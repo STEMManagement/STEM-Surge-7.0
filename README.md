@@ -10,6 +10,25 @@ The website (www.stemmanagement.com) has installers and more information.
 
 The code released here is running in production environments; it can be used directly, and serve as a set of examples on how developers might create their own extensions to the platform.
 
+
+The platform is comprised of 3 parts:
+
+The Deployment Managers: these are the brains, discovering and assigning work
+
+The Branch Managers: these are the dumb workers, they do exactly what the Deployment Managers dictate
+
+The Message Fabric: this is the means of Manager/Branch communication using a custom message format
+
+
+There are 3 ways to extend the platform:
+
+Custom Deployment Controllers: Extend the Deployment Managers
+
+Custom Instructions: Extend the Branch Managers
+
+Custom Messages: Extend/Customize communications
+
+
 Notes:
 
 When a class type is prefixed with an underscore, prefer the type without the underscore.
