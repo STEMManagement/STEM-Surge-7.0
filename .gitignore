@@ -3,3 +3,55 @@
 ################################################################################
 
 /STEM.Surge/.vs/STEM.Surge 7.0/v16
+/STEM.Surge/Extensions/STEM.Surge.Azure/obj/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Azure/obj
+/STEM.Surge/Extensions/STEM.Surge.BasicControllers/obj
+/STEM.Surge/Extensions/STEM.Surge.Compression/obj/Debug
+/STEM.Surge/Extensions/STEM.Surge.DropBox/obj
+/STEM.Surge/Extensions/STEM.Surge.ErrorCleaner/obj
+/STEM.Surge/Extensions/STEM.Surge.Fisher/obj
+/STEM.Surge/Extensions/STEM.Surge.FlowControl/obj
+/STEM.Surge/Extensions/STEM.Surge.FTP/obj
+/STEM.Surge/Extensions/STEM.Surge.Machine/obj
+/STEM.Surge/Extensions/STEM.Surge.MySQL/obj
+/STEM.Surge/Extensions/STEM.Surge.PostGreSQL/obj
+/STEM.Surge/Extensions/STEM.Surge.S3/obj
+/STEM.Surge/Extensions/STEM.Surge.Security/obj
+/STEM.Surge/Extensions/STEM.Surge.SMB/obj
+/STEM.Surge/Extensions/STEM.Surge.SQLServer/obj
+/STEM.Surge/Extensions/STEM.Surge.SQS/obj
+/STEM.Surge/Extensions/STEM.Surge.SSH/obj
+/STEM.Surge/Extensions/STEM.Surge.XML/obj
+/STEM.Surge/STEM.Auth/obj
+/STEM.Surge/STEM.Surge/obj
+/STEM.Surge/STEM.Surge.ControlPanel/obj/Debug
+/STEM.Surge/STEM.SurgeService (Core)/obj
+/STEM.Surge/STEM.SurgeService (Framework)/obj/Debug
+/STEM.Surge/STEM.Sys/obj
+/STEM.Surge/STEM.Surge/bin/Release/netstandard2.0
+/STEM.Surge/STEM.Surge.ControlPanel/bin/Release
+/STEM.Surge/STEM.Surge.ControlPanel/obj/Release/TempPE
+/STEM.Surge/STEM.Surge.ControlPanel/obj/Release
+/STEM.Surge/STEM.SurgeService (Framework)/bin/Release
+/STEM.Surge/STEM.SurgeService (Framework)/obj/Release
+/STEM.Surge/STEM.Sys/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Azure/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.BasicControllers/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Compression
+/STEM.Surge/Extensions/STEM.Surge.DropBox/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.ErrorCleaner/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Fisher/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.FlowControl/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.FTP/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Machine/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.MySQL/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.PostGreSQL/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.S3/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Security/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SMB/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SQLServer/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SQS/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SSH/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.XML/bin/Release/netstandard2.0
+/STEM.Surge/RequiredDlls/STEM.Surge.7.0.0.0.dll
+/STEM.Surge/RequiredDlls/STEM.Sys.7.0.0.0.dll
