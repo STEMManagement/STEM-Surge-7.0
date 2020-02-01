@@ -55,3 +55,25 @@
 /STEM.Surge/Extensions/STEM.Surge.XML/bin/Release/netstandard2.0
 /STEM.Surge/RequiredDlls/STEM.Surge.7.0.0.0.dll
 /STEM.Surge/RequiredDlls/STEM.Sys.7.0.0.0.dll
+/STEM.Surge/Extensions/STEM.Surge.Azure/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.BasicControllers/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.DropBox/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.ErrorCleaner/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Fisher/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.FlowControl/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.FTP/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Machine/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.MySQL/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.PostGreSQL/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.S3/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Security/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SMB/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SQLServer/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SQS/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.SSH/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.XML/bin/Debug/netstandard2.0
+/STEM.Surge/STEM.Surge/bin/Debug/netstandard2.0
+/STEM.Surge/STEM.Surge.ControlPanel/bin/Debug
+/STEM.Surge/STEM.SurgeService (Core)/bin/Debug/netcoreapp3.0
+/STEM.Surge/STEM.SurgeService (Framework)/bin/Debug
+/STEM.Surge/STEM.Sys/bin/Debug/netstandard2.0

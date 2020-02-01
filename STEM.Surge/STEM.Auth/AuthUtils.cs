@@ -24,6 +24,5 @@ namespace STEM.Auth
 {
     public class AuthUtils
     {
-
     }
 }
