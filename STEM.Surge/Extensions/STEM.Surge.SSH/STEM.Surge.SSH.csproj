@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
+    <Authors>Brendan Richards</Authors>
+    <Copyright>Copyright © STEM Management 2019</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Company>STEM Management</Company>
+    <Version>7.0.0</Version>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SSH.NET.Fork" Version="2018.8.25.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\STEM.Surge.BasicControllers\STEM.Surge.BasicControllers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="STEM.Surge.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Surge.7.0.0.0.dll</HintPath>
+    </Reference>
+    <Reference Include="STEM.Surge.Internal.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Surge.Internal.7.0.0.0.dll</HintPath>
+    </Reference>
+    <Reference Include="STEM.Sys.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Sys.7.0.0.0.dll</HintPath>
+    </Reference>
+    <Reference Include="STEM.Sys.Internal.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Sys.Internal.7.0.0.0.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="md &quot;$(SolutionDir)Binaries\Extensions\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)Binaries\Extensions&quot;" />
+  </Target>
+
+</Project>
