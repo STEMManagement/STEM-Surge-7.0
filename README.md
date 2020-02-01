@@ -8,4 +8,4 @@ An introduction video can be found here (https://youtu.be/rMsPSUjCcsE)
 
 The website (www.stemmanagement.com) has installers and more information.
 
-The code released here is running in production environments; it can be used directly, and serve as a set of examples on how a developer might create their own extensions to the platform.
+The code released here is running in production environments; it can be used directly, and serve as a set of examples on how developers might create their own extensions to the platform.
