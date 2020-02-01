@@ -9,3 +9,17 @@ An introduction video can be found here (https://youtu.be/rMsPSUjCcsE)
 The website (www.stemmanagement.com) has installers and more information.
 
 The code released here is running in production environments; it can be used directly, and serve as a set of examples on how developers might create their own extensions to the platform.
+
+Notes:
+
+When a class type is prefixed with an underscore, prefer the type without the underscore.
+
+Custom DeploymentControllers should ALWAYS derive from STEM.Surge.DeploymentController or STEM.Surge.FileDeploymentController if they're not deriving from another DeploymentController
+
+Custom Instructions should ALWAYS derive from STEM.Surge.Instruction if they're not deriving from another Instruction
+
+When Instruction._Run() returns false the configured FailureAction will be invoked
+
+When Instruction._Run() adds to the Exceptions collection an error file will be created
+
+  ONLY when Instruction._Run() returns false (regardless of the Exceptions collection state) will the configured FailureAction be invoked
