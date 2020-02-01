@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
+    <Authors>Brendan Richards</Authors>
+    <Copyright>Copyright © STEM Management 2019</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Company>STEM Management</Company>
+    <Version>7.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="md &quot;$(SolutionDir)DLLs\$(ConfigurationName)\&quot;&#xD;&#xA;md &quot;$(SolutionDir)..\Required\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)DLLs\$(ConfigurationName)&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)..\Required&quot;" />
+  </Target>
+
+</Project>
