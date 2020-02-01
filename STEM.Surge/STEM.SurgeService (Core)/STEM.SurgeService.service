@@ -1,0 +1,10 @@
+[Unit]
+Description=STEM.Surge service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/dotnet /opt/STEM.Surge/STEM.SurgeService.dll
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
