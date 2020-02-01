@@ -29,4 +29,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="3.0.0" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="md &quot;$(SolutionDir)Binaries\STEM.SurgeService (Core)\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.exe&quot; &quot;$(SolutionDir)Binaries\STEM.SurgeService (Core)&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)Binaries\STEM.SurgeService (Core)&quot;&#xD;&#xA;copy &quot;$(SolutionDir)\RequiredDlls\*.dll&quot; &quot;$(SolutionDir)Binaries\STEM.SurgeService (Core)&quot;" />
+  </Target>
 </Project>

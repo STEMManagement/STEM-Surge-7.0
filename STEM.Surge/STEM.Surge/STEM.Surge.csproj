@@ -18,9 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="STEM.Surge.Internal.7.0.0.0">
-      <HintPath>..\RequiredDlls\STEM.Surge.Internal.7.0.0.0.dll</HintPath>
-    </Reference>
     <Reference Include="STEM.Sys.7.0.0.0">
       <HintPath>..\RequiredDlls\STEM.Sys.7.0.0.0.dll</HintPath>
     </Reference>

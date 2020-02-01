@@ -114,6 +114,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RequiredDlls", "RequiredDll
 		RequiredDlls\STEM.Sys.Internal.7.0.0.0.dll = RequiredDlls\STEM.Sys.Internal.7.0.0.0.dll
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "STEM.Sys.Internal", "STEM.Sys.Internal\STEM.Sys.Internal.csproj", "{6BAEFA48-CA31-4596-9F5B-CE62F23515D3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "STEM.Surge.Internal", "STEM.Surge.Internal\STEM.Surge.Internal.csproj", "{412E3431-CE90-4EC1-ADBF-EAA079BECD83}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,6 +220,14 @@ Global
 		{4B274763-4FD4-4507-A2A0-9605C3F500CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4B274763-4FD4-4507-A2A0-9605C3F500CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4B274763-4FD4-4507-A2A0-9605C3F500CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BAEFA48-CA31-4596-9F5B-CE62F23515D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BAEFA48-CA31-4596-9F5B-CE62F23515D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BAEFA48-CA31-4596-9F5B-CE62F23515D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BAEFA48-CA31-4596-9F5B-CE62F23515D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{412E3431-CE90-4EC1-ADBF-EAA079BECD83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{412E3431-CE90-4EC1-ADBF-EAA079BECD83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{412E3431-CE90-4EC1-ADBF-EAA079BECD83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{412E3431-CE90-4EC1-ADBF-EAA079BECD83}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
