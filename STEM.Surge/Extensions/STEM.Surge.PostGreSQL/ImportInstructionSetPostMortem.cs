@@ -46,11 +46,11 @@ CREATE SCHEMA postmortem
 CREATE TABLE postmortem.instruction
 (
     isid uuid NOT NULL,
-    is_assigned timestamp with time zone NOT NULL,
+    is_assigned timestamp without time zone NOT NULL,
     iid uuid NOT NULL,
     type character varying COLLATE pg_catalog."default",
-    start timestamp with time zone NOT NULL,
-    finish timestamp with time zone NOT NULL,
+    start timestamp without time zone NOT NULL,
+    finish timestamp without time zone NOT NULL,
     stage character varying COLLATE pg_catalog."default",
     exceptions boolean
 )
@@ -101,10 +101,10 @@ CREATE TABLE postmortem.instruction_set
     instruction_set_template character varying COLLATE pg_catalog."default",
     initiation_source character varying COLLATE pg_catalog."default",
     process_name character varying COLLATE pg_catalog."default",
-    assigned timestamp with time zone NOT NULL,
-    received timestamp with time zone NOT NULL,
-    started timestamp with time zone NOT NULL,
-    completed timestamp with time zone NOT NULL
+    assigned timestamp without time zone NOT NULL,
+    received timestamp without time zone NOT NULL,
+    started timestamp without time zone NOT NULL,
+    completed timestamp without time zone NOT NULL
 )
 WITH(
     OIDS = FALSE

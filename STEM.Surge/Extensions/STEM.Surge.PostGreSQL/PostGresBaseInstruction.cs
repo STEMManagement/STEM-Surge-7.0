@@ -74,8 +74,10 @@ namespace STEM.Surge.PostGreSQL
             SqlTypeToNpgsqlDbType["interval"] = NpgsqlDbType.Interval;
             SqlTypeToNpgsqlDbType["timestamp"] = NpgsqlDbType.Timestamp;
             SqlTypeToNpgsqlDbType["timestamp with time zone"] = NpgsqlDbType.TimestampTz;
+            SqlTypeToNpgsqlDbType["timestamp without time zone"] = NpgsqlDbType.Timestamp;
             SqlTypeToNpgsqlDbType["time"] = NpgsqlDbType.Time;
             SqlTypeToNpgsqlDbType["time with time zone"] = NpgsqlDbType.TimeTz;
+            SqlTypeToNpgsqlDbType["time without time zone"] = NpgsqlDbType.Time;
             SqlTypeToNpgsqlDbType["bytea"] = NpgsqlDbType.Bytea;
             SqlTypeToNpgsqlDbType["oid"] = NpgsqlDbType.Oid;
             SqlTypeToNpgsqlDbType["xid"] = NpgsqlDbType.Xid;
