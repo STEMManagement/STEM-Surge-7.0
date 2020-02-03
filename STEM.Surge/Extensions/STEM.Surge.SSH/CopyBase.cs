@@ -190,7 +190,7 @@ namespace STEM.Surge.SSH
             else
             {
                 int r = Retry;
-                while (r-- >= 0)
+                while (r-- >= 0 && !Stop)
                 {
                     _Address = Authentication.NextAddress(ServerAddress);
 
@@ -218,7 +218,7 @@ namespace STEM.Surge.SSH
             if (ExecutionMode == ExecutoOn.ForwardExecution)
             {
                 int r = Retry;
-                while (r-- >= 0)
+                while (r-- >= 0 && !Stop)
                 {
                     _Address = Authentication.NextAddress(ServerAddress);
 
@@ -284,10 +284,14 @@ namespace STEM.Surge.SSH
 
                     if (Direction == SshDirection.ToSshServer)
                     {
+                        PostMortemMetaData["LastOperation"] = "STEM_GetFiles:SourceFile";
+
                         sourceFiles = STEM.Sys.IO.Directory.STEM_GetFiles(src, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false);
                     }
                     else
                     {
+                        PostMortemMetaData["LastOperation"] = "ListDirectory:SourceFile";
+
                         items = Authentication.ListDirectory(_Address, Int32.Parse(Port), src, SSHListType.File, RecurseSource, DirectoryFilter, FileFilter);
 
                         sourceFiles = items.Select(i => i.FullName).ToList();
@@ -312,6 +316,8 @@ namespace STEM.Surge.SSH
                                         {
                                             PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
                                             PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
+
+                                            PostMortemMetaData["LastOperation"] = "GetFileInfo:SourceFile";
 
                                             if (Direction == SshDirection.ToSshServer)
                                                 PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
@@ -339,8 +345,12 @@ namespace STEM.Surge.SSH
                                     {
                                         string directory = STEM.Sys.IO.Path.GetDirectoryName(dPath);
 
+                                        PostMortemMetaData["LastOperation"] = "DirectoryExists:DestinationDirectory";
+
                                         if (!Authentication.DirectoryExists(_Address, Int32.Parse(Port), directory))
                                             Authentication.CreateDirectory(_Address, Int32.Parse(Port), directory);
+
+                                        PostMortemMetaData["LastOperation"] = "FileExists:DestinationFile";
 
                                         if (Authentication.FileExists(_Address, Int32.Parse(Port), dPath))
                                         {
@@ -369,10 +379,14 @@ namespace STEM.Surge.SSH
 
                                         DateTime mt = File.GetLastWriteTimeUtc(s);
 
+                                        PostMortemMetaData["LastOperation"] = "OpenSftpClient";
+
                                         SftpClient client = Authentication.OpenSftpClient(_Address, Int32.Parse(Port));
 
                                         try
                                         {
+                                            PostMortemMetaData["LastOperation"] = "UploadFile";
+
                                             using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
                                             {
                                                 client.UploadFile(sStream, Authentication.AdjustPath(_Address, dPath));
@@ -381,11 +395,13 @@ namespace STEM.Surge.SSH
                                         }
                                         finally
                                         {
+                                            PostMortemMetaData["LastOperation"] = "RecycleClient";
                                             Authentication.RecycleClient(client);
                                         }
                                     }
                                     else
                                     {
+                                        PostMortemMetaData["LastOperation"] = "File.Exists:DestinationFile";
                                         if (File.Exists(dPath))
                                         {
                                             switch (ExistsAction)
@@ -411,6 +427,8 @@ namespace STEM.Surge.SSH
                                             dFile = dPath;
                                         }
 
+                                        PostMortemMetaData["LastOperation"] = "Directory.Exists:DestinationDirectory";
+
                                         if (!Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(dFile)))
                                             Directory.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(dFile));
 
@@ -418,6 +436,8 @@ namespace STEM.Surge.SSH
 
                                         try
                                         {
+                                            PostMortemMetaData["LastOperation"] = "DownloadFile";
+
                                             using (System.IO.Stream dStream = System.IO.File.Open(dFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                                             {
                                                 client.DownloadFile(Authentication.AdjustPath(_Address, s), dStream);
@@ -425,9 +445,11 @@ namespace STEM.Surge.SSH
                                         }
                                         finally
                                         {
+                                            PostMortemMetaData["LastOperation"] = "RecycleClient";
                                             Authentication.RecycleClient(client);
                                         }
 
+                                        PostMortemMetaData["LastOperation"] = "SetLastWriteTimeUtc:DestinationFile";
                                         try
                                         {
                                             File.SetLastWriteTimeUtc(dFile, Authentication.GetFileInfo(_Address, Int32.Parse(Port), s).LastWriteTimeUtc);
@@ -464,10 +486,12 @@ namespace STEM.Surge.SSH
                             {
                                 if (Direction == SshDirection.ToSshServer)
                                 {
+                                    PostMortemMetaData["LastOperation"] = "File.Delete:SourceFile";
                                     File.Delete(s);
                                 }
                                 else
                                 {
+                                    PostMortemMetaData["LastOperation"] = "DeleteFile:SourceFile";
                                     Authentication.DeleteFile(_Address, Int32.Parse(Port), s);
                                 }
                             }

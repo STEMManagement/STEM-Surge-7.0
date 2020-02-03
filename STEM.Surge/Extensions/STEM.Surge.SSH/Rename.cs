@@ -83,9 +83,11 @@ namespace STEM.Surge.SSH
         {
             int r = Retry;
 
-            while (r-- >= 0)
+            while (r-- >= 0 && !Stop)
                 try
                 {
+                    PostMortemMetaData["LastOperation"] = "NextAddress";
+
                     string address = Authentication.NextAddress(ServerAddress);
 
                     if (address == null)
@@ -96,11 +98,15 @@ namespace STEM.Surge.SSH
                         return false;
                     }
 
+                    PostMortemMetaData["LastOperation"] = "FileExists:SourceFile";
+
                     if (!Authentication.FileExists(address, Int32.Parse(Port), SourceFile))
                         throw new System.IO.IOException("The target file does not exist: (" + SourceFile + ")");
 
                     string dst = NewFile;
-                    
+
+                    PostMortemMetaData["LastOperation"] = "FileExists:DestinationFile";
+
                     if (Authentication.FileExists(address, Int32.Parse(Port), dst))
                         switch (FileExistsAction)
                         {
@@ -121,9 +127,13 @@ namespace STEM.Surge.SSH
                         }
 
                     string directory = STEM.Sys.IO.Path.GetDirectoryName(dst);
+                    
+                    PostMortemMetaData["LastOperation"] = "DirectoryExists:DestinationDirectory";
 
                     if (!Authentication.DirectoryExists(address, Int32.Parse(Port), directory))
                         Authentication.CreateDirectory(address, Int32.Parse(Port), directory);
+
+                    PostMortemMetaData["LastOperation"] = "RenameFile";
 
                     Authentication.RenameFile(address, Int32.Parse(Port), SourceFile, dst);
 

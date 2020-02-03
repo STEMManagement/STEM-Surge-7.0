@@ -65,6 +65,7 @@ namespace STEM.Surge.SSH
         {
             try
             {
+                PostMortemMetaData["LastOperation"] = "NextAddress";
                 string address = Authentication.NextAddress(ServerAddress);
 
                 if (address == null)
@@ -77,6 +78,7 @@ namespace STEM.Surge.SSH
 
                 Surge.FailureAction tgtAction = FileNotExistsAction;
 
+                PostMortemMetaData["LastOperation"] = "FileExists";
                 if (Authentication.FileExists(address, Int32.Parse(Port), FileName))
                     tgtAction = FileExistsAction;
 

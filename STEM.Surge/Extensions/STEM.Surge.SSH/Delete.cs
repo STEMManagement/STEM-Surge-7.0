@@ -105,7 +105,7 @@ namespace STEM.Surge.SSH
             if (ExecutionMode == ExecutoOn.ForwardExecution)
             {
                 int r = Retry;
-                while (r-- >= 0)
+                while (r-- >= 0 && !Stop)
                 {
                     _Address = Authentication.NextAddress(ServerAddress);
 
@@ -137,7 +137,7 @@ namespace STEM.Surge.SSH
             if (ExecutionMode == ExecutoOn.Rollback)
             {
                 int r = Retry;
-                while (r-- >= 0)
+                while (r-- >= 0 && !Stop)
                 {
                     _Address = Authentication.NextAddress(ServerAddress);
 
@@ -164,6 +164,8 @@ namespace STEM.Surge.SSH
         {
             try
             {
+                PostMortemMetaData["LastOperation"] = "ListDirectory";
+
                 List<SftpFile> items = Authentication.ListDirectory(_Address, Int32.Parse(Port), SourcePath, SSHListType.All, RecurseSource, DirectoryFilter, FileFilter);
 
                 foreach (SftpFile i in items)
@@ -172,6 +174,7 @@ namespace STEM.Surge.SSH
                     {
                         try
                         {
+                            PostMortemMetaData["LastOperation"] = "DeleteFile";
                             Authentication.DeleteFile(_Address, Int32.Parse(Port), i.FullName);
                             AppendToMessage(i.FullName + " deleted");
                         }
@@ -195,11 +198,13 @@ namespace STEM.Surge.SSH
                             {
                                 try
                                 {
+                                    PostMortemMetaData["LastOperation"] = "ListDirectory";
                                     remaining = Authentication.ListDirectory(_Address, Int32.Parse(Port),
                                                                        i.FullName, SSHListType.All, false, "*", "*");
 
                                     if (remaining.Count == 0)
                                     {
+                                        PostMortemMetaData["LastOperation"] = "DeleteDirectory";
                                         Authentication.DeleteDirectory(_Address, Int32.Parse(Port), i.FullName);
                                         AppendToMessage(i.FullName + " deleted");
                                     }
@@ -213,11 +218,13 @@ namespace STEM.Surge.SSH
                         }
                     }
 
+                    PostMortemMetaData["LastOperation"] = "ListDirectory";
                     remaining = Authentication.ListDirectory(_Address, Int32.Parse(Port),
                                                        SourcePath, SSHListType.All, false, "*", "*");
 
                     if (remaining.Count == 0)
                     {
+                        PostMortemMetaData["LastOperation"] = "DeleteDirectory";
                         Authentication.DeleteDirectory(_Address, Int32.Parse(Port), SourcePath);
                         AppendToMessage(SourcePath + " deleted");
                     }

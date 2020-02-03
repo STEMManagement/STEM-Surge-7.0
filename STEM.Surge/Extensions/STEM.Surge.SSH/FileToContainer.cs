@@ -117,9 +117,10 @@ namespace STEM.Surge.SSH
         {
             int r = Retry;
 
-            while (r-- >= 0)
+            while (r-- >= 0 && !Stop)
                 try
                 {
+                    PostMortemMetaData["LastOperation"] = "NextAddress";
                     string address = Authentication.NextAddress(ServerAddress);
 
                     if (address == null)
@@ -135,10 +136,12 @@ namespace STEM.Surge.SSH
 
                     string sFile = Authentication.AdjustPath(address, SourceFile);
 
+                    PostMortemMetaData["LastOperation"] = "OpenSftpClient";
                     SftpClient client = Authentication.OpenSftpClient(address, Int32.Parse(Port));
 
                     try
                     {
+                        PostMortemMetaData["LastOperation"] = "DownloadFile";
                         using (System.IO.MemoryStream s = new System.IO.MemoryStream())
                         {
                             client.DownloadFile(sFile, s);
@@ -154,6 +157,7 @@ namespace STEM.Surge.SSH
                     }
                     finally
                     {
+                        PostMortemMetaData["LastOperation"] = "RecycleClient";
                         Authentication.RecycleClient(client);
                     }
 

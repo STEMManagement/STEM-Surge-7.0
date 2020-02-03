@@ -101,11 +101,12 @@ namespace STEM.Surge.SSH
         {
             int r = Retry;
 
-            while (r-- >= 0)
+            while (r-- >= 0 && !Stop)
             {
                 if (_SavedFile != null)
                     try
                     {
+                        PostMortemMetaData["LastOperation"] = "DeleteFile";
                         Authentication.DeleteFile(_Address, Int32.Parse(Port), _SavedFile);
                         break;
                     }
@@ -132,8 +133,9 @@ namespace STEM.Surge.SSH
         {
             int r = Retry;
 
-            while (r-- >= 0)
+            while (r-- >= 0 && !Stop)
             {
+                PostMortemMetaData["LastOperation"] = "NextAddress";
                 _Address = Authentication.NextAddress(ServerAddress);
 
                 if (_Address == null)
@@ -184,6 +186,7 @@ namespace STEM.Surge.SSH
 
                     string dFile = DestinationFile;
 
+                    PostMortemMetaData["LastOperation"] = "FileExists";
                     if (Authentication.FileExists(_Address, Int32.Parse(Port), DestinationFile))
                         switch (FileExistsAction)
                         {
@@ -205,9 +208,13 @@ namespace STEM.Surge.SSH
 
                     dFile = Authentication.AdjustPath(_Address, dFile);
                     string directory = Authentication.AdjustPath(_Address, STEM.Sys.IO.Path.GetDirectoryName(dFile));
-
+                    
+                    PostMortemMetaData["LastOperation"] = "DirectoryExists";
                     if (!Authentication.DirectoryExists(_Address, Int32.Parse(Port), directory))
+                    {
+                        PostMortemMetaData["LastOperation"] = "CreateDirectory";
                         Authentication.CreateDirectory(_Address, Int32.Parse(Port), directory);
+                    }
 
                     byte[] data = null;
 
@@ -223,10 +230,12 @@ namespace STEM.Surge.SSH
 
                     if (data != null)
                     {
+                        PostMortemMetaData["LastOperation"] = "OpenSftpClient";
                         SftpClient client = Authentication.OpenSftpClient(_Address, Int32.Parse(Port));
 
                         try
                         {
+                            PostMortemMetaData["LastOperation"] = "UploadFile";
                             using (System.IO.MemoryStream s = new System.IO.MemoryStream(data))
                             {
                                 client.UploadFile(s, dFile);
@@ -236,6 +245,7 @@ namespace STEM.Surge.SSH
                         }
                         finally
                         {
+                            PostMortemMetaData["LastOperation"] = "RecycleClient";
                             Authentication.RecycleClient(client);
                         }
                     }

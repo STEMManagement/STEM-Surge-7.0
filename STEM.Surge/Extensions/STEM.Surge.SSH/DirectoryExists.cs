@@ -65,6 +65,7 @@ namespace STEM.Surge.SSH
         {
             try
             {
+                PostMortemMetaData["LastOperation"] = "NextAddress";
                 string address = Authentication.NextAddress(ServerAddress);
 
                 if (address == null)
@@ -77,6 +78,7 @@ namespace STEM.Surge.SSH
 
                 Surge.FailureAction tgtAction = DirectoryNotExistsAction;
 
+                PostMortemMetaData["LastOperation"] = "DirectoryExists";
                 if (Authentication.DirectoryExists(address, Int32.Parse(Port), DirectoryName))
                     tgtAction = DirectoryExistsAction;
 

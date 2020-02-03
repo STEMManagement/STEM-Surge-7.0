@@ -100,7 +100,7 @@ namespace STEM.Surge.SSH
             if (ExecutionMode == ExecutoOn.ForwardExecution)
             {
                 int r = Retry;
-                while (r-- >= 0)
+                while (r-- >= 0 && !Stop)
                 {
                     _Address = Authentication.NextAddress(ServerAddress);
 
@@ -132,7 +132,7 @@ namespace STEM.Surge.SSH
             if (ExecutionMode == ExecutoOn.Rollback)
             {
                 int r = Retry;
-                while (r-- >= 0)
+                while (r-- >= 0 && !Stop)
                 {
                     _Address = Authentication.NextAddress(ServerAddress);
 
@@ -159,18 +159,24 @@ namespace STEM.Surge.SSH
         {
             try
             {
+                PostMortemMetaData["LastOperation"] = "ListDirectory:" + SourcePath;
+
                 List<SftpFile> items = Authentication.ListDirectory(_Address, Int32.Parse(Port), SourcePath, SSHListType.Directory, RecurseSource, DirectoryFilter, "*");
 
                 foreach (SftpFile i in items)
                 {
                     try
                     {
+                        PostMortemMetaData["LastOperation"] = "ListDirectory:" + i.FullName;
+
                         List<SftpFile> remaining = Authentication.ListDirectory(_Address, Int32.Parse(Port), i.FullName, SSHListType.All, true, "*", "*");
 
                         if (DeleteEmptyDirectoriesOnly)
                         {
                             if (remaining.Count == 0)
                             {
+                                PostMortemMetaData["LastOperation"] = "DeleteDirectory:" + i.FullName;
+
                                 Authentication.DeleteDirectory(_Address, Int32.Parse(Port), i.FullName);
                                 AppendToMessage(i.FullName + " deleted");
                             }
@@ -180,16 +186,26 @@ namespace STEM.Surge.SSH
                             foreach (SftpFile del in remaining)
                             {
                                 if (del.IsRegularFile)
+                                {
+                                    PostMortemMetaData["LastOperation"] = "DeleteFile:" + del.FullName;
                                     Authentication.DeleteFile(_Address, Int32.Parse(Port), del.FullName);
+                                }
                             }
 
                             foreach (SftpFile del in remaining)
                             {
                                 if (del.IsDirectory)
-                                    Authentication.DirectoryExists(_Address, Int32.Parse(Port), del.FullName);
+                                {
+                                    PostMortemMetaData["LastOperation"] = "DirectoryExists:" + del.FullName;
+                                    if (Authentication.DirectoryExists(_Address, Int32.Parse(Port), del.FullName))
+                                    {
+                                        PostMortemMetaData["LastOperation"] = "DeleteDirectory:" + del.FullName;
                                         Authentication.DeleteDirectory(_Address, Int32.Parse(Port), del.FullName);
+                                    }
+                                }
                             }
 
+                            PostMortemMetaData["LastOperation"] = "DeleteDirectory:" + i.FullName;
                             Authentication.DeleteDirectory(_Address, Int32.Parse(Port), i.FullName);
                             AppendToMessage(i.FullName + " deleted");
                         }
