@@ -968,5 +968,11 @@ namespace STEM.Surge.ControlPanel
             stats.Start();
             SetDetailPanel(stats, panelActive);
         }
+
+        private void adHocInstructionSet_Click(object sender, EventArgs e)
+        {
+            AdHoc adHoc = new AdHoc(_UIActor);
+            adHoc.Show(this);
+        }
     }
 }

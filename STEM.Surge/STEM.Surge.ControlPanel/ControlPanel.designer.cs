@@ -33,9 +33,15 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ControlPanel));
             this.branchListGrid = new System.Windows.Forms.DataGridView();
+            this.branchStateDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.OnlineImg = new System.Windows.Forms.DataGridViewImageColumn();
             this.BranchIP = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.BranchName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.assignedDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.processingDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.errorsDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.threadsDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.rAMDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.branchMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.takeOffline = new System.Windows.Forms.ToolStripMenuItem();
             this.bringOnline = new System.Windows.Forms.ToolStripMenuItem();
@@ -43,6 +49,8 @@
             this.viewErrors = new System.Windows.Forms.ToolStripMenuItem();
             this.updateSurge = new System.Windows.Forms.ToolStripMenuItem();
             this.updateConfiguration = new System.Windows.Forms.ToolStripMenuItem();
+            this.branchDetailsBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.tableDataSources = new STEM.Surge.ControlPanel.TableDataSources();
             this.controlPanelMainTools = new System.Windows.Forms.ToolStrip();
             this.switchboardConfig = new System.Windows.Forms.ToolStripButton();
             this.about = new System.Windows.Forms.ToolStripButton();
@@ -63,7 +71,9 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.contextHelp = new System.Windows.Forms.ToolStripButton();
             this.curTime = new System.Windows.Forms.ToolStripLabel();
+            this.pollerStats = new System.Windows.Forms.ToolStripButton();
             this.grafana = new System.Windows.Forms.ToolStripButton();
+            this.adHocInstructionSet = new System.Windows.Forms.ToolStripButton();
             this.connectedDM = new System.Windows.Forms.ToolStripButton();
             this.openControllerDialog = new System.Windows.Forms.OpenFileDialog();
             this.toolStrip2 = new System.Windows.Forms.ToolStrip();
@@ -78,17 +88,10 @@
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.pollerStats = new System.Windows.Forms.ToolStripButton();
-            this.branchStateDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.assignedDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.processingDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.errorsDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.threadsDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.rAMDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.branchDetailsBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.tableDataSources = new STEM.Surge.ControlPanel.TableDataSources();
             ((System.ComponentModel.ISupportInitialize)(this.branchListGrid)).BeginInit();
             this.branchMenu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.branchDetailsBindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tableDataSources)).BeginInit();
             this.controlPanelMainTools.SuspendLayout();
             this.toolStrip2.SuspendLayout();
             this.panelRight.SuspendLayout();
@@ -99,8 +102,6 @@
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.branchDetailsBindingSource)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tableDataSources)).BeginInit();
             this.SuspendLayout();
             // 
             // branchListGrid
@@ -147,6 +148,14 @@
             this.branchListGrid.Size = new System.Drawing.Size(643, 461);
             this.branchListGrid.TabIndex = 0;
             // 
+            // branchStateDataGridViewTextBoxColumn
+            // 
+            this.branchStateDataGridViewTextBoxColumn.DataPropertyName = "BranchState";
+            this.branchStateDataGridViewTextBoxColumn.HeaderText = "BranchState";
+            this.branchStateDataGridViewTextBoxColumn.Name = "branchStateDataGridViewTextBoxColumn";
+            this.branchStateDataGridViewTextBoxColumn.ReadOnly = true;
+            this.branchStateDataGridViewTextBoxColumn.Visible = false;
+            // 
             // OnlineImg
             // 
             this.OnlineImg.HeaderText = "";
@@ -168,6 +177,46 @@
             this.BranchName.HeaderText = "Name";
             this.BranchName.Name = "BranchName";
             this.BranchName.ReadOnly = true;
+            // 
+            // assignedDataGridViewTextBoxColumn
+            // 
+            this.assignedDataGridViewTextBoxColumn.DataPropertyName = "Assigned";
+            this.assignedDataGridViewTextBoxColumn.HeaderText = "Assigned";
+            this.assignedDataGridViewTextBoxColumn.Name = "assignedDataGridViewTextBoxColumn";
+            this.assignedDataGridViewTextBoxColumn.ReadOnly = true;
+            this.assignedDataGridViewTextBoxColumn.Width = 80;
+            // 
+            // processingDataGridViewTextBoxColumn
+            // 
+            this.processingDataGridViewTextBoxColumn.DataPropertyName = "Processing";
+            this.processingDataGridViewTextBoxColumn.HeaderText = "Processing";
+            this.processingDataGridViewTextBoxColumn.Name = "processingDataGridViewTextBoxColumn";
+            this.processingDataGridViewTextBoxColumn.ReadOnly = true;
+            this.processingDataGridViewTextBoxColumn.Width = 80;
+            // 
+            // errorsDataGridViewTextBoxColumn
+            // 
+            this.errorsDataGridViewTextBoxColumn.DataPropertyName = "Errors";
+            this.errorsDataGridViewTextBoxColumn.HeaderText = "Errors";
+            this.errorsDataGridViewTextBoxColumn.Name = "errorsDataGridViewTextBoxColumn";
+            this.errorsDataGridViewTextBoxColumn.ReadOnly = true;
+            this.errorsDataGridViewTextBoxColumn.Width = 68;
+            // 
+            // threadsDataGridViewTextBoxColumn
+            // 
+            this.threadsDataGridViewTextBoxColumn.DataPropertyName = "Threads";
+            this.threadsDataGridViewTextBoxColumn.HeaderText = "Threads";
+            this.threadsDataGridViewTextBoxColumn.Name = "threadsDataGridViewTextBoxColumn";
+            this.threadsDataGridViewTextBoxColumn.ReadOnly = true;
+            this.threadsDataGridViewTextBoxColumn.Width = 68;
+            // 
+            // rAMDataGridViewTextBoxColumn
+            // 
+            this.rAMDataGridViewTextBoxColumn.DataPropertyName = "RAM";
+            this.rAMDataGridViewTextBoxColumn.HeaderText = "MB RAM";
+            this.rAMDataGridViewTextBoxColumn.Name = "rAMDataGridViewTextBoxColumn";
+            this.rAMDataGridViewTextBoxColumn.ReadOnly = true;
+            this.rAMDataGridViewTextBoxColumn.Width = 72;
             // 
             // branchMenu
             // 
@@ -218,6 +267,16 @@
             this.updateConfiguration.Size = new System.Drawing.Size(189, 22);
             this.updateConfiguration.Text = "Update Configuration";
             // 
+            // branchDetailsBindingSource
+            // 
+            this.branchDetailsBindingSource.DataMember = "BranchDetails";
+            this.branchDetailsBindingSource.DataSource = this.tableDataSources;
+            // 
+            // tableDataSources
+            // 
+            this.tableDataSources.DataSetName = "TableDataSources";
+            this.tableDataSources.SchemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
+            // 
             // controlPanelMainTools
             // 
             this.controlPanelMainTools.AllowDrop = true;
@@ -240,12 +299,13 @@
             this.contextHelp,
             this.curTime,
             this.pollerStats,
-            this.grafana});
+            this.grafana,
+            this.adHocInstructionSet});
             this.controlPanelMainTools.Location = new System.Drawing.Point(0, 0);
             this.controlPanelMainTools.Margin = new System.Windows.Forms.Padding(3);
             this.controlPanelMainTools.Name = "controlPanelMainTools";
             this.controlPanelMainTools.Padding = new System.Windows.Forms.Padding(0);
-            this.controlPanelMainTools.Size = new System.Drawing.Size(782, 31);
+            this.controlPanelMainTools.Size = new System.Drawing.Size(782, 35);
             this.controlPanelMainTools.TabIndex = 0;
             this.controlPanelMainTools.Text = "toolStrip1";
             // 
@@ -255,7 +315,7 @@
             this.switchboardConfig.Image = global::STEM.Surge.ControlPanel.Properties.Resources.edit;
             this.switchboardConfig.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.switchboardConfig.Name = "switchboardConfig";
-            this.switchboardConfig.Size = new System.Drawing.Size(28, 28);
+            this.switchboardConfig.Size = new System.Drawing.Size(28, 32);
             this.switchboardConfig.Text = "Configure Switchboard";
             this.switchboardConfig.Click += new System.EventHandler(this.switchboardConfig_Click);
             // 
@@ -266,7 +326,7 @@
             this.about.Image = global::STEM.Surge.ControlPanel.Properties.Resources.info;
             this.about.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.about.Name = "about";
-            this.about.Size = new System.Drawing.Size(28, 28);
+            this.about.Size = new System.Drawing.Size(28, 32);
             this.about.Text = "About";
             this.about.Click += new System.EventHandler(this.about_Click);
             // 
@@ -274,7 +334,7 @@
             // 
             this.toolStripSeparator2.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 31);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 35);
             // 
             // licenseAccess
             // 
@@ -283,7 +343,7 @@
             this.licenseAccess.Image = global::STEM.Surge.ControlPanel.Properties.Resources.License;
             this.licenseAccess.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.licenseAccess.Name = "licenseAccess";
-            this.licenseAccess.Size = new System.Drawing.Size(28, 28);
+            this.licenseAccess.Size = new System.Drawing.Size(28, 32);
             this.licenseAccess.Text = "License";
             this.licenseAccess.Click += new System.EventHandler(this.licenseAccess_Click);
             // 
@@ -300,7 +360,7 @@
             this.systemTools.Image = global::STEM.Surge.ControlPanel.Properties.Resources.tools;
             this.systemTools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.systemTools.Name = "systemTools";
-            this.systemTools.Size = new System.Drawing.Size(37, 28);
+            this.systemTools.Size = new System.Drawing.Size(37, 32);
             this.systemTools.Text = "System Tools";
             // 
             // deploymentControllerEditorToolStripMenuItem
@@ -351,7 +411,7 @@
             this.uploadExtensions.Image = global::STEM.Surge.ControlPanel.Properties.Resources.Import;
             this.uploadExtensions.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.uploadExtensions.Name = "uploadExtensions";
-            this.uploadExtensions.Size = new System.Drawing.Size(28, 28);
+            this.uploadExtensions.Size = new System.Drawing.Size(28, 32);
             this.uploadExtensions.Text = "Upload Extensions";
             this.uploadExtensions.Click += new System.EventHandler(this.uploadExtensions_Click);
             // 
@@ -361,7 +421,7 @@
             this.viewLocks.Image = global::STEM.Surge.ControlPanel.Properties.Resources._lock;
             this.viewLocks.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.viewLocks.Name = "viewLocks";
-            this.viewLocks.Size = new System.Drawing.Size(28, 28);
+            this.viewLocks.Size = new System.Drawing.Size(28, 32);
             this.viewLocks.Text = "View Locks";
             this.viewLocks.Click += new System.EventHandler(this.viewLocks_Click);
             // 
@@ -374,7 +434,7 @@
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 31);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 35);
             // 
             // activity
             // 
@@ -382,7 +442,7 @@
             this.activity.Image = global::STEM.Surge.ControlPanel.Properties.Resources.view;
             this.activity.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.activity.Name = "activity";
-            this.activity.Size = new System.Drawing.Size(28, 28);
+            this.activity.Size = new System.Drawing.Size(28, 32);
             this.activity.Text = "System Activity";
             this.activity.Click += new System.EventHandler(this.activity_Click);
             // 
@@ -390,7 +450,7 @@
             // 
             this.toolStripSeparator1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 31);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 35);
             // 
             // contextHelp
             // 
@@ -399,7 +459,7 @@
             this.contextHelp.Image = global::STEM.Surge.ControlPanel.Properties.Resources.help;
             this.contextHelp.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.contextHelp.Name = "contextHelp";
-            this.contextHelp.Size = new System.Drawing.Size(28, 28);
+            this.contextHelp.Size = new System.Drawing.Size(28, 32);
             this.contextHelp.Text = "toolStripButton2";
             this.contextHelp.ToolTipText = "Context Help";
             this.contextHelp.Click += new System.EventHandler(this.contextHelp_Click);
@@ -408,8 +468,18 @@
             // 
             this.curTime.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.curTime.Name = "curTime";
-            this.curTime.Size = new System.Drawing.Size(0, 28);
+            this.curTime.Size = new System.Drawing.Size(0, 32);
             this.curTime.ToolTipText = "UTC Time";
+            // 
+            // pollerStats
+            // 
+            this.pollerStats.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.pollerStats.Image = global::STEM.Surge.ControlPanel.Properties.Resources.health;
+            this.pollerStats.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.pollerStats.Name = "pollerStats";
+            this.pollerStats.Size = new System.Drawing.Size(28, 32);
+            this.pollerStats.Text = "Poller Evaluation";
+            this.pollerStats.Click += new System.EventHandler(this.pollerStats_Click);
             // 
             // grafana
             // 
@@ -417,10 +487,22 @@
             this.grafana.Image = global::STEM.Surge.ControlPanel.Properties.Resources.graph;
             this.grafana.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.grafana.Name = "grafana";
-            this.grafana.Size = new System.Drawing.Size(28, 28);
+            this.grafana.Size = new System.Drawing.Size(28, 32);
             this.grafana.Text = "Show Graphs";
             this.grafana.ToolTipText = "Show Graphs";
             this.grafana.Click += new System.EventHandler(this.Grafana_Click);
+            // 
+            // adHocInstructionSet
+            // 
+            this.adHocInstructionSet.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.adHocInstructionSet.Image = global::STEM.Surge.ControlPanel.Properties.Resources.AdHoc;
+            this.adHocInstructionSet.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            this.adHocInstructionSet.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.adHocInstructionSet.Margin = new System.Windows.Forms.Padding(5, 1, 0, 2);
+            this.adHocInstructionSet.Name = "adHocInstructionSet";
+            this.adHocInstructionSet.Size = new System.Drawing.Size(60, 32);
+            this.adHocInstructionSet.Text = "configure and launch an ad hoc InstructionSet";
+            this.adHocInstructionSet.Click += new System.EventHandler(this.adHocInstructionSet_Click);
             // 
             // connectedDM
             // 
@@ -490,9 +572,9 @@
             this.panelActive.AutoSize = true;
             this.panelActive.BackColor = System.Drawing.SystemColors.ButtonFace;
             this.panelActive.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelActive.Location = new System.Drawing.Point(0, 31);
+            this.panelActive.Location = new System.Drawing.Point(0, 35);
             this.panelActive.Name = "panelActive";
-            this.panelActive.Size = new System.Drawing.Size(782, 461);
+            this.panelActive.Size = new System.Drawing.Size(782, 457);
             this.panelActive.TabIndex = 0;
             // 
             // panelLeft
@@ -566,74 +648,6 @@
             this.splitContainer1.SplitterDistance = 647;
             this.splitContainer1.TabIndex = 2;
             // 
-            // pollerStats
-            // 
-            this.pollerStats.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.pollerStats.Image = global::STEM.Surge.ControlPanel.Properties.Resources.health;
-            this.pollerStats.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.pollerStats.Name = "pollerStats";
-            this.pollerStats.Size = new System.Drawing.Size(28, 28);
-            this.pollerStats.Text = "Poller Evaluation";
-            this.pollerStats.Click += new System.EventHandler(this.pollerStats_Click);
-            // 
-            // branchStateDataGridViewTextBoxColumn
-            // 
-            this.branchStateDataGridViewTextBoxColumn.DataPropertyName = "BranchState";
-            this.branchStateDataGridViewTextBoxColumn.HeaderText = "BranchState";
-            this.branchStateDataGridViewTextBoxColumn.Name = "branchStateDataGridViewTextBoxColumn";
-            this.branchStateDataGridViewTextBoxColumn.ReadOnly = true;
-            this.branchStateDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // assignedDataGridViewTextBoxColumn
-            // 
-            this.assignedDataGridViewTextBoxColumn.DataPropertyName = "Assigned";
-            this.assignedDataGridViewTextBoxColumn.HeaderText = "Assigned";
-            this.assignedDataGridViewTextBoxColumn.Name = "assignedDataGridViewTextBoxColumn";
-            this.assignedDataGridViewTextBoxColumn.ReadOnly = true;
-            this.assignedDataGridViewTextBoxColumn.Width = 80;
-            // 
-            // processingDataGridViewTextBoxColumn
-            // 
-            this.processingDataGridViewTextBoxColumn.DataPropertyName = "Processing";
-            this.processingDataGridViewTextBoxColumn.HeaderText = "Processing";
-            this.processingDataGridViewTextBoxColumn.Name = "processingDataGridViewTextBoxColumn";
-            this.processingDataGridViewTextBoxColumn.ReadOnly = true;
-            this.processingDataGridViewTextBoxColumn.Width = 80;
-            // 
-            // errorsDataGridViewTextBoxColumn
-            // 
-            this.errorsDataGridViewTextBoxColumn.DataPropertyName = "Errors";
-            this.errorsDataGridViewTextBoxColumn.HeaderText = "Errors";
-            this.errorsDataGridViewTextBoxColumn.Name = "errorsDataGridViewTextBoxColumn";
-            this.errorsDataGridViewTextBoxColumn.ReadOnly = true;
-            this.errorsDataGridViewTextBoxColumn.Width = 68;
-            // 
-            // threadsDataGridViewTextBoxColumn
-            // 
-            this.threadsDataGridViewTextBoxColumn.DataPropertyName = "Threads";
-            this.threadsDataGridViewTextBoxColumn.HeaderText = "Threads";
-            this.threadsDataGridViewTextBoxColumn.Name = "threadsDataGridViewTextBoxColumn";
-            this.threadsDataGridViewTextBoxColumn.ReadOnly = true;
-            this.threadsDataGridViewTextBoxColumn.Width = 68;
-            // 
-            // rAMDataGridViewTextBoxColumn
-            // 
-            this.rAMDataGridViewTextBoxColumn.DataPropertyName = "RAM";
-            this.rAMDataGridViewTextBoxColumn.HeaderText = "MB RAM";
-            this.rAMDataGridViewTextBoxColumn.Name = "rAMDataGridViewTextBoxColumn";
-            this.rAMDataGridViewTextBoxColumn.ReadOnly = true;
-            this.rAMDataGridViewTextBoxColumn.Width = 72;
-            // 
-            // branchDetailsBindingSource
-            // 
-            this.branchDetailsBindingSource.DataMember = "BranchDetails";
-            this.branchDetailsBindingSource.DataSource = this.tableDataSources;
-            // 
-            // tableDataSources
-            // 
-            this.tableDataSources.DataSetName = "TableDataSources";
-            this.tableDataSources.SchemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
-            // 
             // ControlPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -650,6 +664,8 @@
             this.Text = "Surge Control Panel";
             ((System.ComponentModel.ISupportInitialize)(this.branchListGrid)).EndInit();
             this.branchMenu.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.branchDetailsBindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tableDataSources)).EndInit();
             this.controlPanelMainTools.ResumeLayout(false);
             this.controlPanelMainTools.PerformLayout();
             this.toolStrip2.ResumeLayout(false);
@@ -667,8 +683,6 @@
             this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.branchDetailsBindingSource)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tableDataSources)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -731,6 +745,7 @@
         private System.Windows.Forms.ToolStripMenuItem updateConfiguration;
         private System.Windows.Forms.ToolStripMenuItem exploreConfigurationToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton pollerStats;
+        private System.Windows.Forms.ToolStripButton adHocInstructionSet;
     }
 }
 

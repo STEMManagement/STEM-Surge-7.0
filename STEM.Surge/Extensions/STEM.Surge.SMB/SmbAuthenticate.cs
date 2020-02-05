@@ -181,7 +181,7 @@ namespace STEM.Surge.SMB
 
                     string err = _Process.StandardError.ReadToEnd();
 
-                    if (err != "")
+                    if (err != "" && !err.Contains("System error 1219 has occurred"))
                         throw new Exception(err);
                 }
                 catch (Exception ex)

@@ -31,7 +31,13 @@
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LockViewer));
             this.lockGridView1 = new System.Windows.Forms.DataGridView();
+            this.managerIPDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.keyDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.lockTimeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.lastLockAttemptDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.locksDataTableBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -40,11 +46,6 @@
             this.filterMask = new System.Windows.Forms.ToolStripTextBox();
             this.rowCount = new System.Windows.Forms.ToolStripLabel();
             this.lockDetailBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.managerIPDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.keyDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.lockTimeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.lastLockAttemptDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.lockGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.locksDataTableBindingSource)).BeginInit();
             this.panel1.SuspendLayout();
@@ -74,6 +75,55 @@
             this.lockGridView1.RowHeadersVisible = false;
             this.lockGridView1.Size = new System.Drawing.Size(1119, 333);
             this.lockGridView1.TabIndex = 0;
+            // 
+            // managerIPDataGridViewTextBoxColumn
+            // 
+            this.managerIPDataGridViewTextBoxColumn.DataPropertyName = "ManagerIP";
+            this.managerIPDataGridViewTextBoxColumn.HeaderText = "ManagerIP";
+            this.managerIPDataGridViewTextBoxColumn.MinimumWidth = 150;
+            this.managerIPDataGridViewTextBoxColumn.Name = "managerIPDataGridViewTextBoxColumn";
+            this.managerIPDataGridViewTextBoxColumn.ReadOnly = true;
+            this.managerIPDataGridViewTextBoxColumn.Width = 200;
+            // 
+            // keyDataGridViewTextBoxColumn
+            // 
+            this.keyDataGridViewTextBoxColumn.DataPropertyName = "Key";
+            this.keyDataGridViewTextBoxColumn.HeaderText = "Key";
+            this.keyDataGridViewTextBoxColumn.MinimumWidth = 250;
+            this.keyDataGridViewTextBoxColumn.Name = "keyDataGridViewTextBoxColumn";
+            this.keyDataGridViewTextBoxColumn.ReadOnly = true;
+            this.keyDataGridViewTextBoxColumn.Width = 250;
+            // 
+            // descriptionDataGridViewTextBoxColumn
+            // 
+            this.descriptionDataGridViewTextBoxColumn.DataPropertyName = "Description";
+            this.descriptionDataGridViewTextBoxColumn.HeaderText = "Description";
+            this.descriptionDataGridViewTextBoxColumn.MinimumWidth = 300;
+            this.descriptionDataGridViewTextBoxColumn.Name = "descriptionDataGridViewTextBoxColumn";
+            this.descriptionDataGridViewTextBoxColumn.ReadOnly = true;
+            this.descriptionDataGridViewTextBoxColumn.Width = 300;
+            // 
+            // lockTimeDataGridViewTextBoxColumn
+            // 
+            this.lockTimeDataGridViewTextBoxColumn.DataPropertyName = "LockTime";
+            dataGridViewCellStyle1.Format = "G";
+            this.lockTimeDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
+            this.lockTimeDataGridViewTextBoxColumn.HeaderText = "Lock Time";
+            this.lockTimeDataGridViewTextBoxColumn.MinimumWidth = 150;
+            this.lockTimeDataGridViewTextBoxColumn.Name = "lockTimeDataGridViewTextBoxColumn";
+            this.lockTimeDataGridViewTextBoxColumn.ReadOnly = true;
+            this.lockTimeDataGridViewTextBoxColumn.Width = 150;
+            // 
+            // lastLockAttemptDataGridViewTextBoxColumn
+            // 
+            this.lastLockAttemptDataGridViewTextBoxColumn.DataPropertyName = "LastLockAttempt";
+            dataGridViewCellStyle2.Format = "G";
+            this.lastLockAttemptDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            this.lastLockAttemptDataGridViewTextBoxColumn.HeaderText = "Last Lock Attempt";
+            this.lastLockAttemptDataGridViewTextBoxColumn.MinimumWidth = 150;
+            this.lastLockAttemptDataGridViewTextBoxColumn.Name = "lastLockAttemptDataGridViewTextBoxColumn";
+            this.lastLockAttemptDataGridViewTextBoxColumn.ReadOnly = true;
+            this.lastLockAttemptDataGridViewTextBoxColumn.Width = 150;
             // 
             // locksDataTableBindingSource
             // 
@@ -141,55 +191,6 @@
             // 
             this.lockDetailBindingSource.DataSource = typeof(STEM.Surge.ControlPanel.LockDetail);
             // 
-            // managerIPDataGridViewTextBoxColumn
-            // 
-            this.managerIPDataGridViewTextBoxColumn.DataPropertyName = "ManagerIP";
-            this.managerIPDataGridViewTextBoxColumn.HeaderText = "ManagerIP";
-            this.managerIPDataGridViewTextBoxColumn.MinimumWidth = 150;
-            this.managerIPDataGridViewTextBoxColumn.Name = "managerIPDataGridViewTextBoxColumn";
-            this.managerIPDataGridViewTextBoxColumn.ReadOnly = true;
-            this.managerIPDataGridViewTextBoxColumn.Width = 200;
-            // 
-            // keyDataGridViewTextBoxColumn
-            // 
-            this.keyDataGridViewTextBoxColumn.DataPropertyName = "Key";
-            this.keyDataGridViewTextBoxColumn.HeaderText = "Key";
-            this.keyDataGridViewTextBoxColumn.MinimumWidth = 250;
-            this.keyDataGridViewTextBoxColumn.Name = "keyDataGridViewTextBoxColumn";
-            this.keyDataGridViewTextBoxColumn.ReadOnly = true;
-            this.keyDataGridViewTextBoxColumn.Width = 250;
-            // 
-            // descriptionDataGridViewTextBoxColumn
-            // 
-            this.descriptionDataGridViewTextBoxColumn.DataPropertyName = "Description";
-            this.descriptionDataGridViewTextBoxColumn.HeaderText = "Description";
-            this.descriptionDataGridViewTextBoxColumn.MinimumWidth = 300;
-            this.descriptionDataGridViewTextBoxColumn.Name = "descriptionDataGridViewTextBoxColumn";
-            this.descriptionDataGridViewTextBoxColumn.ReadOnly = true;
-            this.descriptionDataGridViewTextBoxColumn.Width = 300;
-            // 
-            // lockTimeDataGridViewTextBoxColumn
-            // 
-            this.lockTimeDataGridViewTextBoxColumn.DataPropertyName = "LockTime";
-            dataGridViewCellStyle1.Format = "G";
-            this.lockTimeDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle1;
-            this.lockTimeDataGridViewTextBoxColumn.HeaderText = "Lock Time";
-            this.lockTimeDataGridViewTextBoxColumn.MinimumWidth = 150;
-            this.lockTimeDataGridViewTextBoxColumn.Name = "lockTimeDataGridViewTextBoxColumn";
-            this.lockTimeDataGridViewTextBoxColumn.ReadOnly = true;
-            this.lockTimeDataGridViewTextBoxColumn.Width = 150;
-            // 
-            // lastLockAttemptDataGridViewTextBoxColumn
-            // 
-            this.lastLockAttemptDataGridViewTextBoxColumn.DataPropertyName = "LastLockAttempt";
-            dataGridViewCellStyle2.Format = "G";
-            this.lastLockAttemptDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
-            this.lastLockAttemptDataGridViewTextBoxColumn.HeaderText = "Last Lock Attempt";
-            this.lastLockAttemptDataGridViewTextBoxColumn.MinimumWidth = 150;
-            this.lastLockAttemptDataGridViewTextBoxColumn.Name = "lastLockAttemptDataGridViewTextBoxColumn";
-            this.lastLockAttemptDataGridViewTextBoxColumn.ReadOnly = true;
-            this.lastLockAttemptDataGridViewTextBoxColumn.Width = 150;
-            // 
             // LockViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -198,6 +199,7 @@
             this.ClientSize = new System.Drawing.Size(1119, 368);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "LockViewer";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Lock Viewer";

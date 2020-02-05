@@ -104,6 +104,12 @@
     <Compile Include="ActivityControl.designer.cs">
       <DependentUpon>ActivityControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="AdHoc.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AdHoc.Designer.cs">
+      <DependentUpon>AdHoc.cs</DependentUpon>
+    </Compile>
     <Compile Include="AssignmentDetailsView.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -339,6 +345,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ActivityControl.resx">
       <DependentUpon>ActivityControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AdHoc.resx">
+      <DependentUpon>AdHoc.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="AssignmentDetailsView.resx">
       <DependentUpon>AssignmentDetailsView.cs</DependentUpon>
@@ -629,6 +638,7 @@
     <None Include="Resources\ok e.png" />
     <None Include="Resources\ok grey e.png" />
     <None Include="Resources\lock.png" />
+    <None Include="Resources\AdHoc.png" />
     <Content Include="Resources\Macro.png" />
     <None Include="Resources\notes.png" />
     <Content Include="SurgeLogoFull.ico" />

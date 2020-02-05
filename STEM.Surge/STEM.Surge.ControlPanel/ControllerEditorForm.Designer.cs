@@ -48,6 +48,7 @@
             this.Controls.Add(this.controllerEditor1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ControllerEditorForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Controller Editor";
             this.ResumeLayout(false);
 

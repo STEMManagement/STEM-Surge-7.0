@@ -28,12 +28,16 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExploreConfigs));
             this.panel1 = new System.Windows.Forms.Panel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.notes = new System.Windows.Forms.TabPage();
             this.messageText = new System.Windows.Forms.RichTextBox();
             this.searchResults = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.configsFound = new System.Windows.Forms.DataGridView();
+            this.ApplyEdit = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.configFile = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.panel2 = new System.Windows.Forms.Panel();
             this.tabControl2 = new System.Windows.Forms.TabControl();
             this.xmlView = new System.Windows.Forms.TabPage();
@@ -53,9 +57,6 @@
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.replaceFromFind = new System.Windows.Forms.ToolStripTextBox();
             this.replaceText = new System.Windows.Forms.ToolStripButton();
-            this.configsFound = new System.Windows.Forms.DataGridView();
-            this.ApplyEdit = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.configFile = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.panel1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.notes.SuspendLayout();
@@ -64,6 +65,7 @@
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.configsFound)).BeginInit();
             this.panel2.SuspendLayout();
             this.tabControl2.SuspendLayout();
             this.xmlView.SuspendLayout();
@@ -71,7 +73,6 @@
             this.toolStrip2.SuspendLayout();
             this.editorControl.SuspendLayout();
             this.toolStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.configsFound)).BeginInit();
             this.SuspendLayout();
             // 
             // panel1
@@ -145,6 +146,36 @@
             this.splitContainer2.SplitterDistance = 423;
             this.splitContainer2.SplitterWidth = 8;
             this.splitContainer2.TabIndex = 3;
+            // 
+            // configsFound
+            // 
+            this.configsFound.AllowUserToAddRows = false;
+            this.configsFound.AllowUserToDeleteRows = false;
+            this.configsFound.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.configsFound.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.ApplyEdit,
+            this.configFile});
+            this.configsFound.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.configsFound.Location = new System.Drawing.Point(0, 0);
+            this.configsFound.Name = "configsFound";
+            this.configsFound.ReadOnly = true;
+            this.configsFound.Size = new System.Drawing.Size(423, 564);
+            this.configsFound.TabIndex = 0;
+            // 
+            // ApplyEdit
+            // 
+            this.ApplyEdit.HeaderText = "Apply Edit";
+            this.ApplyEdit.Name = "ApplyEdit";
+            this.ApplyEdit.ReadOnly = true;
+            this.ApplyEdit.Width = 50;
+            // 
+            // configFile
+            // 
+            this.configFile.HeaderText = "Config File";
+            this.configFile.MinimumWidth = 300;
+            this.configFile.Name = "configFile";
+            this.configFile.ReadOnly = true;
+            this.configFile.Width = 300;
             // 
             // panel2
             // 
@@ -328,36 +359,6 @@
             this.replaceText.Text = "Replace Text";
             this.replaceText.Click += new System.EventHandler(this.replaceText_Click);
             // 
-            // configsFound
-            // 
-            this.configsFound.AllowUserToAddRows = false;
-            this.configsFound.AllowUserToDeleteRows = false;
-            this.configsFound.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.configsFound.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.ApplyEdit,
-            this.configFile});
-            this.configsFound.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.configsFound.Location = new System.Drawing.Point(0, 0);
-            this.configsFound.Name = "configsFound";
-            this.configsFound.ReadOnly = true;
-            this.configsFound.Size = new System.Drawing.Size(423, 564);
-            this.configsFound.TabIndex = 0;
-            // 
-            // ApplyEdit
-            // 
-            this.ApplyEdit.HeaderText = "Apply Edit";
-            this.ApplyEdit.Name = "ApplyEdit";
-            this.ApplyEdit.ReadOnly = true;
-            this.ApplyEdit.Width = 50;
-            // 
-            // configFile
-            // 
-            this.configFile.HeaderText = "Config File";
-            this.configFile.MinimumWidth = 300;
-            this.configFile.Name = "configFile";
-            this.configFile.ReadOnly = true;
-            this.configFile.Width = 300;
-            // 
             // ExploreConfigs
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -365,6 +366,7 @@
             this.ClientSize = new System.Drawing.Size(1284, 631);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ExploreConfigs";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Explore Configuration";
@@ -377,6 +379,7 @@
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.configsFound)).EndInit();
             this.panel2.ResumeLayout(false);
             this.tabControl2.ResumeLayout(false);
             this.xmlView.ResumeLayout(false);
@@ -387,7 +390,6 @@
             this.editorControl.ResumeLayout(false);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.configsFound)).EndInit();
             this.ResumeLayout(false);
 
         }

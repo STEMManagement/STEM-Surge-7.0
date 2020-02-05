@@ -29,6 +29,7 @@ namespace STEM.Surge.ControlPanel
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DictionaryEditorForm));
             this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
             this.Add = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
@@ -139,6 +140,7 @@ namespace STEM.Surge.ControlPanel
             this.Controls.Add(this.Add);
             this.Controls.Add(this.propertyGrid1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "DictionaryEditorForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Dictionary Editor";

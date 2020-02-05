@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="md &quot;$(SolutionDir)DLLs\$(ConfigurationName)\&quot;&#xD;&#xA;md &quot;$(SolutionDir)..\Required\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)DLLs\$(ConfigurationName)&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)..\Required&quot;" />
+    <Exec Command="md &quot;$(SolutionDir)RequiredDlls\&quot;&#xD;&#xA;copy &quot;$(TargetDir)$(TargetName).dll&quot; &quot;$(SolutionDir)RequiredDlls&quot;" />
   </Target>
 
 </Project>

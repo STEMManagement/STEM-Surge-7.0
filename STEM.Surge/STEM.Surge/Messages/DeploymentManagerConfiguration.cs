@@ -48,6 +48,7 @@ namespace STEM.Surge.Messages
                     test.SwitchboardConfigurationDescription = candidate.SwitchboardConfigurationDescription;
                     test.DeploymentControllers = candidate.DeploymentControllers;
                     test.InstructionSetTemplates = candidate.InstructionSetTemplates;
+                    test.AdHocInstructionSets = candidate.AdHocInstructionSets;
                     test.InstructionSetStatics = candidate.InstructionSetStatics;
 
                     if (orig == test.Serialize())
@@ -62,6 +63,9 @@ namespace STEM.Surge.Messages
 
                     InstructionSetTemplates.Clear();
                     InstructionSetTemplates.AddRange(candidate.InstructionSetTemplates);
+                    
+                    AdHocInstructionSets.Clear();
+                    AdHocInstructionSets.AddRange(candidate.AdHocInstructionSets);
 
                     foreach (string sub in candidate.InstructionSetStatics.Keys)
                     {
@@ -129,6 +133,8 @@ namespace STEM.Surge.Messages
 
         public List<FileDescription> DeploymentControllers { get; set; }
         public List<FileDescription> InstructionSetTemplates { get; set; }
+        public List<FileDescription> AdHocInstructionSets { get; set; }
+
         public STEM.Sys.Serialization.Dictionary<string, List<FileDescription>> InstructionSetStatics { get; set; }
         
         public List<FileDescription> HistoricalDescriptions { get; set; }
@@ -139,6 +145,7 @@ namespace STEM.Surge.Messages
         {
             DeploymentControllers = new List<FileDescription>();
             InstructionSetTemplates = new List<FileDescription>();
+            AdHocInstructionSets = new List<FileDescription>();
             InstructionSetStatics = new Sys.Serialization.Dictionary<string, List<FileDescription>>();
             HistoricalDescriptions = new List<FileDescription>();
 

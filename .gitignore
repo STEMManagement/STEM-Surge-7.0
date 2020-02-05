@@ -82,3 +82,4 @@
 /STEM.Surge/STEM.SurgeService (Core)/bin/Release/netcoreapp3.0
 /STEM.Surge/STEM.Sys.Internal
 *.user
+Required/STEM.Auth.dll
