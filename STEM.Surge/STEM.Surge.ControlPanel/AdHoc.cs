@@ -290,6 +290,7 @@ namespace STEM.Surge.ControlPanel
         {
             string iSetXml = _InstructionSet.Serialize();
 
+            int delivered = 0;
             for (int i = 0; i < branchList.Items.Count; i++)
             {
                 if (branchList.GetItemCheckState(i) == CheckState.Checked)
@@ -298,9 +299,12 @@ namespace STEM.Surge.ControlPanel
                     m.BranchIP = ((string)branchList.Items[i]).Split('\t')[0];
                     m.InstructionSetXml = iSetXml;
 
-                    _UIActor.Send(m);
+                    if (_UIActor.Send(m))
+                        delivered++;
                 }
             }
+
+            MessageBox.Show(this, "Delivered " + delivered + " InstructionSets.", "Delivered", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void newFile_Click(object sender, EventArgs e)
