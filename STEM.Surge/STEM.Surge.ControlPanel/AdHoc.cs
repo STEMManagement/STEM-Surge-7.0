@@ -29,7 +29,7 @@ namespace STEM.Surge.ControlPanel
             instructionProperties.SelectedGridItemChanged += instructionProperties_SelectedGridItemChanged;
             instructionProperties.PropertyValueChanged += new PropertyValueChangedEventHandler(instructionProperties_PropertyValueChanged);
 
-            savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Select(i => Path.GetFileNameWithoutExtension(i.Filename)).OrderBy(i => i).ToArray());
+            savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).Select(i => Path.GetFileNameWithoutExtension(i.Filename)).OrderBy(i => i).ToArray());
             
             instructionSetEditPanel.Visible = false;
         }
@@ -333,7 +333,7 @@ namespace STEM.Surge.ControlPanel
 
             if (MessageBox.Show(this, "Delete " + file + "?", "Delete?", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.FirstOrDefault(i => i.Filename.Equals(file + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
+                STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).FirstOrDefault(i => i.Filename.Equals(file + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
 
                 if (fd != null)
                 {
@@ -378,9 +378,9 @@ namespace STEM.Surge.ControlPanel
             savedAdHoc.Items.Clear();
 
             if (filterBox.Text.Trim().Length > 0)
-                savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Select(i => STEM.Sys.IO.Path.GetFileName(i.Filename)).Where(i => i.ToUpper().Contains(filterBox.Text.Trim().ToUpper())).OrderBy(i => i).ToArray());
+                savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).Select(i => STEM.Sys.IO.Path.GetFileName(i.Filename)).Where(i => i.ToUpper().Contains(filterBox.Text.Trim().ToUpper())).OrderBy(i => i).ToArray());
             else
-                savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Select(i => STEM.Sys.IO.Path.GetFileName(i.Filename)).OrderBy(i => i).ToArray());
+                savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).Select(i => STEM.Sys.IO.Path.GetFileName(i.Filename)).OrderBy(i => i).ToArray());
         }
 
         private void save_Click(object sender, EventArgs e)
@@ -401,7 +401,7 @@ namespace STEM.Surge.ControlPanel
             while (fileName.ToUpper().EndsWith(".IS"))
                 fileName = fileName.Remove(fileName.Length - 4);
 
-            STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.FirstOrDefault(i => i.Filename.Equals(fileName + ".is", StringComparison.InvariantCultureIgnoreCase));
+            STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).FirstOrDefault(i => i.Filename.Equals(fileName + ".is", StringComparison.InvariantCultureIgnoreCase));
 
             if (fd != null && fd.Content != null)
             {
@@ -434,7 +434,7 @@ namespace STEM.Surge.ControlPanel
             save.Enabled = _DIRTY = false;
 
             savedAdHoc.Items.Clear();
-            savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Select(i => Path.GetFileNameWithoutExtension(i.Filename)).OrderBy(i => i).ToArray());
+            savedAdHoc.Items.AddRange(_UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).Select(i => Path.GetFileNameWithoutExtension(i.Filename)).OrderBy(i => i).ToArray());
 
             _LastFileObject = fileName;
             savedAdHoc.SelectedItem = _LastFileObject;
@@ -469,7 +469,7 @@ namespace STEM.Surge.ControlPanel
 
                 if (savedAdHoc.SelectedItem != null)
                 {
-                    STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.FirstOrDefault(i => i.Filename.Equals(savedAdHoc.SelectedItem as string + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
+                    STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.AdHocInstructionSets.Where(i => i.Content != null).FirstOrDefault(i => i.Filename.Equals(savedAdHoc.SelectedItem as string + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
 
                     if (fd != null)
                         _InstructionSet = Surge.InstructionSet.Deserialize(fd.StringContent) as Surge.InstructionSet;
