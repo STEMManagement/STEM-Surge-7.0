@@ -89,3 +89,7 @@ STEM.Surge/Binaries/Installer.exe
 STEM.Surge/Binaries/STEM.Surge - 7 Installer.SED
 STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/STEM.LicenseGenerator
+/STEM.Surge/Binaries/Extensions/STEM.Surge.7.0.0.0.dll
+/STEM.Surge/Binaries/Extensions/STEM.Surge.Internal.7.0.0.0.dll
+/STEM.Surge/Binaries/Extensions/STEM.Sys.7.0.0.0.dll
+/STEM.Surge/Binaries/Extensions/STEM.Sys.Internal.7.0.0.0.dll

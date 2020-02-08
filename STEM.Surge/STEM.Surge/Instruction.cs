@@ -42,6 +42,11 @@ namespace STEM.Surge
         [Category("Flow")]
         public string FlowControlLabel { get; set; }
 
+        [DisplayName("Target Label")]
+        [Category("Flow")]
+        [Description("The label to skip forward to when FailureAction == SkipToLabel")]
+        public string FailureActionLabel { get; set; }
+
         /// <summary>
         /// What to do in the event _Run returns false
         /// </summary>
@@ -137,7 +142,7 @@ namespace STEM.Surge
         [DisplayName("Populate Post Mortem MetaData"), DescriptionAttribute("Should the Post Mortem Evaluation MetaData be populated during execution?")]
         [Category("Post Mortem")]
         public bool PopulatePostMortemMeta { get; set; }
-        
+
         /// <summary>
         /// Provides get access to the InstructionSet instance of which this instruction is a member
         /// </summary>
@@ -164,6 +169,7 @@ namespace STEM.Surge
         {
             ID = Guid.NewGuid();
             FlowControlLabel = "";
+            FailureActionLabel = "";
             FailureAction = FailureAction.Continue;
             Message = "Unexecuted";
             Stage = Stage.Ready;
@@ -225,13 +231,16 @@ namespace STEM.Surge
         {
             try
             {
+                if (String.IsNullOrEmpty(label))
+                    return;
+
                 if (InstructionSet != null)
                 {
                     try
                     {
                         for (int i = OrdinalPosition + 1; i < InstructionSet.Instructions.Count; i++)
                         {
-                            if (InstructionSet.Instructions[i].FlowControlLabel != label)
+                            if (!InstructionSet.Instructions[i].FlowControlLabel.Equals(label, StringComparison.InvariantCultureIgnoreCase))
                                 InstructionSet.Instructions[i].Stage = Stage.Skip;
                             else
                                 break;
@@ -363,6 +372,11 @@ namespace STEM.Surge
 
                                 case Surge.FailureAction.SkipNext:
                                     SkipNext();
+                                    break;
+
+                                case Surge.FailureAction.SkipToLabel:
+
+                                    SkipForwardToFlowControlLabel(FailureActionLabel);
                                     break;
                             }
                         }

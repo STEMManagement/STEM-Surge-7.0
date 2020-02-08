@@ -52,6 +52,10 @@ namespace STEM.Surge.SSH
         [Description("What action should be taken if the file does not exist?")]
         public Surge.FailureAction FileNotExistsAction { get; set; }
 
+        [DisplayName("Target Label")]
+        [Description("The label to skip forward to when Action == SkipToLabel")]
+        public string TargetLabel { get; set; }
+
         public FileExists()
             : base()
         {
@@ -59,6 +63,7 @@ namespace STEM.Surge.SSH
             ServerAddress = "[SshServerAddress]";
             Port = "[SshServerPort]";
             FileName = "[TargetPath]\\[TargetName]";
+            TargetLabel = "";
         }
 
         protected override bool _Run()
@@ -101,6 +106,11 @@ namespace STEM.Surge.SSH
 
                     case Surge.FailureAction.Continue:
 
+                        break;
+
+                    case Surge.FailureAction.SkipToLabel:
+
+                        SkipForwardToFlowControlLabel(TargetLabel);
                         break;
                 }
             }

@@ -51,6 +51,10 @@ namespace STEM.Surge.FTP
         [Description("What action should be taken if the directory does not exist?")]
         public Surge.FailureAction DirectoryNotExistsAction { get; set; }
 
+        [DisplayName("Target Label")]
+        [Description("The label to skip forward to when Action == SkipToLabel")]
+        public string TargetLabel { get; set; }
+
         public DirectoryExists()
             : base()
         {
@@ -58,6 +62,7 @@ namespace STEM.Surge.FTP
             ServerAddress = "[FtpServerAddress]";
             Port = "[FtpServerPort]";
             DirectoryName = "[TargetPath]";
+            TargetLabel = "";
         }
 
         protected override bool _Run()
@@ -97,6 +102,11 @@ namespace STEM.Surge.FTP
 
                         case Surge.FailureAction.Continue:
 
+                            break;
+
+                        case Surge.FailureAction.SkipToLabel:
+
+                            SkipForwardToFlowControlLabel(TargetLabel);
                             break;
                     }
                 }

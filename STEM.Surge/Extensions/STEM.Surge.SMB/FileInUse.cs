@@ -34,10 +34,15 @@ namespace STEM.Surge.SMB
         [Description("What action should be taken if the file is in use (i.e. open by another process)?")]
         public Surge.FailureAction FileInUseAction { get; set; }
 
+        [DisplayName("Target Label")]
+        [Description("The label to skip forward to when Action == SkipToLabel")]
+        public string TargetLabel { get; set; }
+
         public FileInUse()
             : base()
         {
             FileName = "[TargetPath]\\[TargetName]";
+            TargetLabel = "";
         }
 
         protected override bool _Run()
@@ -73,6 +78,11 @@ namespace STEM.Surge.SMB
 
                             case Surge.FailureAction.Continue:
 
+                                break;
+
+                            case Surge.FailureAction.SkipToLabel:
+
+                                SkipForwardToFlowControlLabel(TargetLabel);
                                 break;
                         }
                     }

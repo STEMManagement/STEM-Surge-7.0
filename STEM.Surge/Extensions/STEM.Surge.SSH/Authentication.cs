@@ -119,13 +119,25 @@ namespace STEM.Surge.SSH
 
                 if (!String.IsNullOrEmpty(KeyFile))
                 {
+                    string kf = null;
+
+                    foreach (string f in STEM.Sys.IO.Path.OrderPathsWithSubnet(KeyFile, STEM.Sys.IO.Net.MachineIP()))
+                        if (System.IO.File.Exists(f))
+                        {
+                            kf = f;
+                            break;
+                        }
+
+                    if (kf == null)
+                        throw new System.Exception("No file could be found from " + KeyFile);
+
                     if (!String.IsNullOrEmpty(Password))
                     {
-                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(KeyFile, Password) });
+                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf, Password) });
                     }
                     else
                     {
-                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(KeyFile) });
+                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf) });
                     }
                 }
                 else
@@ -198,13 +210,25 @@ namespace STEM.Surge.SSH
 
                 if (!String.IsNullOrEmpty(KeyFile))
                 {
+                    string kf = null;
+
+                    foreach (string f in STEM.Sys.IO.Path.OrderPathsWithSubnet(KeyFile, STEM.Sys.IO.Net.MachineIP()))
+                        if (System.IO.File.Exists(f))
+                        {
+                            kf = f;
+                            break;
+                        }
+
+                    if (kf == null)
+                        throw new System.Exception("No file could be found from " + KeyFile);
+
                     if (!String.IsNullOrEmpty(Password))
                     {
-                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(KeyFile, Password) });
+                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf, Password) });
                     }
                     else
                     {
-                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(KeyFile) });
+                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf) });
                     }
                 }
                 else

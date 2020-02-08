@@ -41,11 +41,16 @@ namespace STEM.Surge.Azure
         [Description("What action should be taken if the directory does not exist?")]
         public Surge.FailureAction DirectoryNotExistsAction { get; set; }
 
+        [DisplayName("Target Label")]
+        [Description("The label to skip forward to when Action == SkipToLabel")]
+        public string TargetLabel { get; set; }
+
         public DirectoryExists()
             : base()
         {
             Authentication = new Authentication();
             DirectoryName = "[TargetPath]";
+            TargetLabel = "";
         }
 
         protected override bool _Run()
@@ -76,6 +81,11 @@ namespace STEM.Surge.Azure
 
                     case Surge.FailureAction.Continue:
 
+                        break;
+
+                    case Surge.FailureAction.SkipToLabel:
+
+                        SkipForwardToFlowControlLabel(TargetLabel);
                         break;
                 }
             }

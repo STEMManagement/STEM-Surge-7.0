@@ -40,11 +40,16 @@ namespace STEM.Surge.FlowControl
         [DisplayName("If OS Does Not Match"), DescriptionAttribute("The action to take if the OS does not match the selected Operating System.")]
         public Surge.FailureAction ActionIfNotMatch { get; set; }
 
+        [DisplayName("Target Label")]
+        [Description("The label to skip forward to when Action == SkipToLabel")]
+        public string TargetLabel { get; set; }
+
         public OperatingSystem() : base()
         {
             OS = OSType.Windows;
             ActionIfMatch = FailureAction.SkipRemaining;
             ActionIfNotMatch = FailureAction.SkipRemaining;
+            TargetLabel = "";
         }
 
         protected override bool _Run()
@@ -80,6 +85,11 @@ namespace STEM.Surge.FlowControl
 
                     case Surge.FailureAction.Continue:
 
+                        break;
+
+                    case Surge.FailureAction.SkipToLabel:
+
+                        SkipForwardToFlowControlLabel(TargetLabel);
                         break;
                 }
             }
