@@ -120,6 +120,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "STEM.Surge.Internal", "STEM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Installer", "Installer\Installer.csproj", "{482389F3-D742-46AC-835E-04307A82F9D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "STEM.LicenseGenerator", "STEM.LicenseGenerator\STEM.LicenseGenerator.csproj", "{C7053849-D7E3-435D-BBBE-250C30E6F28C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -234,6 +236,10 @@ Global
 		{482389F3-D742-46AC-835E-04307A82F9D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{482389F3-D742-46AC-835E-04307A82F9D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{482389F3-D742-46AC-835E-04307A82F9D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7053849-D7E3-435D-BBBE-250C30E6F28C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7053849-D7E3-435D-BBBE-250C30E6F28C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7053849-D7E3-435D-BBBE-250C30E6F28C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7053849-D7E3-435D-BBBE-250C30E6F28C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -134,6 +134,64 @@ namespace STEM.Sys.IO
             return (path.Substring(0, machineStart) + machineName + path.Substring(machineStart + machine.Length));
         }
 
+        /// <summary>
+        /// Changes the machineName (\\machineName\path) to the IP (\\ip\path)
+        /// Returns path if path does not start with '\\' or already matches IP
+        /// </summary>
+        /// <param name="path">Path to be transformed</param>
+        /// <returns>Path with IP in place of machineName</returns>
+        public static string ChangeMachineNameToIp(string path)
+        {
+            if (!path.StartsWith("\\\\"))
+                return path;
+
+            string machine = FirstTokenOfPath(path);
+            string machineIP = STEM.Sys.IO.Net.MachineAddress(machine);
+
+            if (machineIP == System.Net.IPAddress.None.ToString())
+                return path;
+
+            int machineStart = path.IndexOf(machine);
+
+            return (path.Substring(0, machineStart) + machineIP + path.Substring(machineStart + machine.Length));
+        }
+
+
+        public enum PathScope { IP, MachineName, Unknown };
+        /// <summary>
+        /// Determines if the path starts with IP or machineName
+        /// </summary>
+        /// <param name="path">Path to be transformed</param>
+        /// <returns>PathScope</returns>
+        public static PathScope PathStartsWith(string path)
+        {
+            if (!path.StartsWith("\\\\"))
+                return PathScope.Unknown;
+
+            string machine = FirstTokenOfPath(path);
+
+            try
+            {
+                System.Net.IPAddress.Parse(machine);
+                return PathScope.IP;
+            }
+            catch { }
+
+            string machineName = STEM.Sys.IO.Net.MachineName(machine);
+            string machineIP = STEM.Sys.IO.Net.MachineAddress(machine);
+
+            if (machineName == machine)
+                return PathScope.MachineName;
+            
+            if (machineIP == machine)
+                return PathScope.IP;
+
+            if (machine.StartsWith(machineName, StringComparison.InvariantCultureIgnoreCase))
+                return PathScope.MachineName;
+
+            return PathScope.Unknown;
+        }
+
         public static string FirstTokenOfPath(string path)
         {
             string p = STEM.Sys.IO.Path.AdjustPath(path);
