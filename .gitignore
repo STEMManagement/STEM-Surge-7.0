@@ -93,3 +93,6 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/Binaries/Extensions/STEM.Surge.Internal.7.0.0.0.dll
 /STEM.Surge/Binaries/Extensions/STEM.Sys.7.0.0.0.dll
 /STEM.Surge/Binaries/Extensions/STEM.Sys.Internal.7.0.0.0.dll
+/STEM.Surge/Binaries/Surge-7.0-Installer.EXE
+/STEM.Surge/Installer/bin/Release
+/STEM.Surge/Installer/obj/Release
