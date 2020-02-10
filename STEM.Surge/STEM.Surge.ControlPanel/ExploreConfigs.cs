@@ -282,11 +282,18 @@ namespace STEM.Surge.ControlPanel
 
             if (f == "")
             {
-                tabControl1.SelectTab("messageText");
+                tabControl1.SelectTab("notes");
                 messageText.SelectionColor = System.Drawing.Color.Black;
                 messageText.AppendText("No search string.\r\n");
 
                 return;
+            }
+
+            bool notFilter = false;
+            if (f.StartsWith("!"))
+            {
+                notFilter = true;
+                f = f.Substring(1);
             }
 
             foreach (string key in _DeploymentControllers.Keys)
@@ -309,8 +316,16 @@ namespace STEM.Surge.ControlPanel
                                 }
 
                                 string s = dc.Serialize();
-                                if (s.ToUpper().Contains(f.ToUpper()))
-                                    configsFound.Rows.Add(true, d.Filename);
+                                if (notFilter)
+                                {
+                                    if (!s.ToUpper().Contains(f.ToUpper()))
+                                        configsFound.Rows.Add(true, d.Filename);
+                                }
+                                else
+                                {
+                                    if (s.ToUpper().Contains(f.ToUpper()))
+                                        configsFound.Rows.Add(true, d.Filename);
+                                }
                             }
                         }
                         catch { }
@@ -318,8 +333,18 @@ namespace STEM.Surge.ControlPanel
                 else
                 {
                     if (d.StringContent != null)
-                        if (d.StringContent.ToUpper().Contains(f.ToUpper()))
-                            configsFound.Rows.Add(true, d.Filename);
+                    {
+                        if (notFilter)
+                        {
+                            if (!d.StringContent.ToUpper().Contains(f.ToUpper()))
+                                configsFound.Rows.Add(true, d.Filename);
+                        }
+                        else
+                        {
+                            if (d.StringContent.ToUpper().Contains(f.ToUpper()))
+                                configsFound.Rows.Add(true, d.Filename);
+                        }
+                    }
                 }
             }
 
@@ -327,16 +352,36 @@ namespace STEM.Surge.ControlPanel
             {
                 STEM.Sys.IO.FileDescription d = _ISetTemplates[key];
                 if (d.StringContent != null)
-                    if (d.StringContent.ToUpper().Contains(f.ToUpper()))
-                        configsFound.Rows.Add(true, key);
+                {
+                    if (notFilter)
+                    {
+                        if (!d.StringContent.ToUpper().Contains(f.ToUpper()))
+                            configsFound.Rows.Add(true, key);
+                    }
+                    else
+                    {
+                        if (d.StringContent.ToUpper().Contains(f.ToUpper()))
+                            configsFound.Rows.Add(true, key);
+                    }
+                }
             }
 
             foreach (string key in _ISetStatics.Keys)
             {
                 STEM.Sys.IO.FileDescription d = _ISetStatics[key];
                 if (d.StringContent != null)
-                    if (d.StringContent.ToUpper().Contains(f.ToUpper()))
-                        configsFound.Rows.Add(true, key);
+                {
+                    if (notFilter)
+                    {
+                        if (!d.StringContent.ToUpper().Contains(f.ToUpper()))
+                            configsFound.Rows.Add(true, key);
+                    }
+                    else
+                    {
+                        if (d.StringContent.ToUpper().Contains(f.ToUpper()))
+                            configsFound.Rows.Add(true, key);
+                    }
+                }
             }
 
             messageText.SelectionColor = System.Drawing.Color.Black;
@@ -344,7 +389,7 @@ namespace STEM.Surge.ControlPanel
 
             tabControl1.SelectTab("searchResults");
 
-            if (configsFound.Rows.Count == 0 && (f.StartsWith("[") && f.EndsWith("]")))
+            if (notFilter == false && configsFound.Rows.Count == 0 && (f.StartsWith("[") && f.EndsWith("]")))
             {
                 _SwitchboardConfig = new SwitchboardConfig();
                 _SwitchboardConfig.ReadXml(new System.IO.StringReader(_UIActor.DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent));
@@ -424,8 +469,10 @@ namespace STEM.Surge.ControlPanel
 
         private void clearFilter_Click(object sender, EventArgs e)
         {
+            configsFound.Rows.Clear();
+
             filterBox.Text = "";
-            tabControl1.SelectTab("messageText");
+            tabControl1.SelectTab("notes");
 
             messageText.SelectionColor = System.Drawing.Color.Black;
             messageText.AppendText("Search Cleared.\r\n");

@@ -305,7 +305,7 @@
             this.filterBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             this.filterBox.Name = "filterBox";
             this.filterBox.Size = new System.Drawing.Size(400, 35);
-            this.filterBox.ToolTipText = "Filter Configs";
+            this.filterBox.ToolTipText = "Filter Configs (prepend with \'!\' to apply a \'not in\' filter)";
             // 
             // applyFilter
             // 
