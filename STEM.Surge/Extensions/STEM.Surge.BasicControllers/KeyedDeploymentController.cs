@@ -29,7 +29,7 @@ namespace STEM.Surge.BasicControllers
     [Description("Customize an InstructionSet Template using placeholders related to the file properties for each file discovered. (e.g. [TargetPath], [TargetName], [LastWriteTimeUtc]...) " +
         "Files from this controller are addressed in alphabetical order. " +
         "This controller seeks to issue instruction sets, serially bound to a dedicated branch, based on an exclusive key generated for each file. (e.g. if the key was the filename extension, then all files with " +
-        "extension '.typex' could be bound to 'branch-01' and assigned serially to that branch and only that branch unless or until that branch is no longer a online, at that point typex files could be re-bound to another Branch)")]
+        "extension '.typex' could be bound to 'branch-01' and assigned serially to that branch and only that branch unless or until that branch is no longer online, at that point typex files could be re-bound to another Branch)")]
     public abstract class KeyedDeploymentController : STEM.Surge.FileDeploymentController
     {
         static Dictionary<string, BoundKey> _Keys = new Dictionary<string, BoundKey>();
