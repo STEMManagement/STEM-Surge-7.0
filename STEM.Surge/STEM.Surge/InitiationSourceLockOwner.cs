@@ -60,12 +60,20 @@ namespace STEM.Surge
             lock (this)
             {
                 if (initiationSource != null)
-                    if (ControllerManager.KeyManager.Lock(initiationSource, this, ControllerManager.CoordinateWith))
+                {
+                    string key = initiationSource;
+                    _FileDeploymentController fileBasis = ControllerManager.ValidatedController as _FileDeploymentController;
+                    if (fileBasis != null)
+                        if (fileBasis.RequireTargetNameCoordination)
+                            key = STEM.Sys.IO.Path.GetFileName(initiationSource);
+
+                    if (ControllerManager.KeyManager.Lock(key, this, ControllerManager.CoordinateWith))
                     {
                         LockTime = DateTime.UtcNow;
                         InitiationSource = initiationSource;
                         return true;
                     }
+                }
 
                 return false;
             }
@@ -209,7 +217,13 @@ namespace STEM.Surge
                     if (InitiationSource != null)
                         try
                         {
-                            ControllerManager.KeyManager.Unlock(InitiationSource, this);
+                            string key = InitiationSource;
+                            _FileDeploymentController fileBasis = ControllerManager.ValidatedController as _FileDeploymentController;
+                            if (fileBasis != null)
+                                if (fileBasis.RequireTargetNameCoordination)
+                                    key = STEM.Sys.IO.Path.GetFileName(InitiationSource);
+
+                            ControllerManager.KeyManager.Unlock(key, this);
                         }
                         catch (Exception ex)
                         {
@@ -299,7 +313,8 @@ namespace STEM.Surge
 
         public void Verify(string key)
         {
-            InitiationSource = key;
+            if (InitiationSource == null)
+                InitiationSource = key;
 
             if (DeploymentDetails != null && DeploymentDetails.Completed != DateTime.MinValue)
             {
@@ -307,7 +322,7 @@ namespace STEM.Surge
                 {
                     try
                     {
-                        ControllerManager.KeyManager.Unlock(InitiationSource, this);
+                        ControllerManager.KeyManager.Unlock(key, this);
                     }
                     catch (Exception ex)
                     {
@@ -369,7 +384,7 @@ namespace STEM.Surge
                         if (InitiationSource != null)
                             try
                             {
-                                ControllerManager.KeyManager.Unlock(InitiationSource, this);
+                                ControllerManager.KeyManager.Unlock(key, this);
                             }
                             catch (Exception ex)
                             {

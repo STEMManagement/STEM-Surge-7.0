@@ -213,108 +213,9 @@ namespace STEM.Surge.BasicControllers
 
             base.CustomizeInstructionSet(iSetTemplate, kvp, branchIP, initiationSource, false);
         }
-
-        class LockOwner : STEM.Sys.State.IKeyLockOwner
-        {
-            static Dictionary<string, List<LockOwner>> _Locks = new Dictionary<string, List<LockOwner>>();
-
-            BasicFileController _Controller = null;
-            string _InitiationSource = null;
-            string _Key = null;
-            DateTime _LockTime = DateTime.MaxValue;
-            List<LockOwner> _MemberOf = null;
-
-            private LockOwner(BasicFileController controller, string initiationSource)
-            {
-                _Controller = controller;
-                _InitiationSource = initiationSource;
-                _Key = STEM.Sys.IO.Path.GetFileName(_InitiationSource);
-                _LockTime = DateTime.UtcNow;
-
-                if (!_Locks.ContainsKey(_Controller.DeploymentControllerID))
-                    lock (_Locks)
-                        if (!_Locks.ContainsKey(_Controller.DeploymentControllerID))
-                            _Locks[_Controller.DeploymentControllerID] = new List<LockOwner>();
-            }
-
-            public static bool Lock(BasicFileController controller, string initiationSource)
-            {
-                LockOwner owner = new LockOwner(controller, initiationSource);
-
-                if (controller.CoordinatedKeyManager.Lock(STEM.Sys.IO.Path.GetFileName(initiationSource), owner, controller.CoordinateWith))
-                {
-                    lock (_Locks[controller.DeploymentControllerID])
-                    {
-                        _Locks[controller.DeploymentControllerID].Add(owner);
-                        owner._MemberOf = _Locks[controller.DeploymentControllerID];
-                    }
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            public static void Unlock(BasicFileController controller, string initiationSource)
-            {
-                LockOwner owner = null;
-
-                if (_Locks.ContainsKey(controller.DeploymentControllerID))
-                    lock (_Locks[controller.DeploymentControllerID])
-                        owner = _Locks[controller.DeploymentControllerID].FirstOrDefault(i => i._InitiationSource.Equals(initiationSource, StringComparison.InvariantCultureIgnoreCase));
-
-                if (owner != null)
-                    controller.CoordinatedKeyManager.Unlock(STEM.Sys.IO.Path.GetFileName(initiationSource), owner);
-            }
-
-            public static void UnlockAll(string deploymentControllerID)
-            {
-                List<LockOwner> toDo = new List<LockOwner>();
-
-                if (_Locks.ContainsKey(deploymentControllerID))
-                    lock (_Locks)
-                        if (_Locks.ContainsKey(deploymentControllerID))
-                        {
-                            toDo = _Locks[deploymentControllerID];
-                            _Locks.Remove(deploymentControllerID);
-                        }
-
-                foreach (LockOwner owner in toDo.ToList())
-                {
-                    try
-                    {
-                        owner._Controller.CoordinatedKeyManager.Unlock(STEM.Sys.IO.Path.GetFileName(owner._InitiationSource), owner);
-                    }
-                    catch { }
-                }
-            }
-
-            public void Locked(string key)
-            {
-            }
-
-            public void Unlocked(string key)
-            {
-                try
-                {
-                    if (_MemberOf != null)
-                        lock (_MemberOf)
-                            _MemberOf.Remove(this);
-                }
-                catch { }
-            }
-
-            public void Verify(string key)
-            {
-                if ((DateTime.UtcNow - _LockTime).TotalMinutes > 20)
-                    _Controller.CoordinatedKeyManager.Unlock(STEM.Sys.IO.Path.GetFileName(_InitiationSource), this);
-            }
-        }
-
+        
         public override void Disposing()
-        {
-            LockOwner.UnlockAll(DeploymentControllerID);
-     
+        {     
             base.Disposing();
         }
         
@@ -326,10 +227,6 @@ namespace STEM.Surge.BasicControllers
             DeploymentDetails ret = null;
             try
             {
-                if (RequireTargetNameCoordination && CoordinatedKeyManager != null)
-                    if (!LockOwner.Lock(this, initiationSource))
-                        return null;
-
                 string dp = TemplateKVP.Keys.ToList().FirstOrDefault(i => i.Equals("[DestinationPath]", StringComparison.InvariantCultureIgnoreCase));
                 if (dp == null)
                     throw new Exception("No macro [DestinationPath] exists in this DeploymentController.");
@@ -345,13 +242,6 @@ namespace STEM.Surge.BasicControllers
             catch (Exception ex)
             {
                 STEM.Sys.EventLog.WriteEntry("BasicFileController.GenerateDeploymentDetails", new Exception(InstructionSetTemplate + ": " + initiationSource, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-            }
-            finally
-            {
-                if (ret == null)
-                {
-                    LockOwner.Unlock(this, initiationSource);
-                }
             }
 
             return ret;
@@ -409,12 +299,6 @@ namespace STEM.Surge.BasicControllers
             catch { }
 
             return false;
-        }
-        
-        public override void ExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
-        {
-            LockOwner.Unlock(this, details.InitiationSource);
-            base.ExecutionComplete(details, exceptions);
         }
     }
 }
