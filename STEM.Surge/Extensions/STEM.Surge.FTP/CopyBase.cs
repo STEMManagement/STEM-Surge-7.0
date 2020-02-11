@@ -566,6 +566,7 @@ namespace STEM.Surge.FTP
             }
 
             if (Exceptions.Count == 0 && _FilesActioned.Count == 0)
+            {
                 switch (ZeroFilesAction)
                 {
                     case FailureAction.SkipRemaining:
@@ -587,6 +588,9 @@ namespace STEM.Surge.FTP
                     case FailureAction.Continue:
                         break;
                 }
+
+                Message = "0 Files Actioned";
+            }
 
             return Exceptions.Count == 0;
         }

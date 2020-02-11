@@ -462,8 +462,8 @@ namespace STEM.Surge.Azure
                 AppendToMessage(ex.Message);
                 Exceptions.Add(ex);
             }
-            
             if (Exceptions.Count == 0 && _FilesActioned.Count == 0)
+            {
                 switch (ZeroFilesAction)
                 {
                     case FailureAction.SkipRemaining:
@@ -485,6 +485,9 @@ namespace STEM.Surge.Azure
                     case FailureAction.Continue:
                         break;
                 }
+
+                Message = "0 Files Actioned";
+            }
 
             return Exceptions.Count == 0;
         }
