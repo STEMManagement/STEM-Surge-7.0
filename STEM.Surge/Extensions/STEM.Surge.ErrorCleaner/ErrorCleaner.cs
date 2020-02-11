@@ -77,23 +77,33 @@ namespace STEM.Surge.ErrorCleaner
                                         continue;
                                 }
 
-                                foreach (XElement e in doc.Root.Descendants().Where(i => i.Name.LocalName == "Message"))
-                                {
-                                    if (e.Value.ToUpper().Contains(MessageContains.ToUpper()))
+                                if (!String.IsNullOrEmpty(MessageContains))
+                                    foreach (XElement e in doc.Root.Descendants().Where(i => i.Name.LocalName == "Message"))
                                     {
-                                        File.Delete(file);
-                                        break;
+                                        if (e.Value.ToUpper().Contains(MessageContains.ToUpper()))
+                                        {
+                                            try
+                                            {
+                                                File.Delete(file);
+                                            }
+                                            catch { }
+                                            break;
+                                        }
                                     }
-                                }
 
-                                foreach (XElement e in doc.Root.Descendants().Where(i => i.Name.LocalName == "Exception"))
-                                {
-                                    if (e.Value.ToUpper().Contains(ExceptionContains.ToUpper()))
+                                if (!String.IsNullOrEmpty(ExceptionContains))
+                                    foreach (XElement e in doc.Root.Descendants().Where(i => i.Name.LocalName == "Exception"))
                                     {
-                                        File.Delete(file);
-                                        break;
+                                        if (e.Value.ToUpper().Contains(ExceptionContains.ToUpper()))
+                                        {
+                                            try
+                                            {
+                                                File.Delete(file);
+                                            }
+                                            catch { }
+                                            break;
+                                        }
                                     }
-                                }
                             }
                             catch { }
                     }
