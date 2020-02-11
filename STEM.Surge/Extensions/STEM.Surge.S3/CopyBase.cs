@@ -101,6 +101,10 @@ namespace STEM.Surge.S3
         [DisplayName("S3 Direction"), DescriptionAttribute("Is the action to or from an S3 bucket?")]
         public S3Direction Direction { get; set; }
 
+        [Category("Flow")]
+        [DisplayName("Zero Files Action"), Description("What flow action should be taken if no files are found?")]
+        public FailureAction ZeroFilesAction { get; set; }
+
         public CopyBase()
             : base()
         {
@@ -123,6 +127,7 @@ namespace STEM.Surge.S3
             DestinationFilename = "*.*";
 
             ExecutionMode = ExecutoOn.ForwardExecution;
+            ZeroFilesAction = FailureAction.SkipRemaining;
         }
 
         Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
@@ -478,6 +483,29 @@ namespace STEM.Surge.S3
                 AppendToMessage(ex.Message);
                 Exceptions.Add(ex);
             }
+
+            if (Exceptions.Count == 0 && _FilesActioned.Count == 0)
+                switch (ZeroFilesAction)
+                {
+                    case FailureAction.SkipRemaining:
+                        SkipRemaining();
+                        break;
+
+                    case FailureAction.SkipNext:
+                        SkipNext();
+                        break;
+
+                    case FailureAction.SkipToLabel:
+                        SkipForwardToFlowControlLabel(FailureActionLabel);
+                        break;
+
+                    case FailureAction.Rollback:
+                        RollbackAllPreceedingAndSkipRemaining();
+                        break;
+
+                    case FailureAction.Continue:
+                        break;
+                }
 
             return Exceptions.Count == 0;
         }
