@@ -41,11 +41,16 @@ namespace STEM.Surge.ErrorCleaner
         [Category("Criteria")]
         [DisplayName("Message Contains...")]
         public string MessageContains { get; set; }
-        
+
+        [Category("Criteria")]
+        [DisplayName("Exception Contains...")]
+        public string ExceptionContains { get; set; }
+
         public ErrorCleaner() : base()
         {
             ProcessNameContains = "";
             MessageContains = "";
+            ExceptionContains = "";
             MinutesToAge = 1;
         }
 
@@ -75,6 +80,15 @@ namespace STEM.Surge.ErrorCleaner
                                 foreach (XElement e in doc.Root.Descendants().Where(i => i.Name.LocalName == "Message"))
                                 {
                                     if (e.Value.ToUpper().Contains(MessageContains.ToUpper()))
+                                    {
+                                        File.Delete(file);
+                                        break;
+                                    }
+                                }
+
+                                foreach (XElement e in doc.Root.Descendants().Where(i => i.Name.LocalName == "Exception"))
+                                {
+                                    if (e.Value.ToUpper().Contains(ExceptionContains.ToUpper()))
                                     {
                                         File.Delete(file);
                                         break;
