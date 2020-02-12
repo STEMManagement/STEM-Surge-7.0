@@ -146,10 +146,10 @@ namespace STEM.Surge.ControlPanel
                                 if (m != null)
                                     _UIActor.Send(m);
                             }
+
+                    System.Threading.Thread.Sleep(100);
                 }
                 catch { }
-
-                System.Threading.Thread.Sleep(100);
             }
         }
 
