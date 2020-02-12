@@ -465,8 +465,18 @@ namespace STEM.Sys.IO.TCP
                         {
                             Thread t = _Receiver;
                             _Receiver = null;
-                            t.Interrupt();
-                            t.Abort();
+
+                            try
+                            {
+                                t.Interrupt();
+                            }
+                            catch { }
+
+                            try
+                            {
+                                t.Abort();
+                            }
+                            catch { }
                         }
                     }
                     catch { }

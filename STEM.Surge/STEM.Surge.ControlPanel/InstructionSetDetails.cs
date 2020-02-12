@@ -5,19 +5,30 @@ using System.IO;
 using System.Xml;
 using System.Linq;
 using System.Windows.Forms;
+using STEM.Sys.IO;
 
 namespace STEM.Surge.ControlPanel
 {
     public partial class InstructionSetDetails : Form
     {
-        public InstructionSetDetails(Surge._InstructionSet iSet)
+        UIActor _UIActor;
+
+        string _DeploymentController = "";
+        string _InstructionSetTemplate = "";
+
+        public InstructionSetDetails(Surge._InstructionSet iSet, UIActor uiActor)
         {
             InitializeComponent();
+
+            _UIActor = uiActor;
 
             try
             {
                 Text = iSet.ProcessName;
-                
+
+                _DeploymentController = iSet.DeploymentController;
+                _InstructionSetTemplate = iSet.InstructionSetTemplate;
+
                 XmlTextReader reader = new XmlTextReader(new StringReader(iSet.Serialize()));
                 int depth = -1;
                 bool inValue = false;
@@ -82,7 +93,7 @@ namespace STEM.Surge.ControlPanel
                             break;
 
                         case XmlNodeType.EndElement:
-                            
+
                             if (!inValue)
                             {
                                 xmlText.AppendText("\n");
@@ -109,9 +120,8 @@ namespace STEM.Surge.ControlPanel
                             break;
 
                     }
-
                 }
-                
+
                 List<string> lines = new List<string>();
 
                 lines.Add("Instruction Set Details");
@@ -193,7 +203,7 @@ namespace STEM.Surge.ControlPanel
 
                     lines.Add("");
                 }
-                
+
                 summaryText.Lines = lines.ToArray();
                 summaryText.SelectionChanged += SummaryText_SelectionChanged;
             }
@@ -202,6 +212,10 @@ namespace STEM.Surge.ControlPanel
                 MessageBox.Show(ex.ToString(), "There was an error reading the InstructionSet.");
                 throw ex;
             }
+
+            xmlText.SelectionStart = 0;
+            xmlText.SelectionLength = 0;
+            xmlText.ScrollToCaret(); 
         }
 
         Dictionary<int, Guid> _SummaryLines = new Dictionary<int, Guid>();
@@ -224,6 +238,134 @@ namespace STEM.Surge.ControlPanel
                 xmlText.SelectionStart = xmlText.GetFirstCharIndexFromLine(ln);
                 xmlText.SelectionLength = 0;
                 xmlText.ScrollToCaret();
+            }
+        }
+
+        private void clearFind_Click(object sender, EventArgs e)
+        {
+            findText.Text = "";
+
+            xmlText.SelectionStart = 0;
+            xmlText.SelectionLength = 0;
+            xmlText.ScrollToCaret();
+        }
+
+        private void nextDown_Click(object sender, EventArgs e)
+        {
+            if (findText.Text == "")
+            {
+                xmlText.SelectionStart = 0;
+                xmlText.SelectionLength = 0;
+                xmlText.ScrollToCaret();
+                return;
+            }
+
+            int next = xmlText.Text.IndexOf(findText.Text, xmlText.SelectionStart + xmlText.SelectionLength, StringComparison.InvariantCultureIgnoreCase);
+
+            if (next < 0)
+            {
+                MessageBox.Show(this, "End of text.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            xmlText.SelectionStart = next;
+            xmlText.SelectionLength = findText.Text.Length;
+            xmlText.ScrollToCaret();
+        }
+
+        private void nextUp_Click(object sender, EventArgs e)
+        {
+            if (findText.Text == "")
+            {
+                xmlText.SelectionStart = 0;
+                xmlText.SelectionLength = 0;
+                xmlText.ScrollToCaret();
+                return;
+            }
+
+            int next = -1;
+            
+            if (xmlText.SelectionStart > 0)
+                next = xmlText.Text.Substring(0, xmlText.SelectionStart).LastIndexOf(findText.Text, StringComparison.InvariantCultureIgnoreCase);
+
+            if (next < 0)
+            {
+                MessageBox.Show(this, "Start of text.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            xmlText.SelectionStart = next;
+            xmlText.SelectionLength = findText.Text.Length;
+            xmlText.ScrollToCaret();
+        }
+
+        private void editInstructionSetTemplate_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Surge.InstructionSet iSet = new Surge.InstructionSet();
+
+                FileDescription iSetFD = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(_InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
+
+                if (iSetFD != null)
+                {
+                    iSet = Surge.InstructionSet.Deserialize(iSetFD.StringContent) as Surge.InstructionSet;
+                    iSet.ProcessName = _InstructionSetTemplate;
+                }
+                else
+                {
+                    MessageBox.Show(this, "The InstructionSet Template could not be found.", "Invalid Template (" + _InstructionSetTemplate + ")", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                Dictionary<string, string> macros = new Dictionary<string, string>();
+
+                Surge.DeploymentController dc = null;
+
+                FileDescription dcFD = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(_DeploymentController + ".dc", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
+
+                if (dcFD != null)
+                {
+                    dc = Surge.DeploymentController.Deserialize(dcFD.StringContent) as Surge.DeploymentController;
+                    macros = dc.TemplateKVP;
+                }
+
+                InstructionSetEditorForm ief = new InstructionSetEditorForm(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, macros, _UIActor, "Templates");
+
+                ief.Show(this);
+            }
+            catch (Exception ex)
+            {
+                ExceptionViewer ev = new ExceptionViewer(ex);
+                ev.ShowDialog(this);
+            }
+        }
+
+        private void editController_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Surge.DeploymentController dc = null;
+
+                FileDescription fd = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(_DeploymentController + ".dc", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
+
+                if (fd != null)
+                {
+                    dc = Surge.DeploymentController.Deserialize(fd.StringContent) as Surge.DeploymentController;
+                }
+                else
+                {
+                    MessageBox.Show(this, "The Deployment Controller could not be found.", "Invalid Controller (" + _DeploymentController + ")", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                ControllerEditorForm f = new ControllerEditorForm(_UIActor, _DeploymentController + ".dc");
+                f.Show(this);
+            }
+            catch (Exception ex)
+            {
+                ExceptionViewer ev = new ExceptionViewer(ex);
+                ev.ShowDialog(this);
             }
         }
     }

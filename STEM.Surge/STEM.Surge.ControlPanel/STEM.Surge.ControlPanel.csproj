@@ -639,6 +639,7 @@
     <None Include="Resources\ok grey e.png" />
     <None Include="Resources\lock.png" />
     <None Include="Resources\AdHoc.png" />
+    <None Include="Resources\depolyment_controller.png" />
     <Content Include="Resources\Macro.png" />
     <None Include="Resources\notes.png" />
     <Content Include="SurgeLogoFull.ico" />

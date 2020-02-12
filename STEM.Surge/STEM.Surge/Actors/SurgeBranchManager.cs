@@ -27,7 +27,7 @@ using STEM.Sys.Threading;
 
 namespace STEM.Surge
 {
-    public class SurgeBranchManager : SurgeActor
+    public class SurgeBranchManager : SurgeActor, IDisposable
     {
         static bool _IsWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 
@@ -63,6 +63,18 @@ namespace STEM.Surge
 
         bool _SES = false;
         bool _UseSSL = false;
+        
+        public void Dispose()
+        {
+            if (_TcpConnectionListener != null)
+                try
+                {
+                    _TcpConnectionListener.Close();
+                }
+                catch { }
+
+            _BranchHealthThreads.Clear();
+        }
 
         public SurgeBranchManager(int communicationPort, string postMortemCache, bool useSSL, bool ses)
             : base(communicationPort)

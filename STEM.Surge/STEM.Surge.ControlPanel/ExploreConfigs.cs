@@ -38,7 +38,17 @@ namespace STEM.Surge.ControlPanel
                     _DeploymentController dc = _DeploymentController.Deserialize(f.StringContent) as _DeploymentController;
 
                     if (dc != null)
+                    {
+                        string k = dc.TemplateKVP.Where(i => !i.Key.StartsWith("[") || !i.Key.EndsWith("]")).Select(i => i.Key).FirstOrDefault();
+
+                        if (k != null)
+                        {
+                            messageText.SelectionColor = System.Drawing.Color.Red;
+                            messageText.AppendText("Deployment Controller " + f.Filename + " contains one or more invalid TemplateKVP keys (not wrapped in [])\r\n");
+                        }
+
                         continue;
+                    }
                 }
                 catch { }
 
@@ -272,6 +282,10 @@ namespace STEM.Surge.ControlPanel
                 }
             }
             catch { }
+
+            xmlText.SelectionStart = 0;
+            xmlText.SelectionLength = 0;
+            xmlText.ScrollToCaret();
         }
 
         private void applyFilter_Click(object sender, EventArgs e)
@@ -594,6 +608,64 @@ namespace STEM.Surge.ControlPanel
             }
 
             _UIActor.SubmitConfigurationUpdate();
+        }
+
+        private void clearFind_Click(object sender, EventArgs e)
+        {
+            findText.Text = "";
+
+            xmlText.SelectionStart = 0;
+            xmlText.SelectionLength = 0;
+            xmlText.ScrollToCaret();
+        }
+
+        private void nextDown_Click(object sender, EventArgs e)
+        {
+            if (findText.Text == "")
+            {
+                xmlText.SelectionStart = 0;
+                xmlText.SelectionLength = 0;
+                xmlText.ScrollToCaret();
+                return;
+            }
+
+            int next = xmlText.Text.IndexOf(findText.Text, xmlText.SelectionStart + xmlText.SelectionLength, StringComparison.InvariantCultureIgnoreCase);
+
+            if (next < 0)
+            {
+                MessageBox.Show(this, "End of text.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            xmlText.SelectionStart = next;
+            xmlText.SelectionLength = findText.Text.Length;
+            xmlText.ScrollToCaret();
+        }
+
+        private void nextUp_Click(object sender, EventArgs e)
+        {
+            if (findText.Text == "")
+            {
+                xmlText.SelectionStart = 0;
+                xmlText.SelectionLength = 0;
+                xmlText.ScrollToCaret();
+                return;
+            }
+
+            int next = -1;
+
+            if (xmlText.SelectionStart > 0)
+                next = xmlText.Text.Substring(0, xmlText.SelectionStart).LastIndexOf(findText.Text, StringComparison.InvariantCultureIgnoreCase);
+
+            if (next < 0)
+            {
+                MessageBox.Show(this, "Start of text.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            xmlText.SelectionStart = next;
+            xmlText.SelectionLength = findText.Text.Length;
+            xmlText.ScrollToCaret();
         }
     }
 }

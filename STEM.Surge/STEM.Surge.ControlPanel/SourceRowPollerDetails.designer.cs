@@ -30,11 +30,27 @@
         {
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SourceRowPollerDetails));
             this.pollerDetailsGridView = new System.Windows.Forms.DataGridView();
+            this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.controllerDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.backlogDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.PerceivedBacklog = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.assignedDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.processingDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.AverageExecutionTime = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Samples = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.lastPollMaxDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.LastAssignment = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.LastWalkStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Active = new System.Windows.Forms.DataGridViewImageColumn();
+            this.activeDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.iDDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.pollerDetailsBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this._TableDataSources = new STEM.Surge.ControlPanel.TableDataSources();
             this.directoryDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.fileCountDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
@@ -44,27 +60,11 @@
             this.clearFilter = new System.Windows.Forms.ToolStripButton();
             this.filterMask = new System.Windows.Forms.ToolStripTextBox();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.AverageExecutionTime = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Samples = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.LastWalkStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Active = new System.Windows.Forms.DataGridViewImageColumn();
-            this.descriptionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.controllerDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.backlogDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.PerceivedBacklog = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.assignedDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.processingDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.lastPollMaxDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.LastAssignment = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.activeDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.iDDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.pollerDetailsBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this._TableDataSources = new STEM.Surge.ControlPanel.TableDataSources();
             ((System.ComponentModel.ISupportInitialize)(this.pollerDetailsGridView)).BeginInit();
-            this.toolStrip1.SuspendLayout();
-            this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pollerDetailsBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this._TableDataSources)).BeginInit();
+            this.toolStrip1.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // pollerDetailsGridView
@@ -96,6 +96,124 @@
             this.pollerDetailsGridView.RowHeadersWidth = 25;
             this.pollerDetailsGridView.Size = new System.Drawing.Size(1288, 487);
             this.pollerDetailsGridView.TabIndex = 0;
+            // 
+            // descriptionDataGridViewTextBoxColumn
+            // 
+            this.descriptionDataGridViewTextBoxColumn.DataPropertyName = "Description";
+            this.descriptionDataGridViewTextBoxColumn.HeaderText = "Description";
+            this.descriptionDataGridViewTextBoxColumn.Name = "descriptionDataGridViewTextBoxColumn";
+            // 
+            // controllerDataGridViewTextBoxColumn
+            // 
+            this.controllerDataGridViewTextBoxColumn.DataPropertyName = "Controller";
+            this.controllerDataGridViewTextBoxColumn.HeaderText = "Controller";
+            this.controllerDataGridViewTextBoxColumn.Name = "controllerDataGridViewTextBoxColumn";
+            // 
+            // backlogDataGridViewTextBoxColumn
+            // 
+            this.backlogDataGridViewTextBoxColumn.DataPropertyName = "Backlog";
+            this.backlogDataGridViewTextBoxColumn.HeaderText = "Backlog";
+            this.backlogDataGridViewTextBoxColumn.Name = "backlogDataGridViewTextBoxColumn";
+            // 
+            // PerceivedBacklog
+            // 
+            this.PerceivedBacklog.DataPropertyName = "PerceivedBacklog";
+            this.PerceivedBacklog.HeaderText = "Perceived Backlog";
+            this.PerceivedBacklog.Name = "PerceivedBacklog";
+            // 
+            // assignedDataGridViewTextBoxColumn
+            // 
+            this.assignedDataGridViewTextBoxColumn.DataPropertyName = "Assigned";
+            this.assignedDataGridViewTextBoxColumn.HeaderText = "Assigned";
+            this.assignedDataGridViewTextBoxColumn.Name = "assignedDataGridViewTextBoxColumn";
+            // 
+            // processingDataGridViewTextBoxColumn
+            // 
+            this.processingDataGridViewTextBoxColumn.DataPropertyName = "Processing";
+            this.processingDataGridViewTextBoxColumn.HeaderText = "Processing";
+            this.processingDataGridViewTextBoxColumn.Name = "processingDataGridViewTextBoxColumn";
+            // 
+            // AverageExecutionTime
+            // 
+            this.AverageExecutionTime.DataPropertyName = "AverageExecutionTime";
+            dataGridViewCellStyle1.Format = "0.0000";
+            this.AverageExecutionTime.DefaultCellStyle = dataGridViewCellStyle1;
+            this.AverageExecutionTime.HeaderText = "Avg Execution Time";
+            this.AverageExecutionTime.MinimumWidth = 150;
+            this.AverageExecutionTime.Name = "AverageExecutionTime";
+            this.AverageExecutionTime.ReadOnly = true;
+            this.AverageExecutionTime.ToolTipText = "Average execution time over assignments in the last 2 minutes";
+            this.AverageExecutionTime.Width = 150;
+            // 
+            // Samples
+            // 
+            this.Samples.DataPropertyName = "Samples";
+            this.Samples.HeaderText = "Completed (2min)";
+            this.Samples.MinimumWidth = 150;
+            this.Samples.Name = "Samples";
+            this.Samples.ReadOnly = true;
+            this.Samples.Width = 150;
+            // 
+            // lastPollMaxDataGridViewTextBoxColumn
+            // 
+            this.lastPollMaxDataGridViewTextBoxColumn.DataPropertyName = "LastPollMax";
+            dataGridViewCellStyle2.Format = "G";
+            this.lastPollMaxDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            this.lastPollMaxDataGridViewTextBoxColumn.HeaderText = "Last Poll";
+            this.lastPollMaxDataGridViewTextBoxColumn.Name = "lastPollMaxDataGridViewTextBoxColumn";
+            this.lastPollMaxDataGridViewTextBoxColumn.Width = 150;
+            // 
+            // LastAssignment
+            // 
+            this.LastAssignment.DataPropertyName = "LastAssignment";
+            dataGridViewCellStyle3.Format = "G";
+            this.LastAssignment.DefaultCellStyle = dataGridViewCellStyle3;
+            this.LastAssignment.FillWeight = 150F;
+            this.LastAssignment.HeaderText = "Last Assignment";
+            this.LastAssignment.Name = "LastAssignment";
+            this.LastAssignment.Width = 150;
+            // 
+            // LastWalkStart
+            // 
+            this.LastWalkStart.DataPropertyName = "LastWalkStart";
+            dataGridViewCellStyle4.Format = "G";
+            this.LastWalkStart.DefaultCellStyle = dataGridViewCellStyle4;
+            this.LastWalkStart.FillWeight = 150F;
+            this.LastWalkStart.HeaderText = "Assignment Start";
+            this.LastWalkStart.Name = "LastWalkStart";
+            this.LastWalkStart.Width = 150;
+            // 
+            // Active
+            // 
+            this.Active.HeaderText = "Active";
+            this.Active.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
+            this.Active.Name = "Active";
+            this.Active.ReadOnly = true;
+            this.Active.Width = 43;
+            // 
+            // activeDataGridViewCheckBoxColumn
+            // 
+            this.activeDataGridViewCheckBoxColumn.DataPropertyName = "Active";
+            this.activeDataGridViewCheckBoxColumn.HeaderText = "Active";
+            this.activeDataGridViewCheckBoxColumn.Name = "activeDataGridViewCheckBoxColumn";
+            this.activeDataGridViewCheckBoxColumn.Visible = false;
+            // 
+            // iDDataGridViewTextBoxColumn
+            // 
+            this.iDDataGridViewTextBoxColumn.DataPropertyName = "ID";
+            this.iDDataGridViewTextBoxColumn.HeaderText = "ID";
+            this.iDDataGridViewTextBoxColumn.Name = "iDDataGridViewTextBoxColumn";
+            this.iDDataGridViewTextBoxColumn.Visible = false;
+            // 
+            // pollerDetailsBindingSource
+            // 
+            this.pollerDetailsBindingSource.DataMember = "SwitchboardDataCounts";
+            this.pollerDetailsBindingSource.DataSource = this._TableDataSources;
+            // 
+            // _TableDataSources
+            // 
+            this._TableDataSources.DataSetName = "TableDataSources";
+            this._TableDataSources.SchemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
             // 
             // directoryDataGridViewTextBoxColumn
             // 
@@ -130,7 +248,7 @@
             // openController
             // 
             this.openController.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.openController.Image = global::STEM.Surge.ControlPanel.Properties.Resources.edit_2;
+            this.openController.Image = global::STEM.Surge.ControlPanel.Properties.Resources.depolyment_controller;
             this.openController.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.openController.Name = "openController";
             this.openController.Size = new System.Drawing.Size(28, 32);
@@ -176,124 +294,6 @@
             this.panel1.Size = new System.Drawing.Size(1288, 487);
             this.panel1.TabIndex = 7;
             // 
-            // AverageExecutionTime
-            // 
-            this.AverageExecutionTime.DataPropertyName = "AverageExecutionTime";
-            dataGridViewCellStyle1.Format = "0.0000";
-            this.AverageExecutionTime.DefaultCellStyle = dataGridViewCellStyle1;
-            this.AverageExecutionTime.HeaderText = "Avg Execution Time";
-            this.AverageExecutionTime.MinimumWidth = 150;
-            this.AverageExecutionTime.Name = "AverageExecutionTime";
-            this.AverageExecutionTime.ReadOnly = true;
-            this.AverageExecutionTime.ToolTipText = "Average execution time over assignments in the last 2 minutes";
-            this.AverageExecutionTime.Width = 150;
-            // 
-            // Samples
-            // 
-            this.Samples.DataPropertyName = "Samples";
-            this.Samples.HeaderText = "Completed (2min)";
-            this.Samples.MinimumWidth = 150;
-            this.Samples.Name = "Samples";
-            this.Samples.ReadOnly = true;
-            this.Samples.Width = 150;
-            // 
-            // LastWalkStart
-            // 
-            this.LastWalkStart.DataPropertyName = "LastWalkStart";
-            dataGridViewCellStyle4.Format = "G";
-            this.LastWalkStart.DefaultCellStyle = dataGridViewCellStyle4;
-            this.LastWalkStart.FillWeight = 150F;
-            this.LastWalkStart.HeaderText = "Assignment Start";
-            this.LastWalkStart.Name = "LastWalkStart";
-            this.LastWalkStart.Width = 150;
-            // 
-            // Active
-            // 
-            this.Active.HeaderText = "Active";
-            this.Active.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
-            this.Active.Name = "Active";
-            this.Active.ReadOnly = true;
-            this.Active.Width = 43;
-            // 
-            // descriptionDataGridViewTextBoxColumn
-            // 
-            this.descriptionDataGridViewTextBoxColumn.DataPropertyName = "Description";
-            this.descriptionDataGridViewTextBoxColumn.HeaderText = "Description";
-            this.descriptionDataGridViewTextBoxColumn.Name = "descriptionDataGridViewTextBoxColumn";
-            // 
-            // controllerDataGridViewTextBoxColumn
-            // 
-            this.controllerDataGridViewTextBoxColumn.DataPropertyName = "Controller";
-            this.controllerDataGridViewTextBoxColumn.HeaderText = "Controller";
-            this.controllerDataGridViewTextBoxColumn.Name = "controllerDataGridViewTextBoxColumn";
-            // 
-            // backlogDataGridViewTextBoxColumn
-            // 
-            this.backlogDataGridViewTextBoxColumn.DataPropertyName = "Backlog";
-            this.backlogDataGridViewTextBoxColumn.HeaderText = "Backlog";
-            this.backlogDataGridViewTextBoxColumn.Name = "backlogDataGridViewTextBoxColumn";
-            // 
-            // PerceivedBacklog
-            // 
-            this.PerceivedBacklog.DataPropertyName = "PerceivedBacklog";
-            this.PerceivedBacklog.HeaderText = "Perceived Backlog";
-            this.PerceivedBacklog.Name = "PerceivedBacklog";
-            // 
-            // assignedDataGridViewTextBoxColumn
-            // 
-            this.assignedDataGridViewTextBoxColumn.DataPropertyName = "Assigned";
-            this.assignedDataGridViewTextBoxColumn.HeaderText = "Assigned";
-            this.assignedDataGridViewTextBoxColumn.Name = "assignedDataGridViewTextBoxColumn";
-            // 
-            // processingDataGridViewTextBoxColumn
-            // 
-            this.processingDataGridViewTextBoxColumn.DataPropertyName = "Processing";
-            this.processingDataGridViewTextBoxColumn.HeaderText = "Processing";
-            this.processingDataGridViewTextBoxColumn.Name = "processingDataGridViewTextBoxColumn";
-            // 
-            // lastPollMaxDataGridViewTextBoxColumn
-            // 
-            this.lastPollMaxDataGridViewTextBoxColumn.DataPropertyName = "LastPollMax";
-            dataGridViewCellStyle2.Format = "G";
-            this.lastPollMaxDataGridViewTextBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
-            this.lastPollMaxDataGridViewTextBoxColumn.HeaderText = "Last Poll";
-            this.lastPollMaxDataGridViewTextBoxColumn.Name = "lastPollMaxDataGridViewTextBoxColumn";
-            this.lastPollMaxDataGridViewTextBoxColumn.Width = 150;
-            // 
-            // LastAssignment
-            // 
-            this.LastAssignment.DataPropertyName = "LastAssignment";
-            dataGridViewCellStyle3.Format = "G";
-            this.LastAssignment.DefaultCellStyle = dataGridViewCellStyle3;
-            this.LastAssignment.FillWeight = 150F;
-            this.LastAssignment.HeaderText = "Last Assignment";
-            this.LastAssignment.Name = "LastAssignment";
-            this.LastAssignment.Width = 150;
-            // 
-            // activeDataGridViewCheckBoxColumn
-            // 
-            this.activeDataGridViewCheckBoxColumn.DataPropertyName = "Active";
-            this.activeDataGridViewCheckBoxColumn.HeaderText = "Active";
-            this.activeDataGridViewCheckBoxColumn.Name = "activeDataGridViewCheckBoxColumn";
-            this.activeDataGridViewCheckBoxColumn.Visible = false;
-            // 
-            // iDDataGridViewTextBoxColumn
-            // 
-            this.iDDataGridViewTextBoxColumn.DataPropertyName = "ID";
-            this.iDDataGridViewTextBoxColumn.HeaderText = "ID";
-            this.iDDataGridViewTextBoxColumn.Name = "iDDataGridViewTextBoxColumn";
-            this.iDDataGridViewTextBoxColumn.Visible = false;
-            // 
-            // pollerDetailsBindingSource
-            // 
-            this.pollerDetailsBindingSource.DataMember = "SwitchboardDataCounts";
-            this.pollerDetailsBindingSource.DataSource = this._TableDataSources;
-            // 
-            // _TableDataSources
-            // 
-            this._TableDataSources.DataSetName = "TableDataSources";
-            this._TableDataSources.SchemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
-            // 
             // SourceRowPollerDetails
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -308,11 +308,11 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Source Poller Details";
             ((System.ComponentModel.ISupportInitialize)(this.pollerDetailsGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pollerDetailsBindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this._TableDataSources)).EndInit();
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
             this.panel1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pollerDetailsBindingSource)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this._TableDataSources)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

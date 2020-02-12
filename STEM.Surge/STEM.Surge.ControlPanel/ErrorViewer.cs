@@ -97,7 +97,17 @@ namespace STEM.Surge.ControlPanel
         {
             try
             {
-                _UtilThread.Abort();
+                try
+                {
+                    _UtilThread.Interrupt();
+                }
+                catch { }
+
+                try
+                {
+                    _UtilThread.Abort();
+                }
+                catch { }
             }
             catch { }
         }
@@ -203,7 +213,7 @@ namespace STEM.Surge.ControlPanel
 
                     if (iSet != null)
                     {
-                        InstructionSetDetails dets = new InstructionSetDetails(iSet);
+                        InstructionSetDetails dets = new InstructionSetDetails(iSet, _UIActor);
                         dets.ShowDialog(this);
                     }
                 }

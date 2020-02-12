@@ -344,7 +344,7 @@ namespace STEM.Surge.ControlPanel
             {
                 if (iSet != null)
                 {
-                    InstructionSetDetails ed = new InstructionSetDetails(iSet);
+                    InstructionSetDetails ed = new InstructionSetDetails(iSet, _UIActor);
                     ed.ShowDialog(this);
                 }
             }
