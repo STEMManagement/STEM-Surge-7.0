@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.IO;
 using STEM.Surge;
 
@@ -176,7 +177,8 @@ namespace STEM.Surge.SMB
                 List<string> destinations = new List<string>();
                 if (ExpandDestination)
                 {
-                    destinations = STEM.Sys.IO.Path.ExpandRangedPath(DestinationPath);
+                    Random rnd = new Random();
+                    destinations = STEM.Sys.IO.Path.ExpandRangedPath(DestinationPath).OrderBy(i => rnd.Next()).ToList();
                 }
                 else
                 {
