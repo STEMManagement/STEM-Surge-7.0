@@ -632,7 +632,7 @@ namespace STEM.Surge
                 directoryExists = Directory.Exists(directory);
 
                 if (!directoryExists)
-                    directoryExists = Directory.Exists(directory);
+                    directoryExists = File.Exists(directory);
             }
             finally
             {
