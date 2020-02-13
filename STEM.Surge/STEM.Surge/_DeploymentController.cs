@@ -214,12 +214,12 @@ namespace STEM.Surge
         public STEM.Sys.Serialization.Dictionary<string, string> PostMortemMetaData { get; set; }
         
         StemStr _ReuseStemStr = null;
-               
+
         /// <summary>
-        /// Customize an iSetTemplate by applying the TemplateKVP map to the InstructionsXml
+        /// Customize a target string by applying the TemplateKVP map to the target
         /// </summary>
         /// <param name="target">The string to which the map is to be applied</param>
-        /// <param name="map">The TemplateKVP map used to modify the iSetTemplate</param>
+        /// <param name="map">The TemplateKVP map used to modify the target</param>
         /// <param name="cloneMap">Should the map be cloned as it will be modified in this method</param>
         /// <returns>The modified target</returns>
         public virtual string ApplyKVP(string target, System.Collections.Generic.Dictionary<string, string> map, bool cloneMap = true)
@@ -272,6 +272,42 @@ namespace STEM.Surge
                 xml = KVPMapUtils.ApplyKVP(target, kvp, true, _ReuseStemStr);
 
             return xml;
+        }
+
+        /// <summary>
+        /// Customize a target string by applying the TemplateKVP map to the target
+        /// </summary>
+        /// <param name="target">The string to which the map is to be applied</param>
+        /// <param name="map">The TemplateKVP map used to modify the target</param>
+        /// <param name="branchIP">The branchIP this is related to</param>
+        /// <param name="initiationSource">The initiationSource passed in to GenerateDeploymentDetails()</param>
+        /// <param name="cloneMap">Should the map be cloned as it will be modified in this method</param>
+        /// <returns>The modified target</returns>
+        public virtual string ApplyKVP(string target, System.Collections.Generic.Dictionary<string, string> map, string branchIP, string initiationSource, bool cloneMap = true)
+        {
+            if (map == null)
+                throw new ArgumentNullException(nameof(map));
+
+            if (String.IsNullOrEmpty(target))
+                throw new ArgumentNullException(nameof(target));
+
+            if (String.IsNullOrEmpty(branchIP))
+                throw new ArgumentNullException(nameof(branchIP));
+
+            if (String.IsNullOrEmpty(initiationSource))
+                throw new ArgumentNullException(nameof(initiationSource));
+
+            System.Collections.Generic.Dictionary<string, string> kvp = map;
+
+            if (cloneMap)
+                kvp = new System.Collections.Generic.Dictionary<string, string>(map);
+            
+            kvp["[BranchIP]"] = branchIP;
+            kvp["[BranchName]"] = STEM.Sys.IO.Net.MachineName(branchIP);
+            
+            kvp["[InitiationSource]"] = initiationSource;
+
+            return ApplyKVP(target, kvp, false);
         }
 
         /// <summary>

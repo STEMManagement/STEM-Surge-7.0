@@ -115,7 +115,7 @@ namespace STEM.Surge.BasicControllers
             string destPathMacro = kvp["[DestinationPath]"].Trim();
 
             if (destPathMacro.Length > 0)
-                destPathMacro = base.ApplyKVP(destPathMacro, kvp, false);
+                destPathMacro = base.ApplyKVP(destPathMacro, kvp, branchIP, initiationSource, false);
             
             if (destPathMacro.Length > 0)
             {

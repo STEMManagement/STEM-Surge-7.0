@@ -117,7 +117,7 @@ namespace STEM.Surge.BasicControllers
                         if (_LastList.Count <= x)
                             break;
 
-                        string s = ApplyKVP(_LastList[x], TemplateKVP);
+                        string s = ApplyKVP(_LastList[x], TemplateKVP, recommendedBranchIP, initiationSource, true);
 
                         if (CoordinatedKeyManager.Lock(s, CoordinateWith))
                         {
