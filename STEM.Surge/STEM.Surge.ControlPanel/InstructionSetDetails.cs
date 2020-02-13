@@ -320,13 +320,13 @@ namespace STEM.Surge.ControlPanel
 
                 Dictionary<string, string> macros = new Dictionary<string, string>();
 
-                Surge.DeploymentController dc = null;
+                _DeploymentController dc = null;
 
                 FileDescription dcFD = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(_DeploymentController + ".dc", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
 
                 if (dcFD != null)
                 {
-                    dc = Surge.DeploymentController.Deserialize(dcFD.StringContent) as Surge.DeploymentController;
+                    dc = Surge._DeploymentController.Deserialize(dcFD.StringContent) as _DeploymentController;
                     macros = dc.TemplateKVP;
                 }
 
