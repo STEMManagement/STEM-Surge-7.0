@@ -491,20 +491,23 @@ namespace STEM.Surge.BasicControllers
         /// </summary>
         /// <param name="key"></param>
         public override sealed void ExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
-        {           
-            try
+        {
+            lock (_Keys)
             {
-                base.ExecutionComplete(details, exceptions);
-            }
-            catch { }
+                try
+                {
+                    base.ExecutionComplete(details, exceptions);
+                }
+                catch { }
 
-            try
-            {
-                ReleaseSerializationKey(details.InitiationSource);
-            }
-            catch { }
+                try
+                {
+                    ReleaseSerializationKey(details.InitiationSource);
+                }
+                catch { }
 
-            SafeExecutionComplete(details, exceptions);
+                SafeExecutionComplete(details, exceptions);
+            }
         }
 
         public virtual void SafeExecutionComplete(DeploymentDetails details, List<Exception> exceptions)

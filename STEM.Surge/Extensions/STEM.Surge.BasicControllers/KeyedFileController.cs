@@ -30,7 +30,7 @@ namespace STEM.Surge.BasicControllers
         "Note that with this controller [DestinationPath] can be an expandable path where the controller will choose the best path based on network proximity and destination directory existence (if 'Check for directory existence' is enabled). " +
         "Files from this controller are addressed in alphabetical order. " +
         "This controller seeks to issue instruction sets, serially bound to a dedicated branch, based on an exclusive key generated for each file. (e.g. if the key was the filename extension, then all files with " +
-        "extension '.typex' could be bound to 'branch-01' and assigned serially to that branch and only that branch unless or until that branch is no longer online, at that point typex files could be re-bound to another Branch)")]
+        "extension '.typex' could be bound to 'branch-01' and assigned serially to that branch and only that branch unless or until that branch is no longer online, at that point typex files would be re-bound to another Branch)")]
     public abstract class KeyedFileController : BasicFileController
     {
         static Dictionary<string, BoundKey> _Keys = new Dictionary<string, BoundKey>();
@@ -451,8 +451,12 @@ namespace STEM.Surge.BasicControllers
                 {
                     if (_Keys.ContainsKey(key))
                     {
-                        _Keys[key].InitiationSource = null;
-                        _Keys[key].Assigned = false;
+                        if (_Keys[key].InitiationSource != null)
+                            if (_Keys[key].InitiationSource.ToUpper() == initiationSource.ToUpper())
+                            {
+                                _Keys[key].InitiationSource = null;
+                                _Keys[key].Assigned = false;
+                            }
                     }
                     else
                     {
@@ -547,19 +551,22 @@ namespace STEM.Surge.BasicControllers
         /// <param name="key"></param>
         public override sealed void ExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
         {
-            try
+            lock (_Keys)
             {
-                base.ExecutionComplete(details, exceptions);
-            }
-            catch { }
+                try
+                {
+                    base.ExecutionComplete(details, exceptions);
+                }
+                catch { }
 
-            try
-            {
-                ReleaseSerializationKey(details.InitiationSource);
-            }
-            catch { }
+                try
+                {
+                    ReleaseSerializationKey(details.InitiationSource);
+                }
+                catch { }
 
-            SafeExecutionComplete(details, exceptions);
+                SafeExecutionComplete(details, exceptions);
+            }
         }
 
         public virtual void SafeExecutionComplete(DeploymentDetails details, List<Exception> exceptions)

@@ -667,5 +667,21 @@ namespace STEM.Surge.ControlPanel
             xmlText.SelectionLength = findText.Text.Length;
             xmlText.ScrollToCaret();
         }
+
+        private void deselectAll_Click(object sender, EventArgs e)
+        {
+            foreach (DataGridViewRow row in configsFound.Rows)
+            {
+                row.Cells[0].Value = false;
+            }
+        }
+
+        private void selectAll_Click(object sender, EventArgs e)
+        {
+            foreach (DataGridViewRow row in configsFound.Rows)
+            {
+                row.Cells[0].Value = true;
+            }
+        }
     }
 }
