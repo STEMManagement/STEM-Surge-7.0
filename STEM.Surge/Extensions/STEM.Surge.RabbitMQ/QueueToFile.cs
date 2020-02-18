@@ -36,8 +36,8 @@ namespace STEM.Surge.RabbitMQ
         [DisplayName("Queue Port"), DescriptionAttribute("What is the Queue Port?")]
         public string Port { get; set; }
 
-        [DisplayName("Source Queue")]
-        [Description("The Queue from which the data is to be obtained.")]
+        [Category("Queue Server")]
+        [DisplayName("Source Queue"), Description("The Queue from which the data is to be obtained.")]
         public string QueueName { get; set; }
         
         [DisplayName("Destination File")]

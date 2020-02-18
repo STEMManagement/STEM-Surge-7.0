@@ -35,8 +35,8 @@ namespace STEM.Surge.RabbitMQ
         [DisplayName("Queue Port"), DescriptionAttribute("What is the Queue Port?")]
         public string Port { get; set; }
 
-        [DisplayName("Destination Queue")]
-        [Description("The Queue to which the data is to be saved.")]
+        [Category("Queue Server")]
+        [DisplayName("Destination Queue"), Description("The Queue to which the data is to be saved.")]
         public string QueueName { get; set; }
         
         [DisplayName("Source File")]
