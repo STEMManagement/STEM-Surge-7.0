@@ -27,19 +27,6 @@ namespace STEM.Surge.Azure
     [Description("Write data to a container from a file in Azure.")]
     public class FileToContainer : STEM.Surge.Instruction
     {
-        public enum ContainerType
-        {
-            InstructionSetContainer,
-            Session,
-            Cache,
-        }
-
-        public enum DataType
-        {
-            String,
-            Binary
-        }
-
         [Category("Azure")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }

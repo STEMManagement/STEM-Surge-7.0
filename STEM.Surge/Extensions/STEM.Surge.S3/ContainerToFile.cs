@@ -29,19 +29,6 @@ namespace STEM.Surge.S3
     [Description("Write data from a container to a file in the S3 bucket.")]
     public class ContainerToFile : STEM.Surge.Instruction
     {
-        public enum ContainerType
-        {
-            InstructionSetContainer,
-            Session,
-            Cache,
-        }
-
-        public enum DataType
-        {
-            String,
-            Binary
-        }
-
         [Category("S3")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }

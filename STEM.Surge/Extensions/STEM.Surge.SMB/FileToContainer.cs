@@ -27,19 +27,6 @@ namespace STEM.Surge.SMB
     [Description("Write data to a container from a file.")]
     public class FileToContainer : Instruction
     {
-        public enum ContainerType
-        {
-            InstructionSetContainer,
-            Session,
-            Cache,
-        }
-
-        public enum DataType
-        {
-            String,
-            Binary
-        }
-
         [DisplayName("Source File")]
         [Description("The file data to be loaded into the container.")]
         public string SourceFile { get; set; }

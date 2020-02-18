@@ -24,4 +24,17 @@ namespace STEM.Surge
     public enum BranchState { RegisteredSpare, Online, Offline, Silent }
     public enum AgeOrigin { LastWriteTime, LastAccessTime, CreationTime }
     public enum OSType { Windows, Linux }
+
+    public enum ContainerType
+    {
+        InstructionSetContainer,
+        Session,
+        Cache,
+    }
+
+    public enum DataType
+    {
+        String,
+        Binary
+    }
 }

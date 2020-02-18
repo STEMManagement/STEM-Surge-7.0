@@ -28,19 +28,6 @@ namespace STEM.Surge.SSH
     [Description("Write data to a container from a file on the SSH server.")]
     public class FileToContainer : STEM.Surge.Instruction
     {
-        public enum ContainerType
-        {
-            InstructionSetContainer,
-            Session,
-            Cache,
-        }
-
-        public enum DataType
-        {
-            String,
-            Binary
-        }
-
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
