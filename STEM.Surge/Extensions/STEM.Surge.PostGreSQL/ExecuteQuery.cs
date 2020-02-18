@@ -26,14 +26,7 @@ namespace STEM.Surge.PostGreSQL
     [DisplayName("ExecuteQuery")]
     [Description("Execute a query and put the resulting DataSet in a container for others to use.")]
     public class ExecuteQuery : PostGresBaseInstruction
-    {
-        public enum ContainerType
-        {
-            InstructionSetContainer,
-            Session,
-            Cache,
-        }
-        
+    {        
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will be executed.")]
         public List<string> Sql { get; set; }
 
