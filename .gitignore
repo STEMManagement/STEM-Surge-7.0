@@ -97,3 +97,10 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/Installer/bin/Release
 /STEM.Surge/Installer/obj/Release
 /STEM.Surge/Installer/obj/Debug
+/STEM.Surge/Extensions/STEM.Surge.Kafka/obj
+/STEM.Surge/Extensions/STEM.Surge.MQ/obj/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Python/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Python/obj
+/STEM.Surge/Extensions/STEM.Surge.RabbitMQ/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.RabbitMQ/obj
+/STEM.Surge/Extensions/STEM.Surge.Kafka/bin/Debug/netstandard2.0

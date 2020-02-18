@@ -202,9 +202,6 @@ namespace STEM.Surge
             // Lock _MessageConnections in case the connection closes while we are here
             lock (ConnectionLock)
             {
-                // Start sending assembly sync messages
-                STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ParameterizedThreadStart(SendAssemblyList), connection, TimeSpan.FromSeconds(30));
-
                 // Report connection
                 try
                 {
@@ -220,9 +217,14 @@ namespace STEM.Surge
                     {
                         c.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true));
 
+                        _LastAssemblyList = DateTime.UtcNow;
+
                         connectionOpenedCall = true;
                         _Connected = true;
                     }
+
+                // Start sending assembly sync messages
+                STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ParameterizedThreadStart(SendAssemblyList), connection, TimeSpan.FromSeconds(30));
 
                 if (connectionOpenedCall && onPrimaryConnectionOpened != null)
                     try
@@ -232,6 +234,9 @@ namespace STEM.Surge
                     catch { }
             }
         }
+
+        DateTime _LastAssemblyList = DateTime.UtcNow;
+        ActiveDeploymentManagers _ActiveDeploymentManagers = null;
 
         /// <summary>
         /// Sending an AssemblyList message triggers the Deployment manager to sync us to its VersionCache
@@ -247,11 +252,18 @@ namespace STEM.Surge
             {
                 while (!AssemblyInitializationComplete)
                 {
-                    if (_AsmPool.LoadLevel == 0)
+                    if (_AsmPool.LoadLevel == 0 && (DateTime.UtcNow - _LastAssemblyList).TotalSeconds > 3)
+                    {
+                        _LastAssemblyList = DateTime.UtcNow;
                         connection.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true));
+                    }
 
                     System.Threading.Thread.Sleep(1000);
                 }
+
+                if (_ActiveDeploymentManagers != null)
+                    foreach (string i in _ActiveDeploymentManagers.DeploymentManagers)
+                        ConnectToDeploymentManager(i, _SslConnection ? CommunicationPort + 1 : CommunicationPort, _SslConnection, true);
             }
             else if (!AssemblyInitializationComplete)
             {
@@ -598,9 +610,18 @@ namespace STEM.Surge
             try
             {
                 List<string> keys = null;
+                List<string> deadConnections = new List<string>();
+
+                while (true)
+                    try
+                    {
+                        deadConnections.AddRange(_BranchesMessages.Keys.Except(Connections()));
+                        break;
+                    }
+                    catch { }
+
                 lock (_BranchesMessages)
                 {
-                    List<string> deadConnections = _BranchesMessages.Keys.Except(Connections()).ToList();
                     foreach (string k in deadConnections)
                         _BranchesMessages.Remove(k);
 
@@ -663,11 +684,19 @@ namespace STEM.Surge
                 try
                 {
                     List<Backlogs> backlogList = null;
-
+                    List<string> deadConnections = new List<string>();
+                        
+                    while (true)
+                        try
+                        {
+                            deadConnections.AddRange(_BacklogsMessages.Keys.Except(Connections()));
+                            break;
+                        }
+                        catch { }
+                    
                     lock (_BacklogsMessages)
                         if (_BacklogsMessages.Count > 0)
                         {
-                            List<string> deadConnections = _BacklogsMessages.Keys.Except(Connections()).ToList();
                             foreach (string k in deadConnections)
                                 _BacklogsMessages.Remove(k);
 
@@ -785,13 +814,18 @@ namespace STEM.Surge
                     deadConnections.Clear();
                     keys.Clear();
 
+                    while (true)
+                        try
+                        {
+                            deadConnections.AddRange(_ActiveDeploymentsMessages.Keys.Except(Connections()));
+                            break;
+                        }
+                        catch { }
+
                     lock (_ActiveDeploymentsMessages)
                     {
-                        deadConnections.AddRange(_ActiveDeploymentsMessages.Keys.Except(Connections()));
                         foreach (string k in deadConnections)
-                        {
                             _ActiveDeploymentsMessages.Remove(k);
-                        }
 
                         keys.AddRange(_ActiveDeploymentsMessages.Keys);
                     }
@@ -894,10 +928,7 @@ namespace STEM.Surge
 
             if (message is ActiveDeploymentManagers)
             {
-                ActiveDeploymentManagers m = message as ActiveDeploymentManagers;
-
-                foreach (string i in m.DeploymentManagers)
-                    ConnectToDeploymentManager(i, _SslConnection ? CommunicationPort+1 : CommunicationPort, _SslConnection, true);
+                _ActiveDeploymentManagers = message as ActiveDeploymentManagers;
             }
             else if (message is Branches)
             {
@@ -992,7 +1023,9 @@ namespace STEM.Surge
             else if (message is AssemblyList)
             {
                 AssemblyList aList = message as AssemblyList;
-                
+
+                _LastAssemblyList = DateTime.UtcNow;
+
                 foreach (STEM.Sys.IO.FileDescription m in aList.Descriptions)
                 {
                     if (m.Filepath == ".")
