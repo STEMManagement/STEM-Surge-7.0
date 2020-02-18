@@ -138,13 +138,17 @@ namespace STEM.Sys.IO.TCP
                     {
                         try
                         {
+                            _TcpClient = null;
+
                             string address = STEM.Sys.IO.Net.MachineAddress(RemoteAddress);
 
                             if (address == null || System.Net.IPAddress.None.ToString() == address)
                                 throw new Exception("Address could not be reached.");
-                            
-                            _TcpClient = new TcpClient(AddressFamily.InterNetwork);
-                            _TcpClient.Connect(RemoteAddress, RemotePort);
+
+                            TcpClient client = new TcpClient(AddressFamily.InterNetwork);
+                            client.Connect(RemoteAddress, RemotePort);
+
+                            _TcpClient = client;
 
                             if (_SslConnection)
                             {
@@ -157,23 +161,26 @@ namespace STEM.Sys.IO.TCP
                         }
                         catch
                         {
-                            try
+                            if (_TcpClient != null)
                             {
-                                _TcpClient.Client.Shutdown(SocketShutdown.Both);
-                            }
-                            catch { }
+                                try
+                                {
+                                    _TcpClient.Client.Shutdown(SocketShutdown.Both);
+                                }
+                                catch { }
 
-                            try
-                            {
-                                _TcpClient.Close();
-                            }
-                            catch { }
+                                try
+                                {
+                                    _TcpClient.Close();
+                                }
+                                catch { }
 
-                            try
-                            {
-                                _TcpClient.Dispose();
+                                try
+                                {
+                                    _TcpClient.Dispose();
+                                }
+                                catch { }
                             }
-                            catch { }
 
                             _TcpClient = null;
                             _SslStream = null;
@@ -364,6 +371,9 @@ namespace STEM.Sys.IO.TCP
 
         public bool IsConnected()
         {
+            if (_CloseBroadcast && _TcpClient == null)
+                return false;
+
             lock (_AccessMutex)
             {
                 if (_TcpClient != null)
