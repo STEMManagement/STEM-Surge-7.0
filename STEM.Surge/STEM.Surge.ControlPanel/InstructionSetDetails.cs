@@ -303,16 +303,9 @@ namespace STEM.Surge.ControlPanel
         {
             try
             {
-                Surge.InstructionSet iSet = new Surge.InstructionSet();
-
                 FileDescription iSetFD = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(_InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
 
-                if (iSetFD != null)
-                {
-                    iSet = Surge.InstructionSet.Deserialize(iSetFD.StringContent) as Surge.InstructionSet;
-                    iSet.ProcessName = _InstructionSetTemplate;
-                }
-                else
+                if (iSetFD == null)
                 {
                     MessageBox.Show(this, "The InstructionSet Template could not be found.", "Invalid Template (" + _InstructionSetTemplate + ")", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
@@ -323,14 +316,18 @@ namespace STEM.Surge.ControlPanel
                 _DeploymentController dc = null;
 
                 FileDescription dcFD = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(_DeploymentController + ".dc", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
-
+                
                 if (dcFD != null)
                 {
                     dc = Surge._DeploymentController.Deserialize(dcFD.StringContent) as _DeploymentController;
-                    macros = dc.TemplateKVP;
+
+                    macros = new Dictionary<string, string>(dc.TemplateKVP);
+
+                    foreach (SwitchboardConfig.ConfigurationMacroMapRow r in _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.ConfigurationMacroMap)
+                        macros[r.Placeholder] = "Reserved";
                 }
 
-                InstructionSetEditorForm ief = new InstructionSetEditorForm(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, macros, _UIActor, "Templates");
+                InstructionSetEditorForm ief = new InstructionSetEditorForm(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSetFD, macros, _UIActor, "Templates", true);
 
                 ief.Show(this);
             }

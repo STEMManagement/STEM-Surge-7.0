@@ -18,7 +18,7 @@ namespace STEM.Surge.ControlPanel
 
             FormClosing += ControllerEditorForm_FormClosing;
 
-            controllerEditor1.Bind(messageClient, controllerFilename);
+            controllerEditor1.Bind(controllerFilename, messageClient, true);
         }
 
         void ControllerEditorForm_FormClosing(object sender, FormClosingEventArgs e)

@@ -88,6 +88,7 @@
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.sandboxConfigurationUpdateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.branchListGrid)).BeginInit();
             this.branchMenu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.branchDetailsBindingSource)).BeginInit();
@@ -356,7 +357,8 @@
             this.editManagerStaticsToolStripMenuItem,
             this.changeVersionsToolStripMenuItem,
             this.manageExtensionsToolStripMenuItem,
-            this.exploreConfigurationToolStripMenuItem});
+            this.exploreConfigurationToolStripMenuItem,
+            this.sandboxConfigurationUpdateToolStripMenuItem});
             this.systemTools.Image = global::STEM.Surge.ControlPanel.Properties.Resources.tools;
             this.systemTools.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.systemTools.Name = "systemTools";
@@ -366,42 +368,42 @@
             // deploymentControllerEditorToolStripMenuItem
             // 
             this.deploymentControllerEditorToolStripMenuItem.Name = "deploymentControllerEditorToolStripMenuItem";
-            this.deploymentControllerEditorToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.deploymentControllerEditorToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
             this.deploymentControllerEditorToolStripMenuItem.Text = "Deployment Controller Editor";
             this.deploymentControllerEditorToolStripMenuItem.Click += new System.EventHandler(this.deploymentControllerEditorToolStripMenuItem_Click);
             // 
             // instructionSetEditorToolStripMenuItem
             // 
             this.instructionSetEditorToolStripMenuItem.Name = "instructionSetEditorToolStripMenuItem";
-            this.instructionSetEditorToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.instructionSetEditorToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
             this.instructionSetEditorToolStripMenuItem.Text = "Instruction Set Editor";
             this.instructionSetEditorToolStripMenuItem.Click += new System.EventHandler(this.instructionSetEditorToolStripMenuItem_Click);
             // 
             // editManagerStaticsToolStripMenuItem
             // 
             this.editManagerStaticsToolStripMenuItem.Name = "editManagerStaticsToolStripMenuItem";
-            this.editManagerStaticsToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.editManagerStaticsToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
             this.editManagerStaticsToolStripMenuItem.Text = "Statics Editor";
             this.editManagerStaticsToolStripMenuItem.Click += new System.EventHandler(this.editManagerStaticsToolStripMenuItem_Click);
             // 
             // changeVersionsToolStripMenuItem
             // 
             this.changeVersionsToolStripMenuItem.Name = "changeVersionsToolStripMenuItem";
-            this.changeVersionsToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.changeVersionsToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
             this.changeVersionsToolStripMenuItem.Text = "Change Versions";
             this.changeVersionsToolStripMenuItem.Click += new System.EventHandler(this.changeVersionsToolStripMenuItem_Click);
             // 
             // manageExtensionsToolStripMenuItem
             // 
             this.manageExtensionsToolStripMenuItem.Name = "manageExtensionsToolStripMenuItem";
-            this.manageExtensionsToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.manageExtensionsToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
             this.manageExtensionsToolStripMenuItem.Text = "Manage Extensions";
             this.manageExtensionsToolStripMenuItem.Click += new System.EventHandler(this.manageExtensionsToolStripMenuItem_Click);
             // 
             // exploreConfigurationToolStripMenuItem
             // 
             this.exploreConfigurationToolStripMenuItem.Name = "exploreConfigurationToolStripMenuItem";
-            this.exploreConfigurationToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.exploreConfigurationToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
             this.exploreConfigurationToolStripMenuItem.Text = "Explore Configuration";
             this.exploreConfigurationToolStripMenuItem.Click += new System.EventHandler(this.exploreConfigurationToolStripMenuItem_Click);
             // 
@@ -648,6 +650,13 @@
             this.splitContainer1.SplitterDistance = 647;
             this.splitContainer1.TabIndex = 2;
             // 
+            // sandboxConfigurationUpdateToolStripMenuItem
+            // 
+            this.sandboxConfigurationUpdateToolStripMenuItem.Name = "sandboxConfigurationUpdateToolStripMenuItem";
+            this.sandboxConfigurationUpdateToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
+            this.sandboxConfigurationUpdateToolStripMenuItem.Text = "Sandbox Configuration Update";
+            this.sandboxConfigurationUpdateToolStripMenuItem.Click += new System.EventHandler(this.sandboxConfigurationUpdateToolStripMenuItem_Click);
+            // 
             // ControlPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -746,6 +755,7 @@
         private System.Windows.Forms.ToolStripMenuItem exploreConfigurationToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton pollerStats;
         private System.Windows.Forms.ToolStripButton adHocInstructionSet;
+        private System.Windows.Forms.ToolStripMenuItem sandboxConfigurationUpdateToolStripMenuItem;
     }
 }
 

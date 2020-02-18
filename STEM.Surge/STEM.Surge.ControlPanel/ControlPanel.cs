@@ -974,5 +974,11 @@ namespace STEM.Surge.ControlPanel
             AdHoc adHoc = new AdHoc(_UIActor);
             adHoc.Show(this);
         }
+
+        private void sandboxConfigurationUpdateToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SandboxConfigUpdate cfg = new SandboxConfigUpdate(_UIActor);
+            cfg.ShowDialog(this);
+        }
     }
 }

@@ -15,8 +15,15 @@ namespace STEM.Surge.ControlPanel
 {
     public partial class ControllerEditor : UserControl
     {
-        UIActor _UIActor;
+        UIActor _UIActor = null;
+
+        STEM.Sys.IO.FileDescription _DC = null;
+        STEM.Sys.IO.FileDescription _IS = null;
+
         STEM.Surge._DeploymentController _ActiveController = null;
+
+        bool _SaveToManager = false;
+
         public EventHandler onSaved;
 
         public ControllerEditor()
@@ -65,15 +72,7 @@ namespace STEM.Surge.ControlPanel
 
             SetAutocomplete(controllerProperties);
         }
-
-        public string ActiveControllerFile
-        {
-            get
-            {
-                return deploymentControllerName.Text + ".dc";
-            }
-        }
-
+        
         void SetAutocomplete(System.Windows.Forms.Control control)
         {
             if (control is TextBox)
@@ -111,9 +110,64 @@ namespace STEM.Surge.ControlPanel
             }
         }
 
-        public void Bind(UIActor uiActor, string controllerFilename)
+        public void Bind(STEM.Sys.IO.FileDescription dc, STEM.Sys.IO.FileDescription iSet, UIActor uiActor, bool saveToManager)
         {
             _UIActor = uiActor;
+            _SaveToManager = saveToManager;
+
+            controllerProperties.SelectedObject = null;
+            _ActiveController = null;
+            openTemplate.Visible = false;
+            detailsLabel.Text = "";
+
+            _DC = dc;
+            _IS = iSet;
+                
+            _ActiveController = STEM.Surge._DeploymentController.Deserialize(_DC.StringContent) as STEM.Surge._DeploymentController;
+
+            openTemplate.Visible = true;
+
+            _ActiveController.InstructionSetTemplate = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_IS.Filename);
+            
+            controllerProperties.SelectedObject = _ActiveController;
+
+            macroPlaceholderGrid.Rows.Clear();
+
+            foreach (SwitchboardConfig.ConfigurationMacroMapRow r in _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.ConfigurationMacroMap)
+                _ActiveController.TemplateKVP[r.Placeholder] = "Reserved";
+
+            foreach (string k in _ActiveController.TemplateKVP.Keys.OrderBy(i => i))
+                macroPlaceholderGrid.Rows.Add(null, k, _ActiveController.TemplateKVP[k]);
+
+            foreach (DataGridViewRow r in macroPlaceholderGrid.Rows)
+            {
+                if (r.Cells[2].Value == null)
+                    break;
+
+                if (r.Cells[2].Value.ToString() == "Reserved")
+                    r.ReadOnly = true;
+            }
+
+            deploymentControllerName.Text = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DC.Filename);
+
+            detailsLabel.Text = _ActiveController.VersionDescriptor.TypeName;
+
+            save.Enabled = _DIRTY = false;
+
+            if (!_UIActor.DeploymentManagerConfiguration.DeploymentControllers.Exists(i => i == _DC))
+            {
+                _DIRTY = true;
+                save.Enabled = _DIRTY;
+            }
+        }
+
+        public void Bind(string controllerFilename, UIActor uiActor, bool saveToManager)
+        {
+            _UIActor = uiActor;
+            _SaveToManager = saveToManager;
+
+            _DC = null;
+            _IS = null;
 
             try
             {
@@ -132,7 +186,6 @@ namespace STEM.Surge.ControlPanel
                             _ActiveController.InstructionSetTemplate = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_ActiveController.InstructionSetTemplate);
 
                         controllerProperties.SelectedObject = _ActiveController;
-                        //SetAutocomplete(controllerProperties);
 
                         macroPlaceholderGrid.Rows.Clear();
 
@@ -155,6 +208,10 @@ namespace STEM.Surge.ControlPanel
 
                         deploymentControllerName.Text = "NewController";
 
+                        _DC = new FileDescription();
+                        _DC.CreationTimeUtc = DateTime.UtcNow;
+                        _DC.Filename = "";
+
                         detailsLabel.Text = _ActiveController.VersionDescriptor.TypeName;
 
                         _DIRTY = true;
@@ -168,12 +225,10 @@ namespace STEM.Surge.ControlPanel
                     openTemplate.Visible = false;
                     detailsLabel.Text = "";
 
-                    FileDescription fd = null;
+                    _DC = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(controllerFilename, StringComparison.InvariantCultureIgnoreCase) && i.StringContent != null);
 
-                    fd = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(controllerFilename, StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
-
-                    if (fd != null)
-                        _ActiveController = STEM.Surge._DeploymentController.Deserialize(fd.StringContent) as STEM.Surge._DeploymentController;
+                    if (_DC != null)
+                        _ActiveController = STEM.Surge._DeploymentController.Deserialize(_DC.StringContent) as STEM.Surge._DeploymentController;
 
                     openTemplate.Visible = true;
 
@@ -183,9 +238,7 @@ namespace STEM.Surge.ControlPanel
                         _ActiveController.InstructionSetTemplate = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_ActiveController.InstructionSetTemplate);
 
                     controllerProperties.SelectedObject = _ActiveController;
-
-                    //SetAutocomplete(controllerProperties);
-
+                    
                     macroPlaceholderGrid.Rows.Clear();
 
                     foreach (SwitchboardConfig.ConfigurationMacroMapRow r in _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.ConfigurationMacroMap)
@@ -203,7 +256,7 @@ namespace STEM.Surge.ControlPanel
                             r.ReadOnly = true;
                     }
 
-                    deploymentControllerName.Text = STEM.Sys.IO.Path.GetFileNameWithoutExtension(controllerFilename);
+                    deploymentControllerName.Text = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DC.Filename);
 
                     detailsLabel.Text = _ActiveController.VersionDescriptor.TypeName;
 
@@ -262,7 +315,7 @@ namespace STEM.Surge.ControlPanel
         {
             if (controllerProperties.SelectedObject == null)
                 return;
-            
+
             string fileName = deploymentControllerName.Text.Trim();
 
             if (fileName.Length < 1)
@@ -277,9 +330,24 @@ namespace STEM.Surge.ControlPanel
             fileName += ".dc";
 
             FileDescription fd = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(fileName, StringComparison.InvariantCultureIgnoreCase));
+            
+            if (fd != null)
+            {
+                if (fd.Content != null)
+                    if (MessageBox.Show(this, "A Deployment Controller named " + fileName + " already exists. Overwrite?", "Overwrite?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                        return;
+
+                _DC = fd;
+            }
+            else
+            {
+                _DC = new FileDescription();
+                _DC.CreationTimeUtc = DateTime.UtcNow;
+                _DC.Filename = fileName;
+            }
 
             _DeploymentController dc = controllerProperties.SelectedObject as _DeploymentController;
-            
+
             dc.TemplateKVP.Clear();
 
             foreach (DataGridViewRow r in macroPlaceholderGrid.Rows)
@@ -299,55 +367,39 @@ namespace STEM.Surge.ControlPanel
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Macro Configurationn Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, "Macro Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            if (dc.InstructionSetTemplate != STEM.Sys.IO.Path.GetFileName(dc.InstructionSetTemplate))
-                dc.InstructionSetTemplate = STEM.Sys.IO.Path.GetFileName(dc.InstructionSetTemplate);
+            dc.InstructionSetTemplate = STEM.Sys.IO.Path.GetFileName(dc.InstructionSetTemplate);
 
             if (dc.InstructionSetTemplate.EndsWith(".is", StringComparison.InvariantCultureIgnoreCase))
                 dc.InstructionSetTemplate = STEM.Sys.IO.Path.GetFileNameWithoutExtension(dc.InstructionSetTemplate);
+                
+            _DC.StringContent = dc.Serialize();
+            _DC.LastWriteTimeUtc = DateTime.UtcNow;
 
-            if (fd != null && fd.Content != null)
+            if (_SaveToManager)
             {
-                if (MessageBox.Show(this, "A Deployment Controller named " + fileName + " already exists. Overwrite?", "Overwrite?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
-                    return;
-
-                fd.StringContent = dc.Serialize();
-                fd.LastWriteTimeUtc = DateTime.UtcNow;
+                if (!_UIActor.DeploymentManagerConfiguration.DeploymentControllers.Exists(i => i.Filename.Equals(fileName, StringComparison.InvariantCultureIgnoreCase)))
+                    _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Add(_DC);
+                    
+                _UIActor.SubmitConfigurationUpdate();
             }
-            else if (fd != null)
-            {
-                fd.StringContent = dc.Serialize();
-                fd.CreationTimeUtc = DateTime.UtcNow;
-                fd.LastWriteTimeUtc = DateTime.UtcNow;
-            }
-            else
-            {
-                fd = new FileDescription();
-                fd.CreationTimeUtc = DateTime.UtcNow;
-                fd.Filename = fileName;
-
-                fd.StringContent = dc.Serialize();
-                fd.LastWriteTimeUtc = DateTime.UtcNow;
-
-                _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Add(fd);
-            }
-
-            string xml = dc.Serialize();
-
-            _UIActor.SubmitConfigurationUpdate();
 
             save.Enabled = _DIRTY = false;
 
             if (onSaved != null)
                 try
                 {
-                    onSaved(this, EventArgs.Empty);
+                    onSaved(_DC, EventArgs.Empty);
                 }
-                catch { }
-            
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.ToString(), "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
             MessageBox.Show(this, "Save Complete!", "", MessageBoxButtons.OK);
         }
                 
@@ -382,16 +434,31 @@ namespace STEM.Surge.ControlPanel
             {
                 Surge.InstructionSet iSet = new Surge.InstructionSet();
 
-                FileDescription fd = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(_ActiveController.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase) && i.Content != null);
+                iSet.ProcessName = _ActiveController.InstructionSetTemplate;
 
-                if (fd != null)
+                if (_IS == null || !_IS.Filename.Equals(_ActiveController.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase))
+                    _IS = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(_ActiveController.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase));
+
+                if (_IS != null)
                 {
-                    iSet = Surge.InstructionSet.Deserialize(fd.StringContent) as Surge.InstructionSet;
-                    iSet.ProcessName = _ActiveController.InstructionSetTemplate;
+                    if (_IS.Content != null)
+                    {
+                        iSet = Surge.InstructionSet.Deserialize(_IS.StringContent) as Surge.InstructionSet;
+                        iSet.ProcessName = _ActiveController.InstructionSetTemplate;
+                    }
+                    else
+                    {
+                        _IS = null;
+                    }
                 }
-                else
+                
+                if (_IS == null)
                 {
-                    iSet.ProcessName = _ActiveController.InstructionSetTemplate;
+                    _IS = new FileDescription();
+                    _IS.Filename = iSet.ProcessName + ".is";
+                    _IS.CreationTimeUtc = DateTime.UtcNow;
+                    _IS.LastWriteTimeUtc = DateTime.UtcNow;
+                    _IS.StringContent = iSet.Serialize();
                 }
 
                 Dictionary<string, string> macros = new Dictionary<string, string>();
@@ -403,8 +470,8 @@ namespace STEM.Surge.ControlPanel
                     macros[r.Cells[1].Value.ToString()] = r.Cells[2].Value.ToString();
                 }
 
-                InstructionSetEditorForm ief = new InstructionSetEditorForm(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, macros, _UIActor, "Templates");
-
+                InstructionSetEditorForm ief = new InstructionSetEditorForm(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, _IS, macros, _UIActor, "Templates", _SaveToManager);
+                
                 ief.Show(this);
 
                 _ActiveController.InstructionSetTemplate = ief.ProcessName;

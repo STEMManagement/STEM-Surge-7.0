@@ -15,11 +15,14 @@ namespace STEM.Surge.ControlPanel
     public partial class InstructionSetEditor : UserControl
     {
         UIActor _UIActor;
+
+        bool _SaveToManager = false;
+
         Surge.InstructionSet _InstructionSet;
         List<STEM.Sys.IO.FileDescription> _InstructionSets;
 
         string _RelPath = "";
-
+        
         public EventHandler onSaved;
 
         public string ProcessName { get { return _InstructionSet.ProcessName; } }
@@ -133,9 +136,24 @@ namespace STEM.Surge.ControlPanel
             }
         }
 
-        public void Bind(List<STEM.Sys.IO.FileDescription> instructionSets, Surge.InstructionSet instructionSet, Dictionary<string, string> macros, UIActor messageClient, bool canRepeat, string relPath)
+        public void Bind(List<STEM.Sys.IO.FileDescription> instructionSets, STEM.Sys.IO.FileDescription instructionSet, Dictionary<string, string> macros, UIActor messageClient, bool canRepeat, string relPath, bool saveToManager)
+        {
+            Surge.InstructionSet iSet = Surge.InstructionSet.Deserialize(instructionSet.StringContent) as Surge.InstructionSet;
+
+            Bind(instructionSets, iSet, macros, messageClient, canRepeat, relPath, saveToManager);
+
+            if (!instructionSets.Exists(i => i == instructionSet))
+            {
+                _DIRTY = true;
+                save.Enabled = _DIRTY;
+            }
+        }
+
+        public void Bind(List<STEM.Sys.IO.FileDescription> instructionSets, Surge.InstructionSet instructionSet, Dictionary<string, string> macros, UIActor messageClient, bool canRepeat, string relPath, bool saveToManager)
         {
             _UIActor = messageClient;
+            _SaveToManager = saveToManager;
+
             _RelPath = relPath;
             _Macros = macros;
 
@@ -251,24 +269,25 @@ namespace STEM.Surge.ControlPanel
 
             STEM.Sys.IO.FileDescription fd = _InstructionSets.FirstOrDefault(i => i.Filename.Equals(fileName + ".is", StringComparison.InvariantCultureIgnoreCase));
 
-            if (fd != null && fd.Content != null)
+            if (fd != null)
             {
-                string usedBy = String.Join("\r\n\t", _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.Content != null && i.StringContent.ToUpper().Contains((">" + _InstructionSet.ProcessName + "<").ToUpper())).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList());
+                if (fd.Content != null)
+                {
+                    string usedBy = String.Join("\r\n\t", _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.Content != null && (i.StringContent.ToUpper().Contains(("InstructionSetTemplate>" + _InstructionSet.ProcessName + "<").ToUpper()) || i.StringContent.ToUpper().Contains(("InstructionSetTemplate>" + _InstructionSet.ProcessName + ".is<").ToUpper()))).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList());
 
-                if (usedBy == "")
-                    usedBy = "Not in use by any Deployment Controller.";
+                    if (usedBy == "")
+                        usedBy = "Not in use by any Deployment Controller.";
+                    else
+                        usedBy = "In use by:\r\n\t" + usedBy;
+
+                    if (MessageBox.Show(this, "An InstructionSet named " + fileName + " already exists in this space. Overwrite?\r\n" + usedBy, "Overwrite?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                        return;
+                }
                 else
-                    usedBy = "In use by:\r\n\t" + usedBy;
+                {
+                    fd.CreationTimeUtc = DateTime.UtcNow;
+                }
 
-                if (MessageBox.Show(this, "An InstructionSet named " + fileName + " already exists in this space. Overwrite?\r\n" + usedBy, "Overwrite?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
-                    return;
-
-                fd.StringContent = _InstructionSet.Serialize();
-                fd.LastWriteTimeUtc = DateTime.UtcNow;
-            }
-            else if (fd != null)
-            {
-                fd.CreationTimeUtc = DateTime.UtcNow;
                 fd.StringContent = _InstructionSet.Serialize();
                 fd.LastWriteTimeUtc = DateTime.UtcNow;
             }
@@ -283,19 +302,24 @@ namespace STEM.Surge.ControlPanel
 
                 _InstructionSets.Add(fd);
             }
-
-            _UIActor.SubmitConfigurationUpdate();
             
+            if (_SaveToManager)
+                _UIActor.SubmitConfigurationUpdate();
+
             save.Enabled = _DIRTY = false;
 
             if (onSaved != null)
                 try
                 {
-                    onSaved(this, EventArgs.Empty);
+                    onSaved(fd, EventArgs.Empty);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.ToString(), "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
-            Bind(_InstructionSets, _InstructionSet, _Macros, _UIActor, continuousExecution.Visible, _RelPath);
+            Bind(_InstructionSets, _InstructionSet, _Macros, _UIActor, continuousExecution.Visible, _RelPath, _SaveToManager);
         
             MessageBox.Show(this, "Save Complete!", "", MessageBoxButtons.OK);
         }
@@ -465,7 +489,7 @@ namespace STEM.Surge.ControlPanel
 
         private void usedByControllers_Click(object sender, EventArgs e)
         {
-            string usedBy = String.Join("\r\n\t", _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.Content != null && (i.StringContent.ToUpper().Contains((">" + _InstructionSet.ProcessName + "<").ToUpper()) || i.StringContent.ToUpper().Contains((_InstructionSet.ProcessName + ".is<").ToUpper()))).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList());
+            string usedBy = String.Join("\r\n\t", _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.Content != null && (i.StringContent.ToUpper().Contains(("InstructionSetTemplate>" + _InstructionSet.ProcessName + "<").ToUpper()) || i.StringContent.ToUpper().Contains(("InstructionSetTemplate>" + _InstructionSet.ProcessName + ".is<").ToUpper()))).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList());
 
             if (usedBy == "")
                 usedBy = "Not in use by any Deployment Controller.";

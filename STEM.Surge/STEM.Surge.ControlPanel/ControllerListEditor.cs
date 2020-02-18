@@ -44,13 +44,15 @@ namespace STEM.Surge.ControlPanel
 
         private void controllerEditor1_onSaved(object sender, EventArgs e)
         {
+            STEM.Sys.IO.FileDescription dc = sender as STEM.Sys.IO.FileDescription;
+
             _LastList = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.Content != null).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList();
 
-            if (!_LastList.Contains(STEM.Sys.IO.Path.GetFileNameWithoutExtension(controllerEditor1.ActiveControllerFile)))
-                _LastList.Add(STEM.Sys.IO.Path.GetFileNameWithoutExtension(controllerEditor1.ActiveControllerFile));
+            if (!_LastList.Contains(STEM.Sys.IO.Path.GetFileNameWithoutExtension(dc.Filename)))
+                _LastList.Add(STEM.Sys.IO.Path.GetFileNameWithoutExtension(dc.Filename));
 
             filterBox_TextChanged(this, EventArgs.Empty);
-            fileList.SelectedItem = STEM.Sys.IO.Path.GetFileNameWithoutExtension(controllerEditor1.ActiveControllerFile);
+            fileList.SelectedItem = STEM.Sys.IO.Path.GetFileNameWithoutExtension(dc.Filename);
             fileList_SelectedIndexChanged(this, EventArgs.Empty);
         }
 
@@ -78,7 +80,7 @@ namespace STEM.Surge.ControlPanel
                 }
             }
 
-            controllerEditor1.Bind(_UIActor, null);
+            controllerEditor1.Bind(null, _UIActor, true);
 
             detailsPanel.Visible = true;
         }
@@ -163,7 +165,7 @@ namespace STEM.Surge.ControlPanel
 
                 _LastFileObject = fileList.SelectedItem;
                 
-                controllerEditor1.Bind(_UIActor, fileList.SelectedItem as string + ".dc");                
+                controllerEditor1.Bind(fileList.SelectedItem as string + ".dc", _UIActor, true);                
             }
             catch (Exception ex)
             {

@@ -15,10 +15,12 @@ namespace STEM.Surge.ControlPanel
 {
     public partial class InstructionSetEditorForm : Form
     {
+        public EventHandler onSaved;
+
         string _ProcessName = null;
         public string ProcessName { get { return _ProcessName; } }
 
-        public InstructionSetEditorForm(List<FileDescription> instructionSets, Surge.InstructionSet instructionSet, Dictionary<string, string> macros, UIActor messageClient, string relPath)
+        public InstructionSetEditorForm(List<FileDescription> instructionSets, Surge.InstructionSet instructionSet, Dictionary<string, string> macros, UIActor messageClient, string relPath, bool saveToManager)
         {
             InitializeComponent();
 
@@ -30,12 +32,30 @@ namespace STEM.Surge.ControlPanel
 
             instructionSetEditor1.onSaved += instructionSetEditor1_onSaved;
 
-            instructionSetEditor1.Bind(instructionSets, instructionSet, macros, messageClient, false, relPath);
+            instructionSetEditor1.Bind(instructionSets, instructionSet, macros, messageClient, false, relPath, saveToManager);
+        }
+
+        public InstructionSetEditorForm(List<FileDescription> instructionSets, STEM.Sys.IO.FileDescription instructionSet, Dictionary<string, string> macros, UIActor messageClient, string relPath, bool saveToManager)
+        {
+            InitializeComponent();
+
+            _ProcessName = STEM.Sys.IO.Path.GetFileNameWithoutExtension(instructionSet.Filename);
+
+            FormClosing += InstructionSetEditorForm_FormClosing;
+
+            Text = System.IO.Path.Combine(relPath, _ProcessName);
+
+            instructionSetEditor1.onSaved += instructionSetEditor1_onSaved;
+
+            instructionSetEditor1.Bind(instructionSets, instructionSet, macros, messageClient, false, relPath, saveToManager);
         }
 
         private void instructionSetEditor1_onSaved(object sender, EventArgs e)
         {
-            _ProcessName = instructionSetEditor1.ProcessName;            
+            _ProcessName = instructionSetEditor1.ProcessName;
+            
+            if (onSaved != null)
+                onSaved(sender, EventArgs.Empty);
         }
 
         void InstructionSetEditorForm_FormClosing(object sender, FormClosingEventArgs e)

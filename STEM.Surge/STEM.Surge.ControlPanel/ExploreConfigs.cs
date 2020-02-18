@@ -32,7 +32,11 @@ namespace STEM.Surge.ControlPanel
 
             foreach (STEM.Sys.IO.FileDescription f in _UIActor.DeploymentManagerConfiguration.DeploymentControllers)
             {
+                if (f.StringContent == null)
+                    continue;
+
                 _DeploymentControllers[f.Filename] = f;
+
                 try
                 {
                     _DeploymentController dc = _DeploymentController.Deserialize(f.StringContent) as _DeploymentController;
@@ -58,7 +62,11 @@ namespace STEM.Surge.ControlPanel
 
             foreach (STEM.Sys.IO.FileDescription f in _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates)
             {
+                if (f.StringContent == null)
+                    continue;
+
                 _ISetTemplates[f.Filename] = f;
+                
                 try
                 {
                     _InstructionSet iSet = _InstructionSet.Deserialize(f.StringContent) as _InstructionSet;
@@ -75,7 +83,11 @@ namespace STEM.Surge.ControlPanel
             foreach (string key in _UIActor.DeploymentManagerConfiguration.InstructionSetStatics.Keys)
                 foreach (STEM.Sys.IO.FileDescription f in _UIActor.DeploymentManagerConfiguration.InstructionSetStatics[key])
                 {
+                    if (f.StringContent == null)
+                        continue;
+
                     _ISetStatics[key + "\\" + f.Filename] = f;
+                    
                     try
                     {
                         _InstructionSet iSet = _InstructionSet.Deserialize(f.StringContent) as _InstructionSet;
@@ -135,7 +147,7 @@ namespace STEM.Surge.ControlPanel
                 {
                     _DeploymentController dc = _DeploymentController.Deserialize(_Active.StringContent) as _DeploymentController;
                     ControllerEditor i = new ControllerEditor();
-                    i.Bind(_UIActor, key);
+                    i.Bind(key, _UIActor, true);
 
                     i.Dock = DockStyle.Fill;
 
@@ -154,7 +166,7 @@ namespace STEM.Surge.ControlPanel
                 {
                     InstructionSet iSet = InstructionSet.Deserialize(_Active.StringContent) as InstructionSet;
                     InstructionSetEditor i = new InstructionSetEditor();
-                    i.Bind(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, new Dictionary<string, string>(), _UIActor, false, "Templates");
+                    i.Bind(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, new Dictionary<string, string>(), _UIActor, false, "Templates", true);
 
                     i.Dock = DockStyle.Fill;
 
@@ -173,7 +185,7 @@ namespace STEM.Surge.ControlPanel
                 {
                     InstructionSet iSet = InstructionSet.Deserialize(_Active.StringContent) as InstructionSet;
                     InstructionSetEditor i = new InstructionSetEditor();
-                    i.Bind(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, new Dictionary<string, string>(), _UIActor, true, Path.GetDirectoryName(key));
+                    i.Bind(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, iSet, new Dictionary<string, string>(), _UIActor, true, Path.GetDirectoryName(key), true);
 
                     i.Dock = DockStyle.Fill;
 

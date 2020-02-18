@@ -17,7 +17,6 @@ namespace STEM.Surge.ControlPanel
         UIActor _UIActor;
 
         List<STEM.Sys.IO.FileDescription> _InstructionSets;
-        List<string> _LastList = new List<string>();
         string _RelPath = "";
 
         public bool IsDirty
@@ -34,6 +33,8 @@ namespace STEM.Surge.ControlPanel
         {
             InitializeComponent();
 
+            _InstructionSets = new List<Sys.IO.FileDescription>();
+
             CanBeContinuous = canBeContinuous;
             filterBox_TextChanged(this, EventArgs.Empty);
             instructionSetEditor1.Visible = false;
@@ -45,9 +46,6 @@ namespace STEM.Surge.ControlPanel
         {
             string fileName = instructionSetEditor1.ProcessName;
             
-            if (!_LastList.Contains(fileName))
-                _LastList.Add(fileName);
-
             filterBox_TextChanged(this, EventArgs.Empty);
             fileList.SelectedItem = fileName;
             fileList_SelectedIndexChanged(this, EventArgs.Empty);
@@ -61,7 +59,6 @@ namespace STEM.Surge.ControlPanel
             filterBox_TextChanged(this, EventArgs.Empty);
 
             _InstructionSets = instructionSets;
-            _LastList = _InstructionSets.Where(i => i.Content != null).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList();
             
             filterBox_TextChanged(this, EventArgs.Empty);
             fileList_SelectedIndexChanged(this, EventArgs.Empty);
@@ -85,7 +82,7 @@ namespace STEM.Surge.ControlPanel
             _LastFileObject = null;
             _ActiveInstructionSet = new Surge.InstructionSet();
 
-            instructionSetEditor1.Bind(_InstructionSets, _ActiveInstructionSet, new Dictionary<string, string>(), _UIActor, CanBeContinuous, _RelPath);
+            instructionSetEditor1.Bind(_InstructionSets, _ActiveInstructionSet, new Dictionary<string, string>(), _UIActor, CanBeContinuous, _RelPath, true);
             instructionSetEditor1.Visible = true;
         }
 
@@ -105,15 +102,13 @@ namespace STEM.Surge.ControlPanel
                     fd.Content = null;
                     fd.LastWriteTimeUtc = DateTime.UtcNow;
                     _UIActor.SubmitConfigurationUpdate();
-                    _InstructionSets.Remove(fd);
-                    _LastList.Remove(fd.Filename);
                 }
             }
             else
             {
                 return;
             }
-
+            
             int index = fileList.SelectedIndex;
 
             fileList.SelectedIndices.Clear();
@@ -161,7 +156,7 @@ namespace STEM.Surge.ControlPanel
                 if (fd != null)
                     _ActiveInstructionSet = Surge.InstructionSet.Deserialize(fd.StringContent) as Surge.InstructionSet;
 
-                instructionSetEditor1.Bind(_InstructionSets, _ActiveInstructionSet, new Dictionary<string, string>(), _UIActor, CanBeContinuous, _RelPath);
+                instructionSetEditor1.Bind(_InstructionSets, _ActiveInstructionSet, new Dictionary<string, string>(), _UIActor, CanBeContinuous, _RelPath, true);
                 instructionSetEditor1.Visible = true;
             }
             catch (Exception ex)
@@ -177,11 +172,13 @@ namespace STEM.Surge.ControlPanel
         private void filterBox_TextChanged(object sender, EventArgs e)
         {
             fileList.Items.Clear();
-            
+
+            List<string> list = _InstructionSets.Where(i => i.Content != null).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToList();
+
             if (filterBox.Text.Trim().Length > 0)
-                fileList.Items.AddRange(_LastList.Select(i => STEM.Sys.IO.Path.GetFileName(i)).Where(i => i.ToUpper().Contains(filterBox.Text.Trim().ToUpper())).ToArray());
+                fileList.Items.AddRange(list.Select(i => STEM.Sys.IO.Path.GetFileName(i)).Where(i => i.ToUpper().Contains(filterBox.Text.Trim().ToUpper())).ToArray());
             else
-                fileList.Items.AddRange(_LastList.Select(i => STEM.Sys.IO.Path.GetFileName(i)).ToArray());
+                fileList.Items.AddRange(list.Select(i => STEM.Sys.IO.Path.GetFileName(i)).ToArray());
         }
 
         private void clearFilter_Click(object sender, EventArgs e)
