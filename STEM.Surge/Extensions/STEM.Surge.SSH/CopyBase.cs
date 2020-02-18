@@ -311,8 +311,6 @@ namespace STEM.Surge.SSH
                             {
                                 try
                                 {
-                                    filesActioned++;
-
                                     string dFile = "";
 
                                     try
@@ -464,6 +462,8 @@ namespace STEM.Surge.SSH
 
                                     if (!String.IsNullOrEmpty(dFile))
                                     {
+                                        filesActioned++;
+
                                         _FilesActioned[s] = dFile;
 
                                         if (Action == ActionType.Move)
@@ -520,19 +520,22 @@ namespace STEM.Surge.SSH
                 Exceptions.Add(ex);
             }
 
-            if (Exceptions.Count == 0 && _FilesActioned.Count == 0)
+            if (_FilesActioned.Count == 0)
             {
                 switch (ZeroFilesAction)
                 {
                     case FailureAction.SkipRemaining:
+                        Exceptions.Clear();
                         SkipRemaining();
                         break;
 
                     case FailureAction.SkipNext:
+                        Exceptions.Clear();
                         SkipNext();
                         break;
 
                     case FailureAction.SkipToLabel:
+                        Exceptions.Clear();
                         SkipForwardToFlowControlLabel(FailureActionLabel);
                         break;
 
@@ -541,10 +544,11 @@ namespace STEM.Surge.SSH
                         break;
 
                     case FailureAction.Continue:
+                        Exceptions.Clear();
                         break;
                 }
 
-                Message = "0 Files Actioned";
+                Message = "0 Files Actioned\r\n" + Message;
             }
 
             return Exceptions.Count == 0;
