@@ -18,6 +18,8 @@ namespace STEM.Surge.ControlPanel
         {
             InitializeComponent();
 
+            FormClosing += SandboxConfigUpdate_FormClosing;
+
             controllerEditor1.Visible = false;
             splitContainer1.Visible = false;
             beginSandboxUpdate.Visible = false;
@@ -31,7 +33,23 @@ namespace STEM.Surge.ControlPanel
 
             deploymentControllerSelect.Items.AddRange(_UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.StringContent != null).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)).ToArray());
         }
-        
+
+        private void SandboxConfigUpdate_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_Disabled != null && _Disabled.Count > 0)
+            {
+                foreach (SwitchboardConfig.FileSourcesRow r in _Disabled)
+                {
+                    SwitchboardConfig.FileSourcesRow t = _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.FileSources.FindBySourceDirectoryDirectoryFilterFileFilter(r.SourceDirectory, r.DirectoryFilter, r.FileFilter);
+
+                    if (t != null)
+                        t.Enable = true;
+                }
+
+                _UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration);
+            }
+        }
+
         public bool IsDirty
         {
             get
@@ -127,11 +145,10 @@ namespace STEM.Surge.ControlPanel
             }
         }
 
-        STEM.Surge._DeploymentController _DC = null;
         STEM.Sys.IO.FileDescription _DCfd = null;
-
-        STEM.Surge.InstructionSet _IS = null;
         STEM.Sys.IO.FileDescription _ISfd = null;
+
+        List<SwitchboardConfig.FileSourcesRow> _Disabled = null;
 
         Dictionary<string, Dictionary<string, List<string>>> _FileMap = new Dictionary<string, Dictionary<string, List<string>>>();
         private void deploymentControllerSelect_SelectedIndexChanged(object sender, EventArgs e)
@@ -144,10 +161,10 @@ namespace STEM.Surge.ControlPanel
             List<string> found = new List<string>();
             
             _DCfd = null;
-            _DC = null;
+            STEM.Surge._DeploymentController deploymentController = null;
 
             _ISfd = null;
-            _IS = null;
+            STEM.Surge.InstructionSet iSet = null;
 
             _DCfd = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename).Equals(deploymentControllerSelect.SelectedItem.ToString()));
 
@@ -155,7 +172,7 @@ namespace STEM.Surge.ControlPanel
             {
                 try
                 {
-                    _DC = STEM.Surge._DeploymentController.Deserialize(_DCfd.StringContent) as STEM.Surge._DeploymentController;
+                    deploymentController = STEM.Surge._DeploymentController.Deserialize(_DCfd.StringContent) as STEM.Surge._DeploymentController;
                 }
                 catch (Exception ex)
                 {
@@ -163,7 +180,7 @@ namespace STEM.Surge.ControlPanel
                     return;
                 }
 
-                if (_DC == null)
+                if (deploymentController == null)
                 {
                     MessageBox.Show(this, "The Deployment Controller could not be deserialized.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
@@ -171,28 +188,28 @@ namespace STEM.Surge.ControlPanel
 
                 splitContainer1.Visible = true;
 
-                string v = _DC.VersionDescriptor.AssemblyName.Split(',')[0].Trim() + ", " + _DC.VersionDescriptor.AssemblyName.Split(',')[1].Trim();
+                string v = deploymentController.VersionDescriptor.AssemblyName.Split(',')[0].Trim() + ", " + deploymentController.VersionDescriptor.AssemblyName.Split(',')[1].Trim();
                 if (!found.Contains(v))
                 {
                     _FileMap[v] = new Dictionary<string, List<string>>();
                     found.Add(v);
                 }
 
-                if (!_FileMap[v].ContainsKey(_DC.VersionDescriptor.TypeName))
-                    _FileMap[v][_DC.VersionDescriptor.TypeName] = new List<string>();
+                if (!_FileMap[v].ContainsKey(deploymentController.VersionDescriptor.TypeName))
+                    _FileMap[v][deploymentController.VersionDescriptor.TypeName] = new List<string>();
 
-                if (!_FileMap[v][_DC.VersionDescriptor.TypeName].Contains("Controller, " + STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DCfd.Filename)))
-                    _FileMap[v][_DC.VersionDescriptor.TypeName].Add("Controller, " + STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DCfd.Filename));
+                if (!_FileMap[v][deploymentController.VersionDescriptor.TypeName].Contains("Controller, " + STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DCfd.Filename)))
+                    _FileMap[v][deploymentController.VersionDescriptor.TypeName].Add("Controller, " + STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DCfd.Filename));
 
                 _ISfd = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.StringContent != null && 
-                                                    (_DC.InstructionSetTemplate.Equals(STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename), StringComparison.InvariantCultureIgnoreCase) ||
-                                                    _DC.InstructionSetTemplate.Equals(i.Filename, StringComparison.InvariantCultureIgnoreCase)));
+                                                    (deploymentController.InstructionSetTemplate.Equals(STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename), StringComparison.InvariantCultureIgnoreCase) ||
+                                                    deploymentController.InstructionSetTemplate.Equals(i.Filename, StringComparison.InvariantCultureIgnoreCase)));
 
                 if (_ISfd != null)
                 {                    
                     try
                     {
-                        _IS = STEM.Surge.InstructionSet.Deserialize(_ISfd.StringContent) as STEM.Surge.InstructionSet;
+                        iSet = STEM.Surge.InstructionSet.Deserialize(_ISfd.StringContent) as STEM.Surge.InstructionSet;
                     }
                     catch (Exception ex)
                     {
@@ -200,13 +217,13 @@ namespace STEM.Surge.ControlPanel
                         return;
                     }
 
-                    if (_IS == null)
+                    if (iSet == null)
                     {
                         MessageBox.Show(this, "The Instruction Set could not be deserialized.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
 
-                    foreach (STEM.Surge.Instruction i in _IS.Instructions)
+                    foreach (STEM.Surge.Instruction i in iSet.Instructions)
                     {
                         v = i.VersionDescriptor.AssemblyName.Split(',')[0].Trim() + ", " + i.VersionDescriptor.AssemblyName.Split(',')[1].Trim();
                         if (!found.Contains(v))
@@ -258,6 +275,32 @@ namespace STEM.Surge.ControlPanel
             STEM.Sys.IO.FileDescription dcfd = null;
             STEM.Sys.IO.FileDescription isfd = null;
 
+            _Disabled = _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.FileSources.
+                Where(i => i.Sandbox == true && i.ControllerFilename.Equals(STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DCfd.Filename), StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+            if (_Disabled.Count == 0)
+            {
+                MessageBox.Show(this, "There are no sandboxed rows for this controller.", "No Action To Take", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            foreach (SwitchboardConfig.FileSourcesRow r in _Disabled.ToList())
+            {
+                if (r.Enable)
+                {
+                    r.Enable = false;
+                }
+                else
+                {
+                    _Disabled.Remove(r);
+                }
+            }
+
+            if (_Disabled.Count > 0)
+            {
+                _UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration);
+            }
+
             foreach (DataGridViewRow r in updateEntries.Rows)
                 if (((bool)r.Cells[0].Value) == true)
                 {
@@ -276,8 +319,12 @@ namespace STEM.Surge.ControlPanel
                             break;
 
                         case "Template":
-                            isfd = new Sys.IO.FileDescription();
-                            isfd.CopyFrom(_ISfd);
+                            if (isfd == null)
+                            {
+                                isfd = new Sys.IO.FileDescription();
+                                isfd.CopyFrom(_ISfd);
+                            }
+
                             fd = isfd;
                             break;
                     }
@@ -306,14 +353,78 @@ namespace STEM.Surge.ControlPanel
 
             controllerEditor1.Bind(dcfd, isfd, _UIActor, false);
 
-            controllerEditor1.onSaved += controllerEditor1_onSaved;
+            controllerEditor1.onInstructionSetTemplateSaved += InstructionSetTemplateSaved;
+            controllerEditor1.onSaved += DeploymentControllerSaved;
 
             controllerEditor1.Visible = true;
         }
-
-        private void controllerEditor1_onSaved(object sender, EventArgs e)
+        
+        private void InstructionSetTemplateSaved(object sender, EventArgs e)
         {
-            STEM.Sys.IO.FileDescription dc = sender as STEM.Sys.IO.FileDescription;
+            _ISfd = sender as STEM.Sys.IO.FileDescription;
+        }
+
+        private void DeploymentControllerSaved(object sender, EventArgs e)
+        {
+            _DCfd = sender as STEM.Sys.IO.FileDescription;
+
+            if (_DCfd != null)
+            {
+                if (_Disabled != null && _Disabled.Count > 0)
+                {
+                    MessageBox.Show(this, "Now we must wait for the old configuration assignment to settle.\r\n This may take a minute or two.", "Please Wait", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                    foreach (SwitchboardConfig.FileSourcesRow r in _Disabled)
+                    {
+                        string id = STEM.Surge.GenerateSwitchboardRowIDs.GenerateSwitchboardRowID(r);
+
+                        while (_UIActor.Backlogs.Count(i => i.SwitchboardRowID == id && i.Assigning == true) > 0)
+                            System.Threading.Thread.Sleep(1000);
+
+                        while (_UIActor.Backlogs.Count(i => i.SwitchboardRowID == id && (DateTime.UtcNow - i.LastAssignment).TotalSeconds < 30) > 0)
+                            System.Threading.Thread.Sleep(1000);
+                    }
+                }
+
+                STEM.Sys.IO.FileDescription fd = _UIActor.DeploymentManagerConfiguration.DeploymentControllers.FirstOrDefault(i => i.Filename.Equals(_DCfd.Filename, StringComparison.InvariantCultureIgnoreCase));
+
+                if (fd != null)
+                {
+                    fd.CopyFrom(_DCfd);
+                }
+                else
+                {
+                    _UIActor.DeploymentManagerConfiguration.DeploymentControllers.Add(_DCfd);
+                }
+
+                fd = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(_ISfd.Filename, StringComparison.InvariantCultureIgnoreCase));
+
+                if (fd != null)
+                {
+                    fd.CopyFrom(_ISfd);
+                }
+                else
+                {
+                    _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.Add(_ISfd);
+                }
+
+                _UIActor.SubmitConfigurationUpdate();
+            }
+
+            if (_Disabled != null && _Disabled.Count > 0)
+            {
+                foreach (SwitchboardConfig.FileSourcesRow r in _Disabled)
+                {
+                    SwitchboardConfig.FileSourcesRow t = _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.FileSources.FindBySourceDirectoryDirectoryFilterFileFilter(r.SourceDirectory, r.DirectoryFilter, r.FileFilter);
+                    
+                    if (t != null)
+                        t.Enable = true;
+                }
+
+                _UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration);
+            }
+
+            _Disabled = null;
         }
     }
 }

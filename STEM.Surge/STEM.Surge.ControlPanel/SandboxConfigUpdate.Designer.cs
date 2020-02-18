@@ -86,8 +86,7 @@
             // 
             // splitContainer1
             // 
-            this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.splitContainer1.Location = new System.Drawing.Point(8, 40);
             this.splitContainer1.Name = "splitContainer1";
@@ -100,7 +99,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.updateEntries);
             this.splitContainer1.Size = new System.Drawing.Size(850, 189);
-            this.splitContainer1.SplitterDistance = 419;
+            this.splitContainer1.SplitterDistance = 418;
             this.splitContainer1.TabIndex = 3;
             // 
             // versionSelect
@@ -142,7 +141,7 @@
             dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.versionSelect.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.versionSelect.RowHeadersVisible = false;
-            this.versionSelect.Size = new System.Drawing.Size(419, 189);
+            this.versionSelect.Size = new System.Drawing.Size(418, 189);
             this.versionSelect.TabIndex = 0;
             // 
             // AsmName
@@ -184,7 +183,7 @@
             this.updateEntries.Location = new System.Drawing.Point(0, 0);
             this.updateEntries.Name = "updateEntries";
             this.updateEntries.RowHeadersVisible = false;
-            this.updateEntries.Size = new System.Drawing.Size(427, 189);
+            this.updateEntries.Size = new System.Drawing.Size(428, 189);
             this.updateEntries.TabIndex = 0;
             // 
             // UpdateOb

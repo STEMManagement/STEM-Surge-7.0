@@ -25,6 +25,7 @@ namespace STEM.Surge.ControlPanel
         bool _SaveToManager = false;
 
         public EventHandler onSaved;
+        public EventHandler onInstructionSetTemplateSaved;
 
         public ControllerEditor()
         {
@@ -334,10 +335,18 @@ namespace STEM.Surge.ControlPanel
             if (fd != null)
             {
                 if (fd.Content != null)
-                    if (MessageBox.Show(this, "A Deployment Controller named " + fileName + " already exists. Overwrite?", "Overwrite?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    if (MessageBox.Show(this, "A Deployment Controller named " + STEM.Sys.IO.Path.GetFileNameWithoutExtension(fileName) + " already exists. Overwrite?", "Overwrite?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                         return;
 
-                _DC = fd;
+                if (_SaveToManager)
+                {
+                    _DC = fd;
+                }
+                else
+                {
+                    _DC = new FileDescription();
+                    _DC.CopyFrom(fd);
+                }
             }
             else
             {
@@ -378,6 +387,26 @@ namespace STEM.Surge.ControlPanel
                 
             _DC.StringContent = dc.Serialize();
             _DC.LastWriteTimeUtc = DateTime.UtcNow;
+            
+            if (_IS == null || !_IS.Filename.Equals(dc.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase))
+                _IS = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(dc.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase));
+
+            if (_IS != null && _IS.Content == null)
+                _IS = null;
+
+            if (_IS == null)
+            {
+                Surge.InstructionSet iSet = new Surge.InstructionSet();
+                iSet.ProcessName = dc.InstructionSetTemplate;
+
+                _IS = new FileDescription();
+                _IS.Filename = iSet.ProcessName + ".is";
+                _IS.CreationTimeUtc = DateTime.UtcNow;
+                _IS.LastWriteTimeUtc = DateTime.UtcNow;
+                _IS.StringContent = iSet.Serialize();
+            }
+
+            InstructionSetEditorForm_onSaved(_IS, EventArgs.Empty);
 
             if (_SaveToManager)
             {
@@ -432,34 +461,26 @@ namespace STEM.Surge.ControlPanel
         {
             try
             {
-                Surge.InstructionSet iSet = new Surge.InstructionSet();
-
-                iSet.ProcessName = _ActiveController.InstructionSetTemplate;
-
                 if (_IS == null || !_IS.Filename.Equals(_ActiveController.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase))
                     _IS = _UIActor.DeploymentManagerConfiguration.InstructionSetTemplates.FirstOrDefault(i => i.Filename.Equals(_ActiveController.InstructionSetTemplate + ".is", StringComparison.InvariantCultureIgnoreCase));
 
-                if (_IS != null)
-                {
-                    if (_IS.Content != null)
-                    {
-                        iSet = Surge.InstructionSet.Deserialize(_IS.StringContent) as Surge.InstructionSet;
-                        iSet.ProcessName = _ActiveController.InstructionSetTemplate;
-                    }
-                    else
-                    {
-                        _IS = null;
-                    }
-                }
-                
+                if (_IS != null && _IS.Content == null)
+                    _IS = null;
+
                 if (_IS == null)
                 {
+                    Surge.InstructionSet iSet = new Surge.InstructionSet();
+                    iSet.ProcessName = _ActiveController.InstructionSetTemplate;
+
                     _IS = new FileDescription();
                     _IS.Filename = iSet.ProcessName + ".is";
                     _IS.CreationTimeUtc = DateTime.UtcNow;
                     _IS.LastWriteTimeUtc = DateTime.UtcNow;
                     _IS.StringContent = iSet.Serialize();
                 }
+
+                // Test deserialize
+                Surge.InstructionSet.Deserialize(_IS.StringContent);
 
                 Dictionary<string, string> macros = new Dictionary<string, string>();
                 foreach (DataGridViewRow r in macroPlaceholderGrid.Rows)
@@ -471,7 +492,9 @@ namespace STEM.Surge.ControlPanel
                 }
 
                 InstructionSetEditorForm ief = new InstructionSetEditorForm(_UIActor.DeploymentManagerConfiguration.InstructionSetTemplates, _IS, macros, _UIActor, "Templates", _SaveToManager);
-                
+
+                ief.onSaved += InstructionSetEditorForm_onSaved;
+
                 ief.Show(this);
 
                 _ActiveController.InstructionSetTemplate = ief.ProcessName;
@@ -480,6 +503,25 @@ namespace STEM.Surge.ControlPanel
             {
                 ExceptionViewer ev = new ExceptionViewer(ex);
                 ev.ShowDialog(this);
+            }
+        }
+
+        private void InstructionSetEditorForm_onSaved(object sender, EventArgs e)
+        {
+            STEM.Sys.IO.FileDescription isFD = sender as STEM.Sys.IO.FileDescription;
+
+            if (isFD != null)
+            {
+                if (onInstructionSetTemplateSaved != null)
+                    try
+                    {
+                        onInstructionSetTemplateSaved(isFD, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionViewer ev = new ExceptionViewer(ex);
+                        ev.ShowDialog(this);
+                    }
             }
         }
 
