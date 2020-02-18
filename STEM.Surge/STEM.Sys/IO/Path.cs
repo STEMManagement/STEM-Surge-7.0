@@ -742,7 +742,7 @@ namespace STEM.Sys.IO
                     }
 
                     rangedIP = rangedIP.Substring(0, rangedIP.IndexOf(System.IO.Path.DirectorySeparatorChar));
-                    List<string> ipList = ExpandRangedIP(rangedIP, expandWildcards);
+                    List<string> ipList = _ExpandRangedIP(rangedIP, expandWildcards, false);
 
                     foreach (string ip in ipList)
                         paths.Add(adj.Replace(rangedIP, ip));
@@ -775,26 +775,21 @@ namespace STEM.Sys.IO
         static Dictionary<string, List<string>> _ExpandedName = new Dictionary<string, List<string>>();
 
         /// <summary>
-        /// Expands the ranged machineName to a list of machine names
+        /// Expands the ranged IP/MachineName to a list of machine names
         /// </summary>
         /// <param name="rangedName"></param>
         /// <returns>The list of expanded machine names</returns>
         public static List<string> ExpandRangedMachineName(string ranged, bool expandWildcards = false)
         {
-            List<string> ret = _ExpandRangedMachineName(ranged, expandWildcards);
-
-            if (ret.Contains(IPAddressNone))
-                ret.Remove(IPAddressNone);
-
-            return ret;
+            return _ExpandRangedMachineName(ranged, expandWildcards, true);
         }
 
-        static List<string> _ExpandRangedMachineName(string ranged, bool expandWildcards = false)
+        static List<string> _ExpandRangedMachineName(string ranged, bool expandWildcards, bool convertIPsToMachineNames)
         {
             if (String.IsNullOrEmpty(ranged))
                 return new List<string>();
 
-            if (_ExpandedName.ContainsKey(ranged))
+            if (convertIPsToMachineNames && _ExpandedName.ContainsKey(ranged))
                 return _ExpandedName[ranged].ToList();
 
             List<string> names = new List<string>();
@@ -802,7 +797,7 @@ namespace STEM.Sys.IO
             {
                 foreach (string s in ranged.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    names.AddRange(_ExpandRangedMachineName(s));
+                    names.AddRange(_ExpandRangedMachineName(s, expandWildcards, convertIPsToMachineNames));
 
                     if (names.Count > 10000)
                         throw new Exception("Expansion exceeds 10,000. Consider using STEM.Sys.IO.Path.RangedIPContains or STEM.Sys.IO.Path.RangedPathContains.");
@@ -845,7 +840,7 @@ namespace STEM.Sys.IO
                 {
                     if (tail.Contains("("))
                     {
-                        names.AddRange(_ExpandRangedMachineName(head + segment + tail));
+                        names.AddRange(_ExpandRangedMachineName(head + segment + tail, expandWildcards, convertIPsToMachineNames));
                     }
                     else
                     {
@@ -859,7 +854,7 @@ namespace STEM.Sys.IO
 
                 if (octets.Length == 4)
                 {
-                    names = _ExpandRangedIP(ranged, expandWildcards);
+                    names = _ExpandRangedIP(ranged, expandWildcards, false);
                 }
                 else
                 {
@@ -878,14 +873,21 @@ namespace STEM.Sys.IO
 
                 if (i != IPAddressNone)
                 {
-                    string a = STEM.Sys.IO.Net.MachineName(i);
-                    if (a != null)
+                    if (convertIPsToMachineNames)
                     {
-                        ret.Add(a);
+                        string a = STEM.Sys.IO.Net.MachineName(i);
+                        if (a != null)
+                        {
+                            ret.Add(a);
+                        }
+                        else
+                        {
+                            ret.Add(IPAddressNone);
+                        }
                     }
                     else
                     {
-                        ret.Add(IPAddressNone);
+                        ret.Add(i);
                     }
                 }
                 else
@@ -895,41 +897,40 @@ namespace STEM.Sys.IO
             }
 
             ret = ret.Distinct().ToList();
-
-            if (ret.Contains(IPAddressNone))
-                return ret;
-
-            if (ret.Count > 0)
+            
+            if (convertIPsToMachineNames &&
+                ret.Count > 0 &&
+                !ret.Contains(IPAddressNone) &&
+                !ret.Exists(i => i.Contains("(") || i.Contains(")")) && 
+                !ret.Exists(i => i.StartsWith("[")))
             {
                 lock (_ExpandedName)
                     _ExpandedName[ranged] = ret;
             }
-
-            return ret;
-        }
-
-        /// <summary>
-        /// Expands rangedIP to a list of ips
-        /// </summary>
-        /// <param name="ranged"></param>
-        /// <param name="expandWildcards"></param>
-        /// <returns>The list of expanded ips</returns>
-        public static List<string> ExpandRangedIP(string ranged, bool expandWildcards = false)
-        {
-            List<string> ret = _ExpandRangedIP(ranged, expandWildcards);
-
+            
             if (ret.Contains(IPAddressNone))
                 ret.Remove(IPAddressNone);
 
             return ret;
         }
 
-        static List<string> _ExpandRangedIP(string ranged, bool expandWildcards = false)
+        /// <summary>
+        /// Expands the ranged IP/MachineName to a list of ips
+        /// </summary>
+        /// <param name="ranged"></param>
+        /// <param name="expandWildcards"></param>
+        /// <returns>The list of expanded ips</returns>
+        public static List<string> ExpandRangedIP(string ranged, bool expandWildcards = false)
+        {
+            return _ExpandRangedIP(ranged, expandWildcards, true);
+        }
+
+        static List<string> _ExpandRangedIP(string ranged, bool expandWildcards, bool convertMachineNamesToIPs)
         {
             if (String.IsNullOrEmpty(ranged))
                 return new List<string>();
-
-            if (_ExpandedIP.ContainsKey(ranged))
+                        
+            if (convertMachineNamesToIPs && _ExpandedIP.ContainsKey(ranged))
                 return _ExpandedIP[ranged].ToList();
 
             List<string> ips = new List<string>();
@@ -937,7 +938,7 @@ namespace STEM.Sys.IO
             {
                 foreach (string s in ranged.Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    ips.AddRange(_ExpandRangedIP(s, expandWildcards));
+                    ips.AddRange(_ExpandRangedIP(s, expandWildcards, convertMachineNamesToIPs));
 
                     if (ips.Count > 10000)
                         throw new Exception("Expansion exceeds 10,000. Consider using STEM.Sys.IO.Path.RangedIPContains or STEM.Sys.IO.Path.RangedPathContains.");
@@ -945,7 +946,7 @@ namespace STEM.Sys.IO
             }
             else if (ranged.Contains("(") && ranged.Contains(")"))
             {
-                ips = _ExpandRangedMachineName(ranged, expandWildcards);
+                ips = _ExpandRangedMachineName(ranged, expandWildcards, false);
             }
             else
             {
@@ -981,14 +982,21 @@ namespace STEM.Sys.IO
 
                 if (i != IPAddressNone)
                 {
-                    string a = STEM.Sys.IO.Net.MachineAddress(i);
-                    if (a != null)
+                    if (convertMachineNamesToIPs)
                     {
-                        ret.Add(a);
+                        string a = STEM.Sys.IO.Net.MachineAddress(i);
+                        if (a != null)
+                        {
+                            ret.Add(a);
+                        }
+                        else
+                        {
+                            ret.Add(IPAddressNone);
+                        }
                     }
                     else
                     {
-                        ret.Add(IPAddressNone);
+                        ret.Add(i);
                     }
                 }
                 else
@@ -998,15 +1006,19 @@ namespace STEM.Sys.IO
             }
 
             ret = ret.Distinct().ToList();
-
-            if (ret.Contains(IPAddressNone))
-                return ret;
-
-            if (ret.Count > 0)
+            
+            if (convertMachineNamesToIPs &&
+                ret.Count > 0 &&
+                !ret.Contains(IPAddressNone) &&
+                !ret.Exists(i => i.Contains("(") || i.Contains(")")) &&
+                !ret.Exists(i => i.StartsWith("[")))
             {
                 lock (_ExpandedIP)
                     _ExpandedIP[ranged] = ret;
             }
+            
+            if (ret.Contains(IPAddressNone))
+                ret.Remove(IPAddressNone);
 
             return ret;
         }
@@ -1320,7 +1332,7 @@ namespace STEM.Sys.IO
                 Regex exclusiveFilterRegex = Path.BuildExclusiveFilter(compoundFilter);
                 Regex inclusiveFilterRegex = Path.BuildInclusiveFilter(compoundFilter);
 
-                if (!StringMatches(str, exclusiveFilterRegex))
+                if (exclusiveFilterRegex == null || !StringMatches(str, exclusiveFilterRegex))
                     if (StringMatches(str, inclusiveFilterRegex))
                         return true;
             }
