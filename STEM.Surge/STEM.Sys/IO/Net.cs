@@ -47,6 +47,7 @@ namespace STEM.Sys.IO
             return pingable;
         }
 
+        static string IPAddressNone = System.Net.IPAddress.None.ToString();
         public const string EmptyAddress = "0.0.0.0";
 
         public static string LoopbackAddress()
@@ -309,6 +310,12 @@ namespace STEM.Sys.IO
             {
                 foreach (string k in _Resolved.Keys.ToList())
                 {
+                    if (k == IPAddressNone)
+                    {
+                        _Resolved.Remove(k);
+                        continue;
+                    }
+
                     if ((DateTime.UtcNow - _Resolved[k].LastResolved).TotalMinutes > 1)
                         try
                         {
@@ -328,9 +335,14 @@ namespace STEM.Sys.IO
                                                 _Resolved.Remove(key);
                                     }
 
-                                    _Resolved[name] = n;
-                                    _Resolved[ip] = n;
-                                    _Resolved[k] = n;
+                                    if (name != IPAddressNone)
+                                        _Resolved[name] = n;
+
+                                    if (ip != IPAddressNone)
+                                        _Resolved[ip] = n;
+
+                                    if (k != IPAddressNone)
+                                        _Resolved[k] = n;
                                 }
                             }
 
@@ -351,6 +363,11 @@ namespace STEM.Sys.IO
 
         static Dictionary<string, Resolved> _Resolved = new Dictionary<string, Resolved>(StringComparer.InvariantCultureIgnoreCase);
         public static string MachineAddress(string nameOrAddress)
+        {
+            return _MachineAddress(nameOrAddress, false);
+        }
+
+        static string _MachineAddress(string nameOrAddress, bool forceMachineNameLookup)
         {
             if (String.IsNullOrEmpty(nameOrAddress))
                 throw new ArgumentNullException(nameof(nameOrAddress));
@@ -379,8 +396,12 @@ namespace STEM.Sys.IO
                         _Resolved["localhost"] = _Resolved["."];
                         _Resolved["127.0.0.1"] = _Resolved["."];
 
-                        _Resolved[_Resolved["."].IPV4Address] = _Resolved["."];
-                        _Resolved[_Resolved["."].MachineName] = _Resolved["."];
+
+                        if (_Resolved["."].IPV4Address != IPAddressNone)
+                            _Resolved[_Resolved["."].IPV4Address] = _Resolved["."];
+
+                        if (_Resolved["."].MachineName != IPAddressNone)
+                            _Resolved[_Resolved["."].MachineName] = _Resolved["."];
                     }
                 }
                 else
@@ -394,13 +415,15 @@ namespace STEM.Sys.IO
                         {
                             IPAddress.Parse(nameOrAddress);
 
-                            try
+                            name = nameOrAddress;
+
+                            if (forceMachineNameLookup)
                             {
-                                name = System.Net.Dns.GetHostEntry(nameOrAddress).HostName;
-                            }
-                            catch
-                            {
-                                name = nameOrAddress;
+                                try
+                                {
+                                    name = System.Net.Dns.GetHostEntry(nameOrAddress).HostName;
+                                }
+                                catch { }
                             }
 
                             try
@@ -429,16 +452,22 @@ namespace STEM.Sys.IO
                             }
                             catch
                             {
-                                ip = System.Net.IPAddress.None.ToString();
+                                ip = IPAddressNone;
                             }
                         }
 
                         lock (_Resolved)
                         {
                             Resolved r = new Resolved { IPV4Address = ip, MachineName = name, LastResolved = DateTime.UtcNow };
-                            _Resolved[nameOrAddress] = r;
-                            _Resolved[name] = r;
-                            _Resolved[ip] = r;
+
+                            if (nameOrAddress != IPAddressNone)
+                                _Resolved[nameOrAddress] = r;
+
+                            if (name != IPAddressNone)
+                                _Resolved[name] = r;
+
+                            if (ip != IPAddressNone)
+                                _Resolved[ip] = r;
                         }
                     }
                     catch { }
@@ -449,21 +478,33 @@ namespace STEM.Sys.IO
             }
             catch { }
 
-            lock (_Resolved)
-                _Resolved[nameOrAddress] = new Resolved { IPV4Address = System.Net.IPAddress.None.ToString(), MachineName = System.Net.IPAddress.None.ToString(), LastResolved = DateTime.UtcNow };
-         
-            return _Resolved[nameOrAddress].IPV4Address;
+            if (nameOrAddress != IPAddressNone)
+            {
+                lock (_Resolved)
+                    _Resolved[nameOrAddress] = new Resolved { IPV4Address = IPAddressNone, MachineName = IPAddressNone, LastResolved = DateTime.UtcNow };
+
+                return _Resolved[nameOrAddress].IPV4Address;
+            }
+
+            return IPAddressNone;
         }
 
         public static string MachineName()
         {
             try
             {
-                return _Resolved[MachineAddress(".")].MachineName;
+                return _Resolved[_MachineAddress(".", true)].MachineName;
             }
-            catch { }
+            catch
+            {
+                try
+                {
+                    return _Resolved["."].MachineName;
+                }
+                catch { }
+            }
 
-            return System.Net.IPAddress.None.ToString();
+            return IPAddressNone;
         }
 
         public static string MachineName(string nameOrAddress)
@@ -473,11 +514,18 @@ namespace STEM.Sys.IO
 
             try
             {
-                return _Resolved[MachineAddress(nameOrAddress)].MachineName;
+                return _Resolved[_MachineAddress(nameOrAddress, true)].MachineName;
             }
-            catch { }
+            catch 
+            {
+                try
+                {
+                    return _Resolved[nameOrAddress].MachineName;
+                }
+                catch { }
+            }
 
-            return System.Net.IPAddress.None.ToString();
+            return IPAddressNone;
         }
     }
 }
