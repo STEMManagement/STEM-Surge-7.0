@@ -81,7 +81,6 @@ namespace STEM.Surge
         /// The name of this Deployment Controller
         /// </summary>
         [Browsable(false)]
-        [XmlIgnore]
         public string DeploymentControllerName { get; set; }
 
         /// <summary>
