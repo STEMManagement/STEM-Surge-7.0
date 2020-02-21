@@ -12,43 +12,17 @@ namespace STEM.Surge.ControlPanel
 {
     public partial class ConnectionNotification : Form
     {
-        public ConnectionNotification()
+        public ConnectionNotification(string address)
         {
             InitializeComponent();
-        }
 
-        public void CloseForm()
-        {
-            lock (this)
-            {
-                if (_IsOpen)
-                {
-                    _IsOpen = false;
-                    Close();
-                }
-            }
-        }
-
-        bool _IsOpen = false;
-
-        public void Update(IWin32Window owner, string address)
-        {
-            lock (this)
-            {
-                label3.Text = "(" + address + ")";
-                label2.Text = DateTime.UtcNow.ToString("U");
-
-                if (!_IsOpen)
-                {
-                    _IsOpen = true;
-                    this.ShowDialog(owner);
-                }
-            }
+            label3.Text = "(" + address + ")";
+            label2.Text = DateTime.UtcNow.ToString("U");
         }
 
         private void label5_Click(object sender, EventArgs e)
         {
-            CloseForm();
+            Close();
         }
     }
 }

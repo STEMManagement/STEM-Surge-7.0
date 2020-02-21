@@ -146,7 +146,7 @@ namespace STEM.Surge.ControlPanel
             ShowRight();
         }
 
-        ConnectionNotification _ConnectionNotification = new ConnectionNotification();
+        ConnectionNotification _ConnectionNotification = null;
         void ShowRight()
         {
             if (panelActive.InvokeRequired)
@@ -158,7 +158,11 @@ namespace STEM.Surge.ControlPanel
                 panelActive.Visible = true;
                 controlPanelMainTools.Visible = true;
 
-                _ConnectionNotification.CloseForm();
+                if (_ConnectionNotification != null)
+                {
+                    _ConnectionNotification.Close();
+                    _ConnectionNotification = null;
+                }
 
                 _SwitchboardEditor.Reload();
 
@@ -179,7 +183,10 @@ namespace STEM.Surge.ControlPanel
                 controlPanelMainTools.Visible = false;
 
                 if (_ManagerIP == _UIActor.PrimaryDeploymentManagerIP)
-                    _ConnectionNotification.Update(this, _UIActor.PrimaryDeploymentManagerIP);
+                {
+                    _ConnectionNotification = new ConnectionNotification(_UIActor.PrimaryDeploymentManagerIP);
+                    _ConnectionNotification.ShowDialog(this);
+                }
             }
         }
 
@@ -709,7 +716,11 @@ namespace STEM.Surge.ControlPanel
             _ManagerIP = connectedDM.Text.Trim();
             panelActive.Controls.Clear();
 
-            _ConnectionNotification.CloseForm();
+            if (_ConnectionNotification != null)
+            {
+                _ConnectionNotification.Close();
+                _ConnectionNotification = null;
+            }
 
             this.Visible = false;
             //Splash splash = new Splash();
