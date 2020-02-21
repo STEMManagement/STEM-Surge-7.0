@@ -19,6 +19,10 @@
     <Content Include="SurgeLogoFull.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Dropbox.Api" Version="4.9.4" />
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="md &quot;$(SolutionDir)Binaries\Extensions\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)Binaries\Extensions&quot;" />
   </Target>
