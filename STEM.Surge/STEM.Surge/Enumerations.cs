@@ -37,4 +37,14 @@ namespace STEM.Surge
         String,
         Binary
     }
+
+    public enum CommonPostMortemKeys
+    {
+        AbnormalExecution,
+        DestinationIP,
+        LastOperation,
+        ProcessingEnd,
+        ProcessingStart,
+        SourceIP
+    }
 }
