@@ -79,7 +79,7 @@ namespace STEM.Surge.ControlPanel
                     return;
                 }
 
-                _RefreshTimer = new System.Timers.Timer(1000);
+                _RefreshTimer = new System.Timers.Timer(500);
             }
 
             _RefreshTimer.AutoReset = false;
