@@ -67,7 +67,7 @@ namespace STEM.Surge.ControlPanel
                 if (_RefreshTimer != null)
                     return;
 
-                _RefreshTimer = new System.Timers.Timer(1000);
+                _RefreshTimer = new System.Timers.Timer(500);
             }
 
             this.Show(parent);
