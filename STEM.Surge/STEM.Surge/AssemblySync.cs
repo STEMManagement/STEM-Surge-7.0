@@ -25,7 +25,7 @@ namespace STEM.Surge
 {
     public class AssemblySync : STEM.Sys.Threading.IThreadable
     {
-        static STEM.Sys.Threading.ThreadPool _Pool = new Sys.Threading.ThreadPool(Environment.ProcessorCount, true);
+        static STEM.Sys.Threading.ThreadPool _Pool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
 
         AssemblyList AssemblyList = new Messages.AssemblyList();
 
@@ -66,29 +66,17 @@ namespace STEM.Surge
                 }
             }
 
-            List<STEM.Sys.IO.FileDescription> descs = null;
+            bool initComplete = true;
 
             lock (AssemblyList)
-                descs = AssemblyList.Descriptions.ToList();
-
-            bool initComplete = true;
-            foreach (STEM.Sys.IO.FileDescription f in descs)
-            {
-                if (!list.Descriptions.Exists(i => STEM.Sys.IO.Path.AdjustPath(i.Filename).Equals(STEM.Sys.IO.Path.AdjustPath(f.Filename), StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    initComplete = false;
-                    break;
-                }
-            }
-
+                initComplete = AssemblyList.Descriptions.Select(i => STEM.Sys.IO.Path.AdjustPath(i.Filename)).Where(i => !list.Descriptions.Exists(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).Equals(i, StringComparison.InvariantCultureIgnoreCase))).Count() == 0;
+            
             if (initComplete)
                 list.MessageConnection.Send(new AssemblyInitializationComplete());
 
             lock (_AssemblyLists)
             {
-
                 _AssemblyLists.Add(list);
-
                 _Pool.BeginAsync(new System.Threading.ParameterizedThreadStart(DeliverDelta), list.MessageConnection, TimeSpan.FromSeconds(3));
             }
         }
@@ -108,12 +96,7 @@ namespace STEM.Surge
                     return;
                 }
             }
-
-            List<STEM.Sys.IO.FileDescription> descs = null;
-
-            lock (AssemblyList)
-                descs = AssemblyList.Descriptions.ToList();
-
+            
             bool deliveredAsms = false;
             bool connectionClosed = false;
 
@@ -124,7 +107,7 @@ namespace STEM.Surge
                     AssemblyList send = new AssemblyList();
                     send.Path = list.Path;
 
-                    foreach (STEM.Sys.IO.FileDescription f in descs)
+                    foreach (STEM.Sys.IO.FileDescription f in AssemblyList.Descriptions)
                     {
                         if (!list.Descriptions.Exists(i => STEM.Sys.IO.Path.AdjustPath(i.Filename).Equals(STEM.Sys.IO.Path.AdjustPath(f.Filename), StringComparison.InvariantCultureIgnoreCase)))
                         {
@@ -203,19 +186,17 @@ namespace STEM.Surge
 
         protected override void Execute(Sys.Threading.ThreadPool owner)
         {
-            lock (AssemblyList)
-            {
-                foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(_ExtensionDirectory, "*.dll", "!.Archive|!TEMP", _Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
-                    if (!AssemblyList.Descriptions.Exists(i => i.Filename == s.Substring(_ExtensionDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar)))
-                        try
-                        {
-                            Sys.IO.FileDescription d = new Sys.IO.FileDescription(_ExtensionDirectory, s.Substring(_ExtensionDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar), true);
+            foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(_ExtensionDirectory, "*.dll", "!.Archive|!TEMP", _Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
+                if (!AssemblyList.Descriptions.Exists(i => i.Filename == s.Substring(_ExtensionDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar)))
+                    try
+                    {
+                        Sys.IO.FileDescription d = new Sys.IO.FileDescription(_ExtensionDirectory, s.Substring(_ExtensionDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar), true);
 
-                            if (d.Content.Length > 0)
+                        if (d.Content.Length > 0)
+                            lock (AssemblyList)
                                 AssemblyList.Descriptions.Add(d);
-                        }
-                        catch { }
-            }
+                    }
+                    catch { }
         }
     }
 }
