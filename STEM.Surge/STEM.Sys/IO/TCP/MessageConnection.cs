@@ -117,7 +117,7 @@ namespace STEM.Sys.IO.TCP
 
         class ResponseHandlerThread : STEM.Sys.Threading.IThreadable
         {
-            static STEM.Sys.Threading.ThreadPool _ResponsePool = new STEM.Sys.Threading.ThreadPool(TimeSpan.FromMilliseconds(100), Environment.ProcessorCount, true);
+            static STEM.Sys.Threading.ThreadPool _ResponsePool = new STEM.Sys.Threading.ThreadPool(TimeSpan.FromMilliseconds(100), Environment.ProcessorCount);
 
             MessageConnection _MessageConnection = null;
             Message _Original = null;
