@@ -164,40 +164,15 @@ namespace STEM.Sys.IO
 
         public static void STEM_Move(string source, string destination, FileExistsAction ifExists, out string destinationFilename, int retryCount, int retryDelaySeconds, bool useTempHop)
         {
-            if (String.IsNullOrEmpty(source))
-                throw new ArgumentNullException(nameof(source));
-
-            if (String.IsNullOrEmpty(destination))
-                throw new ArgumentNullException(nameof(destination));
-
-            source = STEM.Sys.IO.Path.ChangeIpToMachineName(STEM.Sys.IO.Path.AdjustPath(source));
-            destination = STEM.Sys.IO.Path.ChangeIpToMachineName(STEM.Sys.IO.Path.AdjustPath(destination));
-
-            if (source.Equals(destination, StringComparison.InvariantCultureIgnoreCase))
-            {
-                destinationFilename = destination;
-                return;
-            }
-
-            destinationFilename = "";
-
-            try
-            {
-                STEM_Copy(source, destination, ifExists, out destinationFilename, retryCount, retryDelaySeconds, useTempHop);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("File copy failed") && String.IsNullOrEmpty(destinationFilename))
-                    throw new Exception("File move failed: " + source);
-
-                throw new Exception("File.STEM_Move", ex);
-            }
-
-            if (!String.IsNullOrEmpty(destinationFilename) && !source.Equals(destinationFilename, StringComparison.InvariantCultureIgnoreCase))
-                System.IO.File.Delete(source);
+            _Act(source, destination, ifExists, out destinationFilename, retryCount, retryDelaySeconds, useTempHop, true);
         }
 
         public static void STEM_Copy(string source, string destination, FileExistsAction ifExists, out string destinationFilename, int retryCount, int retryDelaySeconds, bool useTempHop)
+        {
+            _Act(source, destination, ifExists, out destinationFilename, retryCount, retryDelaySeconds, useTempHop, false);
+        }
+
+        static void _Act(string source, string destination, FileExistsAction ifExists, out string destinationFilename, int retryCount, int retryDelaySeconds, bool useTempHop, bool isMove)
         {
             if (String.IsNullOrEmpty(source))
                 throw new ArgumentNullException(nameof(source));
@@ -237,13 +212,15 @@ namespace STEM.Sys.IO
                 }
 
                 try
-                {                    
+                {
                     if (useTempHop)
                     {
                         string dTemp = System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(d), "Temp");
 
                         if (!System.IO.Directory.Exists(dTemp))
                             System.IO.Directory.CreateDirectory(dTemp);
+
+                        dTemp = System.IO.Path.Combine(dTemp, Guid.NewGuid() + ".tmp");
 
                         try
                         {
@@ -259,12 +236,12 @@ namespace STEM.Sys.IO
 
                                     case FileExistsAction.Overwrite:
 
-                                        System.IO.File.Copy(source, System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)), true);
+                                        System.IO.File.Copy(source, dTemp, true);
 
                                         try
                                         {
                                             System.IO.File.SetAttributes(d, System.IO.FileAttributes.Normal);
-                                            System.IO.File.Copy(System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)), d, true);
+                                            System.IO.File.Copy(dTemp, d, true);
                                         }
                                         catch
                                         {
@@ -276,28 +253,57 @@ namespace STEM.Sys.IO
                                     case FileExistsAction.MakeUnique:
                                         d = File.UniqueFilename(destination);
 
-                                        System.IO.File.Copy(source, System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)), true);
-                                        System.IO.File.Move(System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)), d);
-
+                                        System.IO.File.Copy(source, dTemp, true);
+                                        System.IO.File.Move(dTemp, d);
                                         break;
                                 }
                             }
                             else
                             {
-                                System.IO.File.Copy(source, System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)), true);
-                                System.IO.File.Move(System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)), d);
+                                System.IO.File.Copy(source, dTemp, true);
+                                System.IO.File.Move(dTemp, d);
                             }
 
                             destinationFilename = d;
+
+                            if (isMove)
+                            {
+                                while (retryCount >= 0)
+                                {
+                                    try
+                                    {
+                                        System.IO.File.Delete(source);
+                                        break;
+                                    }
+                                    catch
+                                    {
+                                        if (retryCount <= 0)
+                                            throw;
+                                    }
+
+                                    if (retryCount > 0)
+                                        System.Threading.Thread.Sleep(retryDelaySeconds * 1000);
+
+                                    retryCount--;
+                                }
+                            }
                         }
                         finally
                         {
-                            try
-                            {
-                                if (System.IO.File.Exists(System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source))))
-                                    System.IO.File.Delete(System.IO.Path.Combine(dTemp, STEM.Sys.IO.Path.GetFileName(source)));
-                            }
-                            catch { }
+                            int retry = 3;
+                            while (retry-- > 0)
+                                try
+                                {
+                                    if (System.IO.File.Exists(dTemp))
+                                        System.IO.File.Delete(dTemp);
+
+                                    break;
+                                }
+                                catch
+                                {
+                                    if (retry > 0)
+                                        System.Threading.Thread.Sleep(1000);
+                                }
                         }
                     }
                     else
@@ -315,21 +321,51 @@ namespace STEM.Sys.IO
                                 case FileExistsAction.Overwrite:
 
                                     System.IO.File.SetAttributes(d, System.IO.FileAttributes.Normal);
+
                                     System.IO.File.Copy(source, d, true);
+                                    
+                                    if (isMove)
+                                    {
+                                        while (retryCount >= 0)
+                                        {
+                                            try
+                                            {
+                                                System.IO.File.Delete(source);
+                                                break;
+                                            }
+                                            catch
+                                            {
+                                                if (retryCount <= 0)
+                                                    throw;
+                                            }
+
+                                            if (retryCount > 0)
+                                                System.Threading.Thread.Sleep(retryDelaySeconds * 1000);
+
+                                            retryCount--;
+                                        }
+                                    }
 
                                     break;
 
                                 case FileExistsAction.MakeUnique:
 
                                     d = File.UniqueFilename(destination);
-                                    System.IO.File.Copy(source, d);
+
+                                    if (isMove)
+                                        System.IO.File.Move(source, d);
+                                    else
+                                        System.IO.File.Copy(source, d);
 
                                     break;
                             }
                         }
                         else
                         {
-                            System.IO.File.Copy(source, d);
+                            if (isMove)
+                                System.IO.File.Move(source, d);
+                            else
+                                System.IO.File.Copy(source, d);
                         }
 
                         destinationFilename = d;
@@ -340,7 +376,7 @@ namespace STEM.Sys.IO
                 }
                 catch
                 {
-                    if (retryCount == 0)
+                    if (retryCount <= 0)
                         throw;
                 }
 
@@ -351,7 +387,12 @@ namespace STEM.Sys.IO
             }
 
             if (String.IsNullOrEmpty(destinationFilename))
-                throw new Exception("File copy failed: " + source);
+            {
+                if (isMove)
+                    throw new Exception("File move failed: " + source);
+                else
+                    throw new Exception("File copy failed: " + source);
+            }
         }
     }
 }
