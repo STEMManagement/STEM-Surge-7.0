@@ -107,8 +107,11 @@ namespace STEM.Surge
                 }
                 catch { }
 
-            _TcpConnectionListener = new TcpConnectionListener(0);
-            _TcpConnectionListener.onConnect += _TcpConnectionListener_onConnect;
+            if (!(this is SurgeSandbox))
+            {
+                _TcpConnectionListener = new TcpConnectionListener(0);
+                _TcpConnectionListener.onConnect += _TcpConnectionListener_onConnect;
+            }
 
             if (_SES)
             {
@@ -335,10 +338,10 @@ namespace STEM.Surge
             {
                 lock (_RunningSandboxes)
                 {
-                    _RunningSandboxes.Remove(SandboxID);
-
                     lock (this)
                     {
+                        _RunningSandboxes.Remove(SandboxID);
+
                         foreach (AssignInstructionSet i in AssignedInstructionSets.ToList())
                         {
                             try
@@ -1401,7 +1404,7 @@ namespace STEM.Surge
                                 }
                             }
 
-                            if (sandbox == null || sandbox.MessageConnection == null)
+                            if (sandbox == null)
                             {
                                 ExecutionCompleted ec = new ExecutionCompleted();
 
@@ -1420,6 +1423,25 @@ namespace STEM.Surge
 
                             lock (sandbox)
                             {
+                                if (!_RunningSandboxes.ContainsKey(sandboxID))
+                                {
+                                    // Closed between fetch and here
+
+                                    ExecutionCompleted ec = new ExecutionCompleted();
+
+                                    ec.InstructionSetID = m.InstructionSetID;
+                                    ec.DeploymentControllerID = m.DeploymentControllerID;
+
+                                    ec.InitiationSource = m.InitiationSource;
+                                    ec.TimeCompleted = DateTime.UtcNow;
+
+                                    ec.Exceptions = new List<Exception>();
+
+                                    SurgeBranchManager.SendMessage(ec, connection, this);
+
+                                    return;
+                                }
+
                                 sandbox.AssignedInstructionSets.Add(m);
 
                                 if (sandbox.MessageConnection != null)
