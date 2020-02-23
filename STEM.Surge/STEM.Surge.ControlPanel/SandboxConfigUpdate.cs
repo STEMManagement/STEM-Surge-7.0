@@ -351,6 +351,28 @@ namespace STEM.Surge.ControlPanel
                     }
                 }
 
+            if (dcfd == null)
+            {
+                dcfd = new Sys.IO.FileDescription();
+                dcfd.CopyFrom(_DCfd);
+            }
+
+            if (isfd == null)
+            {
+                isfd = new Sys.IO.FileDescription();
+
+                if (_ISfd != null)
+                {
+                    isfd.CopyFrom(_ISfd);
+                }
+                else
+                {
+                    isfd.Filename = "New Template";
+                    isfd.LastWriteTimeUtc = DateTime.UtcNow;
+                    isfd.StringContent = new InstructionSet().Serialize();
+                }
+            }
+
             controllerEditor1.Bind(dcfd, isfd, _UIActor, false);
 
             controllerEditor1.onInstructionSetTemplateSaved += InstructionSetTemplateSaved;
