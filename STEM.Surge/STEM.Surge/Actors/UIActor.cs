@@ -557,7 +557,7 @@ namespace STEM.Surge
                 {
                     _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent = switchboardConfiguration.GetXml();
                     _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc = DateTime.UtcNow;
-                    Send(_DeploymentManagerConfiguration);
+                    SendToAll(_DeploymentManagerConfiguration);
 
                     try
                     {
@@ -583,7 +583,7 @@ namespace STEM.Surge
         {
             lock (_DeploymentManagerConfigurationMutex)
             {
-                Send(_DeploymentManagerConfiguration);
+                SendToAll(_DeploymentManagerConfiguration);
             }
         }
 
