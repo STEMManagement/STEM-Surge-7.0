@@ -165,9 +165,9 @@ namespace STEM.Surge.SMB
                     si.FileName = @"C:\windows\system32\cmd";
 
                     if (String.IsNullOrEmpty(Domain) || Domain == ".")
-                        si.Arguments = "/c net use " + FileShare + " /user:" + User + " " + Password;
+                        si.Arguments = "/c net use \"" + FileShare + "\" /user:" + User + " \"" + Password + "\"";
                     else
-                        si.Arguments = "/c net use " + FileShare + " /user:" + Domain + "\\" + User + " " + Password;
+                        si.Arguments = "/c net use \"" + FileShare + "\" /user:" + Domain + "\\" + User + " \"" + Password + "\"";
 
                     _Process = new Process();
                     _Process.StartInfo = si;
