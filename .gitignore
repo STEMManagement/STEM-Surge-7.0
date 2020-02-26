@@ -107,3 +107,7 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/Extensions/STEM.Surge.Kafka/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Python/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.RabbitMQ/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.HTTP/bin/Release
+/STEM.Surge/Extensions/STEM.Surge.HTTP/obj/Release
+/STEM.Surge/PoolManager - Copy.cs
+/STEM.Surge/ThreadPool - Copy.cs
