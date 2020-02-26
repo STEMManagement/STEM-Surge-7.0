@@ -213,7 +213,8 @@ namespace STEM.Surge
                                     i.SandboxAppConfigXml = "";
                                     if (!connection.Send(i))
                                     {
-                                        sandbox.AssignedInstructionSets.Remove(i);
+                                        i.ExecutionCompleted = DateTime.UtcNow;
+                                        //sandbox.AssignedInstructionSets.Remove(i);
 
                                         ExecutionCompleted ec = new ExecutionCompleted();
 
@@ -254,7 +255,8 @@ namespace STEM.Surge
                         AssignInstructionSet a = sandbox.AssignedInstructionSets.FirstOrDefault(i => i.InstructionSetID == m.InstructionSetID);
 
                         if (a != null && m is ExecutionCompleted)
-                            sandbox.AssignedInstructionSets.Remove(a);
+                            a.ExecutionCompleted = m.TimeSent;
+                            //sandbox.AssignedInstructionSets.Remove(a);
 
                         if (a != null)
                         {
@@ -931,13 +933,13 @@ namespace STEM.Surge
                     {
                         AssignInstructionSet.ExecutionCompleted = DateTime.UtcNow;
 
-                        try
-                        {
-                            lock (_BranchManager._Assigned)
-                                if (_BranchManager._Assigned.Exists(i => i.InstructionSetID == assignInstructionSet.InstructionSetID))
-                                    _BranchManager._Assigned.Remove(assignInstructionSet);
-                        }
-                        catch { }
+                        //try
+                        //{
+                        //    lock (_BranchManager._Assigned)
+                        //        if (_BranchManager._Assigned.Exists(i => i.InstructionSetID == assignInstructionSet.InstructionSetID))
+                        //            _BranchManager._Assigned.Remove(assignInstructionSet);
+                        //}
+                        //catch { }
 
                         try
                         {
@@ -1044,8 +1046,10 @@ namespace STEM.Surge
                     if (!AssignInstructionSet.IsStatic)
                         lock (_BranchManager._Assigned)
                         {
-                            if (_BranchManager._Assigned.Contains(AssignInstructionSet))
-                                _BranchManager._Assigned.Remove(AssignInstructionSet);
+                            AssignInstructionSet.ExecutionCompleted = DateTime.UtcNow;
+
+                            //if (_BranchManager._Assigned.Contains(AssignInstructionSet))
+                            //    _BranchManager._Assigned.Remove(AssignInstructionSet);
                         }
 
                     while (File.Exists(Path.Combine(_BranchManager.InstructionCache, AssignInstructionSet.InstructionSetID.ToString() + ".is")))
@@ -1336,7 +1340,8 @@ namespace STEM.Surge
                         AssignInstructionSet o = _Assigned.FirstOrDefault(i => i.InstructionSetID == m.InstructionSetID);
                         if (o != null)
                         {
-                            _Assigned.Remove(o);
+                            //o.ExecutionCompleted = DateTime.UtcNow;
+                            //_Assigned.Remove(o);
                             o.InstructionSet.Stop();
                         }
                         else
@@ -1717,10 +1722,10 @@ namespace STEM.Surge
                         try
                         {
                             assignments = _Assigned.Where(i => !i.IsStatic && i.MessageConnection.RemoteAddress == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()).ToList();
-
+                            
                             foreach (RunningSandbox s in _RunningSandboxes.Values)
                                 lock (s)
-                                    assignments.AddRange(s.AssignedInstructionSets.Where(i => i.DeploymentManagerIP == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()));
+                                    assignments.AddRange(s.AssignedInstructionSets.Where(i => !i.IsStatic && i.DeploymentManagerIP == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()));
 
                             statics = _Statics.Select(i => i.AssignInstructionSet.InitiationSource).ToList();
                         }
@@ -1731,7 +1736,22 @@ namespace STEM.Surge
                 branchHealthDetails.GenerationTime = generationTime;
                 branchHealthDetails.ProcessorOverload = _ConfigurationDS.Settings[0].ProcessorOverload;
 
-                return connection.Send(branchHealthDetails, false);
+                if (connection.Send(branchHealthDetails, false))
+                {
+                    lock (_Assigned)
+                    {
+                        foreach (AssignInstructionSet x in _Assigned.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
+                            _Assigned.Remove(x);
+
+                        lock (_RunningSandboxes)
+                            foreach (RunningSandbox s in _RunningSandboxes.Values)
+                                lock (s)
+                                    foreach (AssignInstructionSet x in s.AssignedInstructionSets.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
+                                        s.AssignedInstructionSets.Remove(x);
+                    }
+
+                    return true;
+                }
             }
 
             return false;
