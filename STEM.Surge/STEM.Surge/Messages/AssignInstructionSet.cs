@@ -111,10 +111,12 @@ namespace STEM.Surge.Messages
         
         public AssignInstructionSet()
         {
+            ExecutionCompleted = DateTime.MinValue;
         }
 
         public AssignInstructionSet(STEM.Surge._InstructionSet iSet, string deploymentManagerIP, string deploymentControllerID, string branchIP, string sandboxID, string sandboxAppConfigXml, string alternateAssemblyStore)
         {
+            ExecutionCompleted = DateTime.MinValue;
             InitiationSource = iSet.InitiationSource;
             DeploymentManagerIP = deploymentManagerIP;
             DeploymentControllerID = deploymentControllerID;
@@ -131,6 +133,7 @@ namespace STEM.Surge.Messages
 
         public AssignInstructionSet(STEM.Surge._InstructionSet iSet, string deploymentManagerIP, string deploymentManagerID, string branchIP, string sandboxID, string sandboxAppConfigXml, string alternateAssemblyStore, bool isStatic, DateTime lastWriteTime)
         {
+            ExecutionCompleted = DateTime.MinValue;
             InitiationSource = iSet.InitiationSource;
             DeploymentManagerIP = deploymentManagerIP;
             DeploymentControllerID = deploymentManagerID;
