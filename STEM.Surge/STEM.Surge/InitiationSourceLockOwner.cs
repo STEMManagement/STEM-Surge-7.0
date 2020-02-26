@@ -352,7 +352,7 @@ namespace STEM.Surge
                     if (DeploymentDetails.Completed != DateTime.MinValue)
                         STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Completed - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
                     else
-                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Not completed - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
+                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Not received - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
 
                     Unlock();
                 }
