@@ -64,6 +64,13 @@ namespace STEM.Surge
 
         /// <summary>
         /// For internal use only
+        /// Tracks the history of execution Stage settings
+        /// </summary>
+        [Browsable(false)]
+        public List<Stage> ExecutionStageHistory { get; set; }
+
+        /// <summary>
+        /// For internal use only
         /// The free text message string set in _Run
         /// </summary>
         [Browsable(false)]
@@ -173,6 +180,7 @@ namespace STEM.Surge
             FailureAction = FailureAction.Continue;
             Message = "Unexecuted";
             Stage = Stage.Ready;
+            ExecutionStageHistory = new List<Stage>();
             Start = Finish = DateTime.MinValue;
             Stop = false;
             Exceptions = new List<Exception>();
@@ -182,7 +190,7 @@ namespace STEM.Surge
         }
 
         /// <summary>
-        /// Called from within Instructions that return true from _Run, this affects a skip of all remaining Instructions within this InstructionSet
+        /// Called from within Instructions executing _Run, this affects a skip of all remaining Instructions within this InstructionSet
         ///
         /// This is the same as returning false from _Run with a FailureAction = FailureAction.SkipRemaining
         /// </summary>
@@ -193,7 +201,10 @@ namespace STEM.Surge
                 if (InstructionSet != null)
                     for (int i = OrdinalPosition + 1; i < InstructionSet.Instructions.Count; i++)
                         if (InstructionSet.Instructions[i].Stage == Stage.Ready)
+                        {
                             InstructionSet.Instructions[i].Stage = Stage.Skip;
+                            InstructionSet.Instructions[i].ExecutionStageHistory.Add(Stage.Skip);
+                        }
             }
             catch (Exception ex)
             {
@@ -202,65 +213,102 @@ namespace STEM.Surge
         }
 
         /// <summary>
-        /// Called from within Instructions that return true from _Run, this affects a skip of the next Instruction within this InstructionSet
+        /// Called from within Instructions executing _Run, this affects a skip of the next Instruction within this InstructionSet
         /// </summary>
         protected void SkipNext()
         {
-            try
+            if (InstructionSet != null)
             {
-                if (InstructionSet != null)
+                try
                 {
-                    try
-                    {
-                        InstructionSet.Instructions[OrdinalPosition + 1].Stage = Stage.Skip;
-                    }
-                    catch { }
+                    InstructionSet.Instructions[OrdinalPosition + 1].Stage = Stage.Skip;
+                    InstructionSet.Instructions[OrdinalPosition + 1].ExecutionStageHistory.Add(Stage.Skip);
                 }
-            }
-            catch (Exception ex)
-            {
-                Exceptions.Add(ex);
+                catch { }
             }
         }
 
         /// <summary>
-        /// Called from within Instructions that return true from _Run, this affects a skip of all following Instructions up to the Instruction whose FlowControlLabel == label
+        /// Called from within Instructions executing _Rollback, this affects a skip of the previous Instruction within this InstructionSet
         /// </summary>
-        /// <param name="label">The label to skip to. 'End' will skip to the end or the next Instruction whose FlowControlLabel == 'End'.</param>
+        protected void SkipPrevious()
+        {
+            if (InstructionSet != null)
+            {
+                try
+                {
+                    InstructionSet.Instructions[OrdinalPosition - 1].Stage = Stage.Skip;
+                    InstructionSet.Instructions[OrdinalPosition - 1].ExecutionStageHistory.Add(Stage.Skip);
+                }
+                catch { }
+            }
+        }
+
+        /// <summary>
+        /// Called from within Instructions executing _Run, this affects a skip of all following Instructions up to, but not including, the Instruction whose FlowControlLabel == label
+        /// </summary>
+        /// <param name="label">The label to skip to. Specifying a label that does not exist will cause a skip of all remaining Instructions.</param>
         protected void SkipForwardToFlowControlLabel(string label)
         {
-            try
-            {
-                if (String.IsNullOrEmpty(label))
-                    return;
+            if (String.IsNullOrEmpty(label))
+                return;
 
-                if (InstructionSet != null)
+            if (InstructionSet != null)
+            {
+                try
                 {
-                    try
+                    for (int i = OrdinalPosition + 1; i < InstructionSet.Instructions.Count; i++)
                     {
-                        for (int i = OrdinalPosition + 1; i < InstructionSet.Instructions.Count; i++)
+                        if (!InstructionSet.Instructions[i].FlowControlLabel.Equals(label, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            if (!InstructionSet.Instructions[i].FlowControlLabel.Equals(label, StringComparison.InvariantCultureIgnoreCase))
-                                InstructionSet.Instructions[i].Stage = Stage.Skip;
-                            else
-                                break;
+                            InstructionSet.Instructions[i].Stage = Stage.Skip;
+                            InstructionSet.Instructions[i].ExecutionStageHistory.Add(Stage.Skip);
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
-                    catch { }
                 }
-            }
-            catch (Exception ex)
-            {
-                Exceptions.Add(ex);
+                catch { }
             }
         }
 
+        /// <summary>
+        /// Called from within Instructions executing _Rollback, this affects a skip of all previous Instructions up to, but not including, the Instruction whose FlowControlLabel == label
+        /// </summary>
+        /// <param name="label">The label to skip to. Specifying a label that does not exist will cause a skip of all previous Instructions.</param>
+        protected void SkipBackwardToFlowControlLabel(string label)
+        {
+            if (String.IsNullOrEmpty(label))
+                return;
+
+            if (InstructionSet != null)
+            {
+                try
+                {
+                    for (int i = OrdinalPosition - 1; i >= 0; i--)
+                    {
+                        if (!InstructionSet.Instructions[i].FlowControlLabel.Equals(label, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            InstructionSet.Instructions[i].Stage = Stage.Skip;
+                            InstructionSet.Instructions[i].ExecutionStageHistory.Add(Stage.Skip);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
 
         /// <summary>
-        /// Called from within Instructions that return true from _Run, this affects a rollback of prceeding Instructions executed and a 
+        /// Called from within Instructions executing _Run, this affects a rollback of prceeding Instructions executed and a 
         /// skip of all remaining Instructions within this InstructionSet without calling _Rollback on this Instruction
         /// </summary>
-        protected  void RollbackAllPreceedingAndSkipRemaining()
+        protected void RollbackAllPreceedingAndSkipRemaining()
         {
             try
             {
@@ -269,10 +317,7 @@ namespace STEM.Surge
                     for (int i = OrdinalPosition - 1; i >= 0; i--)
                         try
                         {
-                            if (InstructionSet.Instructions[i].Stage == STEM.Surge.Stage.Completed)
-                            {
-                                InstructionSet.Instructions[i].Rollback();
-                            }
+                            InstructionSet.Instructions[i].Rollback();
                         }
                         catch (Exception ex)
                         {
@@ -281,7 +326,10 @@ namespace STEM.Surge
 
                     for (int i = OrdinalPosition + 1; i < InstructionSet.Instructions.Count; i++)
                         if (InstructionSet.Instructions[i].Stage == Stage.Ready)
+                        {
                             InstructionSet.Instructions[i].Stage = Stage.Skip;
+                            InstructionSet.Instructions[i].ExecutionStageHistory.Add(Stage.Skip);
+                        }
                 }
             }
             catch (Exception ex)
@@ -292,17 +340,19 @@ namespace STEM.Surge
 
         public void Rollback()
         {
-            try
+            if (Stage == Stage.Completed || Stage == STEM.Surge.Stage.Stopped)
             {
-                if (Stage == Stage.Completed)
+                try
                 {
                     _Rollback();
-                    Stage = Stage.RolledBack;
                 }
-            }
-            catch (Exception ex)
-            {
-                Exceptions.Add(ex);
+                catch (Exception ex)
+                {
+                    Exceptions.Add(ex);
+                }
+
+                Stage = Stage.RolledBack;
+                ExecutionStageHistory.Add(Stage.RolledBack);
             }
         }
 
@@ -317,20 +367,28 @@ namespace STEM.Surge
             bool success = true;
             try
             {
-                if (Stage == STEM.Surge.Stage.Skip || Stage == STEM.Surge.Stage.Completed)
+                if (Stage != STEM.Surge.Stage.Ready)
                     return;
 
                 InstructionSet.InstructionSetContainer["_Run Called"] = DateTime.UtcNow;
 
                 success = _Run();
 
-                Stage = STEM.Surge.Stage.Completed;
                 if (Stop)
-                    Stage = STEM.Surge.Stage.Stopped;
+                {
+                    Stage = Stage.Stopped;
+                    ExecutionStageHistory.Add(Stage.Stopped);
+                }
+                else
+                {
+                    Stage = Stage.Completed;
+                    ExecutionStageHistory.Add(Stage.Completed);
+                }
             }
             catch (Exception ex)
             {
                 Stage = STEM.Surge.Stage.Completed;
+                ExecutionStageHistory.Add(Stage.Completed);
                 success = false;
                 Exceptions.Add(ex);
             }
@@ -352,10 +410,7 @@ namespace STEM.Surge
                                     {
                                         try
                                         {
-                                            if (InstructionSet.Instructions[i].Stage == STEM.Surge.Stage.Completed)
-                                            {
-                                                InstructionSet.Instructions[i].Rollback();
-                                            }
+                                            InstructionSet.Instructions[i].Rollback();
                                         }
                                         catch (Exception ex)
                                         {
