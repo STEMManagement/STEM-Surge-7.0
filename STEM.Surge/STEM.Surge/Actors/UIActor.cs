@@ -713,11 +713,19 @@ namespace STEM.Surge
                         if (backlogs == null)
                         {
                             backlogs = m.Entries.ToDictionary(i => i.DeploymentControllerID, i => i);
+
+                            foreach (Backlogs.Entry x in backlogs.Values)
+                                if (x.PollError != null && x.PollError.Trim() != "" && !x.PollError.StartsWith(x.LastPoll.ToString("G")))
+                                    x.PollError = x.LastPoll.ToString("G") + ": " + x.PollError;
+
                             continue;
                         }
 
                         foreach (Backlogs.Entry x in m.Entries)
                         {
+                            if (x.PollError != null && x.PollError.Trim() != "" && !x.PollError.StartsWith(x.LastPoll.ToString("G")))
+                                x.PollError = x.LastPoll.ToString("G") + ": " + x.PollError;
+
                             if (!backlogs.ContainsKey(x.DeploymentControllerID))
                             {
                                 backlogs[x.DeploymentControllerID] = x;
@@ -740,7 +748,7 @@ namespace STEM.Surge
                             if (x.PollError != null && y.PollError != null && x.PollError.Trim() != "" && !y.PollError.Trim().Contains(x.PollError.Trim()))
                             {
                                 if (y.PollError.Trim() != "")
-                                    y.PollError = y.PollError.Trim() + "\r\n\r\n" + x.PollError.Trim();
+                                    y.PollError = y.PollError.Trim() + "\r\n" + x.PollError.Trim();
                                 else
                                     y.PollError = x.PollError.Trim();
                             }
@@ -757,7 +765,7 @@ namespace STEM.Surge
                                 }
                             }
 
-                            if (x.LastPoll > y.LastPoll)
+                            if (x.LastPoll > y.LastPoll && x.PollFailure == false && x.PingFailure == false)
                             {
                                 y.LastPoll = x.LastPoll;
                                 y.BacklogCount = x.BacklogCount;
