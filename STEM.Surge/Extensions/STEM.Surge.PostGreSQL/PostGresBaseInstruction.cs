@@ -105,6 +105,8 @@ namespace STEM.Surge.PostGreSQL
                         NpgsqlCommand command = new NpgsqlCommand(sql, connection);
                         command.ExecuteNonQuery();
                     }
+
+                    break;
                 }
                 catch (Exception ex)
                 {
