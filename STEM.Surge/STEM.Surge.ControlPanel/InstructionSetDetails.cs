@@ -162,6 +162,8 @@ namespace STEM.Surge.ControlPanel
                     _SummaryLines[lines.Count] = i.ID;
                     lines.Add("\tFailure Action - \t" + i.FailureAction.ToString());
                     _SummaryLines[lines.Count] = i.ID;
+                    lines.Add("\tStage History - \t" + String.Join(", ", i.ExecutionStageHistory));
+                    _SummaryLines[lines.Count] = i.ID;
                     lines.Add("\tLast Stage - \t" + i.Stage.ToString());
                     _SummaryLines[lines.Count] = i.ID;
                     lines.Add("\tStart Time - \t" + i.Start.ToString("yyyy/MM/dd HH:mm:ss.fffffff"));
