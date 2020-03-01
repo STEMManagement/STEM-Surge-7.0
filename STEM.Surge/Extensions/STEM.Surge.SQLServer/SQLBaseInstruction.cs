@@ -56,6 +56,8 @@ namespace STEM.Surge.SQLServer
                         SqlCommand command = new SqlCommand(sql, connection);
                         command.ExecuteNonQuery();
                     }
+
+                    break;
                 }
                 catch (Exception ex)
                 {
@@ -123,6 +125,8 @@ namespace STEM.Surge.SQLServer
                         try
                         {
                             s.WriteToServer(dt);
+
+                            break;
                         }
                         catch (Exception ex)
                         {
