@@ -593,6 +593,9 @@ namespace STEM.Surge
             {
                 _Instructions[xx].SetOrdinalPosition(xx);
                 _Instructions[xx].InstructionSet = this;
+
+                if (_Instructions[xx].ExecutionStageHistory.Count == 0)
+                    _Instructions[xx].ExecutionStageHistory.Add(_Instructions[xx].Stage);
             }
         }
 
