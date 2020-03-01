@@ -667,18 +667,6 @@ namespace STEM.Surge
 //////        }
 //////    }
 
-//////    internal bool _PreprocessPerformsDiscovery
-//////    {
-//////        get
-//////        {
-//////            return PreprocessPerformsDiscovery;
-//////        }
-//////        set
-//////        {
-//////            PreprocessPerformsDiscovery = value;
-//////        }
-//////    }
-
 //////    internal CoordinatedKeyManager _CoordinatedKeyManager = null;
 
 //////    /// <summary>
