@@ -29,8 +29,6 @@ namespace STEM.Surge.SSH
     [Description("Delete directories from 'Source Path' which can not be an expandable path.")]
     public class DeleteDirectory : Instruction
     {
-        public enum ExecutoOn { ForwardExecution, Rollback }
-
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
@@ -74,7 +72,7 @@ namespace STEM.Surge.SSH
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "delete a working directory on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         public DeleteDirectory()
             : base()
@@ -90,14 +88,14 @@ namespace STEM.Surge.SSH
             DirectoryFilter = "[TargetName]";
             DeleteEmptyDirectoriesOnly = true;
             RecurseSource = false;
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
         string _Address = null;
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
@@ -129,7 +127,7 @@ namespace STEM.Surge.SSH
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.Rollback)
+            if (ExecutionMode == ExecuteOn.Rollback)
             {
                 int r = Retry;
                 while (r-- >= 0 && !Stop)

@@ -28,7 +28,6 @@ namespace STEM.Surge.SMB
     {
         protected enum ActionType { Copy, Move }
         public enum DestinationRule { FirstSuccess, AllOrNone, OneOrMore }
-        public enum ExecutoOn { ForwardExecution, Rollback }
 
         protected ActionType Action { get; set; }
 
@@ -94,7 +93,7 @@ namespace STEM.Surge.SMB
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "move a file out of the flow to an error folder on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         [Category("Flow")]
         [DisplayName("Zero Files Action"), Description("What flow action should be taken if no files are found?")]
@@ -121,7 +120,7 @@ namespace STEM.Surge.SMB
             DestinationPath = "[DestinationPath]\\[SubDir]";
             DestinationFilename = "*.*";
 
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
         
@@ -129,7 +128,7 @@ namespace STEM.Surge.SMB
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 foreach (string d in _FilesActioned.Keys)
                 {
@@ -154,7 +153,7 @@ namespace STEM.Surge.SMB
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
                 return Execute();
 
             return true;

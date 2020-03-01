@@ -29,7 +29,6 @@ namespace STEM.Surge.S3
     {
         protected enum ActionType { Copy, Move }
         public enum DestinationRule { FirstSuccess, AllOrNone, OneOrMore }
-        public enum ExecutoOn { ForwardExecution, Rollback }
         public enum S3Direction { ToS3Bucket, FromS3Bucket }
 
         protected ActionType Action { get; set; }
@@ -95,7 +94,7 @@ namespace STEM.Surge.S3
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "move a file out of the flow to an error folder on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         [Category("S3")]
         [DisplayName("S3 Direction"), DescriptionAttribute("Is the action to or from an S3 bucket?")]
@@ -126,7 +125,7 @@ namespace STEM.Surge.S3
             DestinationPath = "[DestinationPath]\\[SubDir]";
             DestinationFilename = "*.*";
 
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
 
@@ -134,7 +133,7 @@ namespace STEM.Surge.S3
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 foreach (string d in _FilesActioned.Keys)
                 {
@@ -204,7 +203,7 @@ namespace STEM.Surge.S3
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
                 return Execute();
 
             return true;

@@ -19,6 +19,7 @@ using System;
 
 namespace STEM.Surge
 {
+    public enum ExecuteOn { ForwardExecution, Rollback }
     public enum FailureAction { Continue, SkipRemaining, SkipNext, Rollback, SkipToLabel }
     public enum Stage { Ready, Skip, Stopped, RolledBack, Completed }
     public enum BranchState { RegisteredSpare, Online, Offline, Silent }

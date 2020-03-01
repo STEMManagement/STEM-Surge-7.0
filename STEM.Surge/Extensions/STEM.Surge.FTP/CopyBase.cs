@@ -28,7 +28,6 @@ namespace STEM.Surge.FTP
     {
         protected enum ActionType { Copy, Move }
         public enum DestinationRule { FirstSuccess, AllOrNone, OneOrMore }
-        public enum ExecutoOn { ForwardExecution, Rollback }
         public enum FtpDirection { ToFtpServer, FromFtpServer }
 
         protected ActionType Action { get; set; }
@@ -102,7 +101,7 @@ namespace STEM.Surge.FTP
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "move a file out of the flow to an error folder on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         [Category("FTP Server")]
         [DisplayName("FTP Direction"), DescriptionAttribute("Is the action to or from an ftp server?")]
@@ -135,7 +134,7 @@ namespace STEM.Surge.FTP
             DestinationPath = "[DestinationPath]\\[SubDir]";
             DestinationFilename = "*.*";
 
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
 
@@ -144,7 +143,7 @@ namespace STEM.Surge.FTP
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 foreach (string d in _FilesActioned.Keys)
                 {
@@ -277,7 +276,7 @@ namespace STEM.Surge.FTP
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 int r = Retry;
                 while (r-- >= 0)

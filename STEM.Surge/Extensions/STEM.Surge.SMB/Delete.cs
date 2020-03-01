@@ -26,8 +26,6 @@ namespace STEM.Surge.SMB
     [Description("Delete file(s) from 'Source Path' which can be an expandable path.")]
     public class Delete : Instruction
     {
-        public enum ExecutoOn { ForwardExecution, Rollback }
-
         [Category("Retry")]
         [DisplayName("Number of retries"), DescriptionAttribute("How many times should each operation be attempted?")]
         public int Retry { get; set; }
@@ -63,7 +61,7 @@ namespace STEM.Surge.SMB
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "move a file out of the flow to an error folder on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         public Delete()
             : base()
@@ -76,12 +74,12 @@ namespace STEM.Surge.SMB
             DirectoryFilter = "!TEMP";
             DeleteEmptyDirectories = false;
             RecurseSource = false;
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
                 return Execute();
 
             return true;
@@ -89,7 +87,7 @@ namespace STEM.Surge.SMB
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.Rollback)
+            if (ExecutionMode == ExecuteOn.Rollback)
                 Execute();
         }
 

@@ -29,7 +29,6 @@ namespace STEM.Surge.SSH
     {
         protected enum ActionType { Copy, Move }
         public enum DestinationRule { FirstSuccess, AllOrNone, OneOrMore }
-        public enum ExecutoOn { ForwardExecution, Rollback }
         public enum SshDirection { ToSshServer, FromSshServer }
 
         protected ActionType Action { get; set; }
@@ -103,7 +102,7 @@ namespace STEM.Surge.SSH
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "move a file out of the flow to an error folder on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         [Category("SSH Server")]
         [DisplayName("SSH Direction"), DescriptionAttribute("Is the action to or from an SSH server?")]
@@ -136,7 +135,7 @@ namespace STEM.Surge.SSH
             DestinationPath = "[DestinationPath]\\[SubDir]";
             DestinationFilename = "*.*";
 
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
 
@@ -145,7 +144,7 @@ namespace STEM.Surge.SSH
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 foreach (string d in _FilesActioned.Keys)
                 {
@@ -220,7 +219,7 @@ namespace STEM.Surge.SSH
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
                 int r = Retry;
                 while (r-- >= 0 && !Stop)

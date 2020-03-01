@@ -29,8 +29,6 @@ namespace STEM.Surge.S3
     [Description("Delete directories from 'Source Path' which can not be an expandable path.")]
     public class DeleteDirectory : Instruction
     {
-        public enum ExecutoOn { ForwardExecution, Rollback }
-
         [Category("S3")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
@@ -66,7 +64,7 @@ namespace STEM.Surge.S3
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
             "delete a working directory on Rollback.")]
-        public ExecutoOn ExecutionMode { get; set; }
+        public ExecuteOn ExecutionMode { get; set; }
 
         public DeleteDirectory()
             : base()
@@ -80,12 +78,12 @@ namespace STEM.Surge.S3
             DirectoryFilter = "[TargetName]";
             DeleteEmptyDirectoriesOnly = true;
             RecurseSource = false;
-            ExecutionMode = ExecutoOn.ForwardExecution;
+            ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
         protected override bool _Run()
         {
-            if (ExecutionMode == ExecutoOn.ForwardExecution)
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
                 return Execute();
 
             return true;
@@ -93,7 +91,7 @@ namespace STEM.Surge.S3
 
         protected override void _Rollback()
         {
-            if (ExecutionMode == ExecutoOn.Rollback)
+            if (ExecutionMode == ExecuteOn.Rollback)
                 Execute();
         }
 
