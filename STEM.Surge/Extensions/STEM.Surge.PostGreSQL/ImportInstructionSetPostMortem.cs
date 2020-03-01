@@ -139,6 +139,17 @@ CREATE TRIGGER ts_insert_blocker
     FOR EACH ROW
     EXECUTE PROCEDURE _timescaledb_internal.insert_blocker();
 
+-- Grafana Query for a simple 10 second assignment graph grouped by Branch
+
+-- SELECT
+--   $__timeGroup(instruction_set.assigned, '10s', 0), instruction_set.branch_ip, count(0)
+-- FROM
+--   postmortem.instruction_set
+-- WHERE
+--   $__timeFilter(instruction_set.assigned) --AND instruction_set.branch_ip = '10.0.0.80'
+-- group by 1, 2
+-- order by 1
+
 *************************************************************************************************************/
 
 
