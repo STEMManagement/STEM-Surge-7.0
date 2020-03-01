@@ -43,16 +43,35 @@ namespace STEM.Surge.SMB
             ListType = SMBListType.File;
         }
 
+        public override bool PreprocessPerformsDiscovery
+        {
+            get
+            {
+                return (ListType == SMBListType.Directory);
+            }
+
+            set
+            {
+            }
+        }
+
         public override List<string> ListPreprocess(IReadOnlyList<string> list)
         {
             List<string> returnList = new List<string>();
             try
             {
-                if (ListType == SMBListType.Directory || ListType == SMBListType.All)
-                    returnList = list.Select(i => STEM.Sys.IO.Path.GetDirectoryName(i)).Distinct().ToList();
+                if (ListType == SMBListType.Directory)
+                {
+                    returnList = STEM.Sys.IO.Directory.STEM_GetDirectories(PollerSourceString, PollerDirectoryFilter, PollerRecurseSetting ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, false);
+                }
+                else
+                {
+                    if (ListType == SMBListType.Directory || ListType == SMBListType.All)
+                        returnList = list.Select(i => STEM.Sys.IO.Path.GetDirectoryName(i)).Distinct().ToList();
 
-                if (ListType != SMBListType.Directory)
-                    returnList.AddRange(list);
+                    if (ListType != SMBListType.Directory)
+                        returnList.AddRange(list);
+                }
 
                 if (RandomizeList)
                 {
