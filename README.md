@@ -2,7 +2,7 @@
 
 **Simply put... A few intelligent servers manage a dynamic array of workers that can perform any task on demand in a massively multi-threaded environment.**
 
-**STEM Management created Surge in 2009 seeking to solve common issues encountered in datacenters managing big data flows. Surge is an extendable platform designed to grow; it is intended to be customized for each customer given their enterprise specific goals.**
+**STEM Management created Surge in 2009 seeking to solve common issues encountered in datacenters managing big data flows. Surge is an extensible platform designed to grow; it is intended to be customized for each customer given their enterprise specific goals.**
 
 **An introduction video can be found here (https://youtu.be/rMsPSUjCcsE)** 
 
