@@ -36,31 +36,53 @@ namespace STEM.Surge.FlowControl
         [DisplayName("File Filter"), DescriptionAttribute("The filter used against Filename. This can be a compound filter.")]
         public string FileFilter { get; set; }
 
+        [Category("Flow")]
+        [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback?")]
+        public ExecuteOn ExecutionMode { get; set; }
+
         public SkipNextIfFileFilter() : base()
         {
             FileName = "[TargetPath]\\[TargetName]";
             FileFilter = "*";
+            ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
         protected override bool _Run()
         {
-            try
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
-                if (STEM.Sys.IO.Path.StringMatches(FileName, FileFilter))
-                    SkipNext();
-            }
-            catch (Exception ex)
-            {
-                AppendToMessage(ex.Message);
-                Exceptions.Add(ex);
+                try
+                {
+                    if (STEM.Sys.IO.Path.StringMatches(FileName, FileFilter))
+                        SkipNext();
+                }
+                catch (Exception ex)
+                {
+                    AppendToMessage(ex.Message);
+                    Exceptions.Add(ex);
+                }
+
+                return Exceptions.Count == 0;
             }
 
-            return Exceptions.Count == 0;
+            return true;
         }
 
         protected override void _Rollback()
         {
-            // does nothing
+            if (ExecutionMode == ExecuteOn.Rollback)
+            {
+                try
+                {
+                    if (STEM.Sys.IO.Path.StringMatches(FileName, FileFilter))
+                        SkipPrevious();
+                }
+                catch (Exception ex)
+                {
+                    AppendToMessage(ex.Message);
+                    Exceptions.Add(ex);
+                }
+            }
         }
     }
 }

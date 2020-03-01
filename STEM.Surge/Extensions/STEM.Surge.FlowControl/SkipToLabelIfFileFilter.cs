@@ -41,32 +41,54 @@ namespace STEM.Surge.FlowControl
         [Description("The Flow Control Label of the Instruction to skip to.")]
         public string SkipToLabel { get; set; }
 
+        [Category("Flow")]
+        [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback?")]
+        public ExecuteOn ExecutionMode { get; set; }
+
         public SkipToLabelIfFileFilter() : base()
         {
             FileName = "[TargetPath]\\[TargetName]";
             FileFilter = "*";
             SkipToLabel = "End";
+            ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
         protected override bool _Run()
         {
-            try
+            if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
-                if (STEM.Sys.IO.Path.StringMatches(FileName, FileFilter))
-                    SkipForwardToFlowControlLabel(SkipToLabel);
-            }
-            catch (Exception ex)
-            {
-                AppendToMessage(ex.Message);
-                Exceptions.Add(ex);
+                try
+                {
+                    if (STEM.Sys.IO.Path.StringMatches(FileName, FileFilter))
+                        SkipForwardToFlowControlLabel(SkipToLabel);
+                }
+                catch (Exception ex)
+                {
+                    AppendToMessage(ex.Message);
+                    Exceptions.Add(ex);
+                }
+
+                return Exceptions.Count == 0;
             }
 
-            return Exceptions.Count == 0;
+            return true;
         }
 
         protected override void _Rollback()
         {
-            // does nothing
+            if (ExecutionMode == ExecuteOn.Rollback)
+            {
+                try
+                {
+                    if (STEM.Sys.IO.Path.StringMatches(FileName, FileFilter))
+                        SkipBackwardToFlowControlLabel(SkipToLabel);
+                }
+                catch (Exception ex)
+                {
+                    AppendToMessage(ex.Message);
+                    Exceptions.Add(ex);
+                }
+            }
         }
     }
 }
