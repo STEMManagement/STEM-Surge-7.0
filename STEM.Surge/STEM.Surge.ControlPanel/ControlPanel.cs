@@ -429,7 +429,7 @@ namespace STEM.Surge.ControlPanel
 
                                 string toolTip = "";
                                 if (tmp.Count(i => i.PollError != null && i.PollError.Trim() != "") > 0)
-                                    toolTip = String.Join("\r\n", tmp.Where(i => i.PollError != null && i.PollError.Trim() != "").Select(i => i.PollError).ToArray());
+                                    toolTip = String.Join("\r\n\r\n", tmp.Where(i => i.PollError != null && i.PollError.Trim() != "").Select(i => i.PollError).ToArray());
 
                                 DateTime maxHealthy = DateTime.MinValue;
                                 DateTime minHealthy = DateTime.MinValue;
