@@ -158,6 +158,7 @@ namespace STEM.Surge
                         list.MessageConnection.Send(send);
                 }
             }
+            catch { }
             finally
             {
                 if (connectionClosed)
