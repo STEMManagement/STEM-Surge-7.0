@@ -178,7 +178,11 @@ namespace STEM.Surge.SMB
                 if (ExpandDestination)
                 {
                     Random rnd = new Random();
-                    destinations = STEM.Sys.IO.Path.ExpandRangedPath(DestinationPath).OrderBy(i => rnd.Next()).ToList();
+
+                    if (DestinationActionRule == DestinationRule.FirstSuccess)
+                        destinations = STEM.Sys.IO.Path.OrderPathsWithSubnet(DestinationPath, STEM.Sys.IO.Net.MachineIP());
+                    else
+                        destinations = STEM.Sys.IO.Path.ExpandRangedPath(DestinationPath).OrderBy(i => rnd.Next()).ToList();
                 }
                 else
                 {
