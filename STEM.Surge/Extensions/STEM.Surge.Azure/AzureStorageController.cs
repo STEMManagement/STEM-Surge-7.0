@@ -29,7 +29,7 @@ namespace STEM.Surge.Azure
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("Azure Storage Controller")]
     [Description("Derived from Basic File Controller... Poll a container in the Azure cloud. The Switchboard configuration for Source should look like: " +
-        "'\\\\ContainerName\\folder1\\folder2' where the containerName can be expandable with '#' " +
+        "'\\\\ContainerName\\folderX' where the containerName can be expandable with '#' " +
         "and 'folderX' translates to the container directory name. The 'File Filter', 'Directory Filter', and 'Recurse' " +
         "settings in the Switchboard are also applied to the poll. " +
         "This controller provides '[ContainerName]' for template use.")]
