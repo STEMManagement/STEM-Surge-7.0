@@ -37,6 +37,10 @@ namespace STEM.Surge.S3
         public string Region { get; set; }
 
         [Category("S3")]
+        [DisplayName("Service URL"), DescriptionAttribute("What is the S3 Service URL (blank to use the Region lookup)?")]
+        public string ServiceURL { get; set; }
+
+        [Category("S3")]
         [DisplayName("Access Key"), DescriptionAttribute("What is the S3 Access Key?")]
         [XmlIgnore]
         [PasswordPropertyText(true)]
@@ -77,6 +81,7 @@ namespace STEM.Surge.S3
         public Authentication()
         {
             Region = "us-east-1";
+            ServiceURL = "";
             AccessKey = "";
             SecretKey = "";
         }
@@ -93,7 +98,21 @@ namespace STEM.Surge.S3
                 {
                     if (_Client == null)
                     {
-                        _Client = new AmazonS3Client(AccessKey, SecretKey, Amazon.RegionEndpoint.GetBySystemName(Region));
+                        if (String.IsNullOrEmpty(ServiceURL))
+                        {
+                            _Client = new AmazonS3Client(AccessKey, SecretKey, Amazon.RegionEndpoint.GetBySystemName(Region));
+                        }
+                        else
+                        {
+                            AmazonS3Config cfg = new AmazonS3Config
+                            {
+                                RegionEndpoint = Amazon.RegionEndpoint.USEast1,
+                                ServiceURL = this.ServiceURL,
+                                ForcePathStyle = true
+                            };
+
+                            _Client = new AmazonS3Client(AccessKey, SecretKey, cfg);
+                        }
                     }
                 }
 
