@@ -156,7 +156,7 @@ namespace STEM.Surge.S3
 
             prefix = prefix.Substring(bucket.Length);
             prefix = prefix.Replace('\\', '/');
-            return prefix.Trim('/').ToLower();
+            return prefix.Trim('/');
         }
 
         public List<S3Bucket> ListBuckets()

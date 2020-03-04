@@ -384,7 +384,24 @@ namespace STEM.Surge.Azure
                 // In Azure a directory can exist when a blob exists within it
                 // so directories always exist
                 // Check to be sure this isn't a blob and if it's not just return true
-                return !FileExists(directory);
+
+
+                string containerName = ContainerFromPath(directory);
+                
+                CloudBlobContainer container = Client.GetContainerReference(containerName);
+
+                if (!container.Exists())
+                    return false;
+
+                string dir = PrefixFromPath(directory);
+
+                if (dir == "")
+                    return true;
+                
+                List<IListBlobItem> list = ListObjects(containerName, dir, AzureListType.File, true, "*", "*");
+
+                if (list.Count() > 0)
+                    return true;
             }
             catch (Exception ex)
             {
@@ -433,11 +450,29 @@ namespace STEM.Surge.Azure
         public void CreateDirectory(string directory)
         {
             // Directories exist only when blobs exist within them
+
+            // Verify that the Container exists
+
+            string containerName = ContainerFromPath(directory);
+
+            CloudBlobContainer container = Client.GetContainerReference(containerName);
+
+            container.CreateIfNotExists();
         }
 
         public void DeleteDirectory(string directory)
         {
             // Directories exist only when blobs exist within them so delete all blobs, but not here
+
+            string containerName = ContainerFromPath(directory);
+            string prefix = PrefixFromPath(directory);
+
+            if (prefix == "") // Delete Container
+            {
+                CloudBlobContainer container = Client.GetContainerReference(containerName);
+
+                container.DeleteIfExists();
+            }
         }
 
         public void DeleteFile(string filename)
@@ -448,8 +483,7 @@ namespace STEM.Surge.Azure
             CloudBlobContainer container = Client.GetContainerReference(containerName);
             CloudBlobDirectory b = container.GetDirectoryReference(STEM.Sys.IO.Path.GetDirectoryName(prefix));
 
-            System.Threading.Tasks.Task t = b.GetBlobReference(STEM.Sys.IO.Path.GetFileName(prefix)).DeleteIfExistsAsync();
-            t.Wait();
+            b.GetBlobReference(STEM.Sys.IO.Path.GetFileName(prefix)).DeleteIfExists();
         }
 
         public string UniqueFilename(string filename)
