@@ -373,15 +373,35 @@ namespace STEM.Surge.S3
                 string bucket = BucketFromPath(directory);
                 string prefix = PrefixFromPath(directory);
 
-                System.Threading.Tasks.Task<GetObjectMetadataResponse> r = Client.GetObjectMetadataAsync(bucket, prefix + "/");
-                r.Wait();
-
-                return new FDCDirectoryInfo
+                if (prefix != "")
                 {
-                    CreationTimeUtc = r.Result.LastModified,
-                    LastAccessTimeUtc = DateTime.UtcNow,
-                    LastWriteTimeUtc = r.Result.LastModified,
-                };
+                    prefix = prefix + "/";
+
+                    System.Threading.Tasks.Task<GetObjectMetadataResponse> r = Client.GetObjectMetadataAsync(bucket, prefix);
+                    r.Wait();
+
+                    return new FDCDirectoryInfo
+                    {
+                        CreationTimeUtc = r.Result.LastModified,
+                        LastAccessTimeUtc = DateTime.UtcNow,
+                        LastWriteTimeUtc = r.Result.LastModified
+                    };
+                }
+                else
+                {
+                    foreach (S3Bucket b in ListBuckets())
+                    {
+                        if (b.BucketName.Equals(bucket, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            return new FDCDirectoryInfo
+                            {
+                                CreationTimeUtc = b.CreationDate,
+                                LastAccessTimeUtc = DateTime.UtcNow,
+                                LastWriteTimeUtc = b.CreationDate
+                            };
+                        }
+                    }
+                }
             }
             catch (AggregateException)
             {
@@ -402,10 +422,22 @@ namespace STEM.Surge.S3
             {
                 string bucket = BucketFromPath(directory);
                 string prefix = PrefixFromPath(directory);
-                prefix = prefix + "/";
 
-                System.Threading.Tasks.Task<PutObjectResponse> r = Client.PutObjectAsync(new PutObjectRequest { BucketName = bucket, Key = prefix });
-                r.Wait();
+                if (prefix != "")
+                {
+                    if (!DirectoryExists(bucket))
+                        CreateDirectory(@"\\" + bucket);
+
+                    prefix = prefix + "/";
+
+                    System.Threading.Tasks.Task<PutObjectResponse> r = Client.PutObjectAsync(new PutObjectRequest { BucketName = bucket, Key = prefix });
+                    r.Wait();
+                }
+                else
+                {
+                    System.Threading.Tasks.Task<PutBucketResponse> r = Client.PutBucketAsync(new PutBucketRequest { BucketName = bucket });
+                    r.Wait();
+                }
             }
         }
 
@@ -415,20 +447,36 @@ namespace STEM.Surge.S3
             {
                 string bucket = BucketFromPath(directory);
                 string prefix = PrefixFromPath(directory);
-                prefix = prefix + "/";
 
-                System.Threading.Tasks.Task<ListVersionsResponse> r = Client.ListVersionsAsync(new ListVersionsRequest { BucketName = bucket, Prefix = prefix });
-                r.Wait();
-
-                if (r.Result.Versions.Count > 0)
+                if (prefix != "")
                 {
-                    foreach (S3ObjectVersion v in r.Result.Versions)
+                    prefix = prefix + "/";
+
+                    System.Threading.Tasks.Task<ListVersionsResponse> r = Client.ListVersionsAsync(new ListVersionsRequest { BucketName = bucket, Prefix = prefix });
+                    r.Wait();
+
+                    if (r.Result.Versions.Count > 0)
+                    {
+                        foreach (S3ObjectVersion v in r.Result.Versions)
+                        {
+                            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest
+                            {
+                                BucketName = v.BucketName,
+                                Key = v.Key,
+                                VersionId = v.VersionId
+                            };
+
+                            System.Threading.Tasks.Task t = Client.DeleteObjectAsync(deleteObjectRequest);
+                            t.Wait();
+                        }
+                    }
+                    else
                     {
                         DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest
                         {
-                            BucketName = v.BucketName,
-                            Key = v.Key,
-                            VersionId = v.VersionId
+                            BucketName = bucket,
+                            Key = prefix,
+                            VersionId = null
                         };
 
                         System.Threading.Tasks.Task t = Client.DeleteObjectAsync(deleteObjectRequest);
@@ -437,14 +485,7 @@ namespace STEM.Surge.S3
                 }
                 else
                 {
-                    DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest
-                    {
-                        BucketName = bucket,
-                        Key = prefix,
-                        VersionId = null
-                    };
-
-                    System.Threading.Tasks.Task t = Client.DeleteObjectAsync(deleteObjectRequest);
+                    System.Threading.Tasks.Task t = Client.DeleteBucketAsync(new DeleteBucketRequest { BucketName = bucket });
                     t.Wait();
                 }
             }
