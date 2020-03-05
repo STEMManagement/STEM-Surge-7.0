@@ -150,6 +150,10 @@ namespace STEM.Surge.S3
                                         i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "Region");
                                         if (i != null)
                                             i.SetValue(a, Authentication.Region);
+
+                                        i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "ServiceURL");
+                                        if (i != null)
+                                            i.SetValue(a, Authentication.ServiceURL);
                                     }
                                 }
                             }
