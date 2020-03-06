@@ -82,7 +82,7 @@ namespace STEM.Surge.SSH
 
                 List<SftpFile> items = Authentication.ListDirectory(server, Port, directory, ListType, PollerRecurseSetting, PollerDirectoryFilter, PollerFileFilter);
 
-                _ListItems = items.ToDictionary(i => System.IO.Path.Combine(PollerSourceString, i.FullName.Substring(directory.Length).Trim(System.IO.Path.DirectorySeparatorChar).Trim(System.IO.Path.AltDirectorySeparatorChar)).Replace(System.IO.Path.AltDirectorySeparatorChar, System.IO.Path.DirectorySeparatorChar), j => j);
+                _ListItems = items.ToDictionary(i => System.IO.Path.Combine(PollerSourceString, i.FullName.Substring(directory.Length + i.FullName.IndexOf(directory, StringComparison.InvariantCultureIgnoreCase)).Trim(System.IO.Path.DirectorySeparatorChar).Trim(System.IO.Path.AltDirectorySeparatorChar)).Replace(System.IO.Path.AltDirectorySeparatorChar, System.IO.Path.DirectorySeparatorChar), j => j);
                 returnList = _ListItems.Keys.ToList();
 
                 if (RandomizeList)
