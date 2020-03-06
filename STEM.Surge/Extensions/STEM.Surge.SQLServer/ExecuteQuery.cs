@@ -54,11 +54,26 @@ namespace STEM.Surge.SQLServer
             // No rollback
         }
 
+        public DataSet Execute(Authentication auth, string sql, int retry)
+        {
+            Authentication x = Authentication;
+
+            try
+            {
+                Authentication = auth;
+                return base.ExecuteQuery(sql, retry);
+            }
+            finally
+            {
+                Authentication = x;
+            }
+        }
+
         protected override bool _Run()
         {
             try
             {
-                DataSet ds = base.ExecuteQuery(String.Join("\r\n", Sql), Retry);
+                DataSet ds = Execute(Authentication, String.Join("\r\n", Sql), Retry);
 
                 switch (TargetContainer)
                 {
