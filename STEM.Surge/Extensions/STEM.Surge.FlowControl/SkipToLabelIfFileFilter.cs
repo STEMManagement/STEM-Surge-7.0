@@ -29,7 +29,7 @@ namespace STEM.Surge.FlowControl
     {
         [Category("Flow")]
         [DisplayName("Filename")]
-        [Description("The full path of the file to be evaluated")]
+        [Description("The name of the file to be evaluated")]
         public string FileName { get; set; }
 
         [Category("Flow")]
@@ -37,7 +37,7 @@ namespace STEM.Surge.FlowControl
         public string FileFilter { get; set; }
 
         [Category("Flow")]
-        [DisplayName("Flow Control Label")]
+        [DisplayName("Skip to Label")]
         [Description("The Flow Control Label of the Instruction to skip to.")]
         public string SkipToLabel { get; set; }
 
@@ -47,7 +47,7 @@ namespace STEM.Surge.FlowControl
 
         public SkipToLabelIfFileFilter() : base()
         {
-            FileName = "[TargetPath]\\[TargetName]";
+            FileName = "[TargetName]";
             FileFilter = "*";
             SkipToLabel = "End";
             ExecutionMode = ExecuteOn.ForwardExecution;

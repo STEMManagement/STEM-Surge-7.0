@@ -29,7 +29,7 @@ namespace STEM.Surge.FlowControl
     {
         [Category("Flow")]
         [DisplayName("Filename")]
-        [Description("The full path of the file to be evaluated")]
+        [Description("The name of the file to be evaluated")]
         public string FileName { get; set; }
 
         [Category("Flow")]
@@ -42,7 +42,7 @@ namespace STEM.Surge.FlowControl
 
         public SkipNextIfFileFilter() : base()
         {
-            FileName = "[TargetPath]\\[TargetName]";
+            FileName = "[TargetName]";
             FileFilter = "*";
             ExecutionMode = ExecuteOn.ForwardExecution;
         }

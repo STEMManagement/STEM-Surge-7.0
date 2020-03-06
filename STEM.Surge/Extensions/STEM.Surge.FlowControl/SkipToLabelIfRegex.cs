@@ -36,7 +36,7 @@ namespace STEM.Surge.FlowControl
         public string RegexFilter { get; set; }
 
         [Category("Flow")]
-        [DisplayName("Flow Control Label")]
+        [DisplayName("Skip to Label")]
         [Description("The Flow Control Label of the Instruction to skip to.")]
         public string SkipToLabel { get; set; }
 
