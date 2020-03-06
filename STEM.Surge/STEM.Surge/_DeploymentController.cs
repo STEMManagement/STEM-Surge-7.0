@@ -207,7 +207,7 @@ namespace STEM.Surge
         public STEM.Sys.Serialization.Dictionary<string, string> TemplateKVP { get; set; }
 
         /// <summary>
-        /// A free form dictionary for reporting aditional Post Mortem meta data
+        /// A free form dictionary for reporting aditional Post Mortem metadata
         /// e.g. PostMortemMetaData["AverageWriteTime"] = writeTimes.Average().ToString(System.Globalization.CultureInfo.CurrentCulture)
         /// </summary>
         [Browsable(false)]
