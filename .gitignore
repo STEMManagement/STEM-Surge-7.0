@@ -113,3 +113,6 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/ThreadPool - Copy.cs
 /STEM.Surge/Extensions/STEM.Surge.SQLServer/bin/Release
 /STEM.Surge/STEM.Auth/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.ObjectTracking/bin
+/STEM.Surge/Extensions/STEM.Surge.ObjectTracking/obj
+/STEM.Surge/Extensions/STEM.Surge.SQLServer/bin/Debug
