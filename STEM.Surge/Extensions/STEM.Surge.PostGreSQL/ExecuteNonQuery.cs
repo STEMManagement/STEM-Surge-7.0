@@ -43,19 +43,33 @@ namespace STEM.Surge.PostGreSQL
             // No rollback
         }
 
+        public void Execute(Authentication auth, string sql, int retry)
+        {
+            Authentication x = Authentication;
+
+            try
+            {
+                Authentication = auth;
+                base.ExecuteNonQuery(sql, retry);
+            }
+            finally
+            {
+                Authentication = x;
+            }
+        }
+
         protected override bool _Run()
         {
             try
             {
-                base.ExecuteNonQuery(String.Join("\r\n", Sql), Retry);
-
-                return true;
+                Execute(Authentication, String.Join("\r\n", Sql), Retry);
             }
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
-                return false;
             }
+
+            return Exceptions.Count == 0;
         }
     }
 }
