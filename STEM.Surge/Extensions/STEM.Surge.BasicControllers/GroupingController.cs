@@ -27,7 +27,7 @@ namespace STEM.Surge.BasicControllers
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("GroupingController")]
     [Description("Populate List<string> properties in the InstructionSet Template with lists of items up to 'Group Size'. ")]
-    public class GroupingController : DeploymentController
+    public class GroupingController : FileDeploymentController
     {
         [Category("Grouping")]
         [DisplayName("Group Size"), DescriptionAttribute("How big should initiationSource groups be (max).")]
@@ -49,6 +49,7 @@ namespace STEM.Surge.BasicControllers
             ListPropertyNames = new List<string>();
             GroupSize = 10;
             RandomizeList = false;
+            CheckTriggerExists = false;
         }
 
         public override List<string> ListPreprocess(IReadOnlyList<string> list)
