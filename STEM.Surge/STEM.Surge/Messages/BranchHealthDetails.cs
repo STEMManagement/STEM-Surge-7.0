@@ -30,6 +30,7 @@ namespace STEM.Surge.Messages
     public class BranchHealthDetails : Message
     {
         public string BranchIP { get; set; }
+        public string BranchName { get; set; }
         public string OSDescription { get; set; }
         public int ThreadCount { get; set; }
         public List<string> ErrorIDs { get; set; }
@@ -48,6 +49,7 @@ namespace STEM.Surge.Messages
         public BranchHealthDetails()
         {
             BranchIP = STEM.Sys.IO.Net.MachineIP();
+            BranchName = STEM.Sys.IO.Net.MachineName();
             OSDescription = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
 
             System.Diagnostics.Process p = System.Diagnostics.Process.GetCurrentProcess();
