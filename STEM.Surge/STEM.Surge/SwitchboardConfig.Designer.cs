@@ -1043,7 +1043,7 @@ namespace STEM.Surge {
                 this.columnSourceDirectory.AllowDBNull = false;
                 this.columnSourceDirectory.DefaultValue = ((string)(""));
                 this.columnDirectoryFilter.AllowDBNull = false;
-                this.columnDirectoryFilter.DefaultValue = ((string)("*"));
+                this.columnDirectoryFilter.DefaultValue = ((string)("!TEMP"));
                 this.columnFileFilter.AllowDBNull = false;
                 this.columnFileFilter.DefaultValue = ((string)("*"));
                 this.columnRecurse.DefaultValue = ((bool)(false));
