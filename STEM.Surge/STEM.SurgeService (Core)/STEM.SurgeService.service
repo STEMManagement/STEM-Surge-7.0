@@ -3,7 +3,7 @@ Description=STEM.Surge service
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/dotnet /opt/STEM.Surge/STEM.SurgeService.dll
+ExecStart=/opt/STEM.Surge/STEM.SurgeService
 Restart=on-failure
 
 [Install]

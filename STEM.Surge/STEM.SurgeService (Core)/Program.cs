@@ -32,7 +32,7 @@ namespace STEM.SurgeService
             System.AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             System.Environment.CurrentDirectory = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
 
-            bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+            bool isWindows = System.Runtime.InteropServices.RuntimeInformation.OSDescription.StartsWith("Microsoft Windows", StringComparison.InvariantCultureIgnoreCase);
 
             int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
@@ -74,23 +74,6 @@ namespace STEM.SurgeService
                         while (true)
                         {
                             bool running = false;
-                            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("dotnet"))
-                            {
-                                if (p.Id == pid)
-                                    continue;
-
-                                foreach (ProcessModule m in p.Modules)
-                                {
-                                    if (m.ModuleName.Equals("STEM.SurgeService.dll", StringComparison.InvariantCultureIgnoreCase))
-                                    {
-                                        running = true;
-                                        break;
-                                    }
-                                }
-
-                                if (running)
-                                    break;
-                            }
 
                             foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("STEM.SurgeService"))
                             {
@@ -114,7 +97,7 @@ namespace STEM.SurgeService
                         if (!isWindows)
                         {
                             si.FileName = "systemctl";
-                            si.Arguments = "start STEM.SurgeService.service";
+                            si.Arguments = "start STEM.Surge";
                         }
                         else
                         {

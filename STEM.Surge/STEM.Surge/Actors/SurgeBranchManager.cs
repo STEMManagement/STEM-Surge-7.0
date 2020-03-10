@@ -29,8 +29,6 @@ namespace STEM.Surge
 {
     public class SurgeBranchManager : SurgeActor, IDisposable
     {
-        static bool _IsWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-
         string _PostMortemCache = null;
         public string PostMortemCache
         {
@@ -441,21 +439,21 @@ namespace STEM.Surge
 
                 configurationDS.WriteXml(Path.Combine(appPath, "SurgeService.cfg"));
 
-                if (STEM.Sys.Control.SystemRuntime == STEM.Sys.Control.Runtime.Core)
+                if (!STEM.Sys.Control.IsWindows)
                 {
                     lock (_RunningSandboxes)
                     {
                         try
                         {
-                            File.Copy("STEM.SurgeService.dll", Path.Combine(appPath, "STEM.SurgeService.dll"));
+                            File.Copy("STEM.SurgeService", Path.Combine(appPath, sandboxID));
                             try
                             {
-                                File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.deps.json"), Path.Combine(appPath, "STEM.SurgeService.deps.json"));
+                                File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.deps.json"), Path.Combine(appPath, sandboxID + ".deps.json"));
                             }
                             catch { }
                             try
                             {
-                                File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.runtimeconfig.json"), Path.Combine(appPath, "STEM.SurgeService.runtimeconfig.json"));
+                                File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.runtimeconfig.json"), Path.Combine(appPath, sandboxID + ".runtimeconfig.json"));
                             }
                             catch { }
                         }
@@ -464,11 +462,11 @@ namespace STEM.Surge
                             STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.LaunchSandbox", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                         }
 
-                        foreach (string dll in Directory.GetFiles(System.Environment.CurrentDirectory, "*.dll"))
-                            if (!dll.EndsWith("STEM.SurgeService.dll") && !dll.EndsWith("STEM.Auth.dll"))
-                                File.Copy(dll, Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(dll)));
+                        foreach (string f in Directory.GetFiles(System.Environment.CurrentDirectory, "*.*"))
+                            if (!f.EndsWith("STEM.Auth.dll") && !f.EndsWith("SurgeService.cfg"))
+                                File.Copy(f, Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(f)));
                         
-                        appPath = Path.Combine(appPath, "STEM.SurgeService.dll");
+                        appPath = Path.Combine(appPath, sandboxID);
 
                         try
                         {
@@ -476,8 +474,8 @@ namespace STEM.Surge
                             si.CreateNoWindow = true;
                             si.UseShellExecute = false;
 
-                            si.FileName = "dotnet";
-                            si.Arguments = "\"" + appPath + "\" -sandbox";
+                            si.FileName = appPath;
+                            si.Arguments = "-sandbox";
 
                             Process p = new Process();
                             p.StartInfo = si;

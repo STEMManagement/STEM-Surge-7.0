@@ -39,15 +39,13 @@ namespace STEM.Sys
             private set;
         }
 
-        public enum Runtime { Core, Framework }
-        public static Runtime SystemRuntime
+        static readonly bool _IsWindows = System.Runtime.InteropServices.RuntimeInformation.OSDescription.StartsWith("Microsoft Windows", StringComparison.InvariantCultureIgnoreCase);
+
+        public static bool IsWindows
         {
             get
             {
-                if (System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.InvariantCultureIgnoreCase))
-                    return Control.Runtime.Core;
-
-                return Control.Runtime.Framework;
+                return _IsWindows;
             }
         }
 
@@ -206,7 +204,7 @@ namespace STEM.Sys
         
         public static void Restart(Control sender)
         {
-            if (SystemRuntime == Runtime.Core)
+            if (!_IsWindows)
             {
                 try
                 {
@@ -223,10 +221,10 @@ namespace STEM.Sys
                     si.CreateNoWindow = true;
                     si.UseShellExecute = false;
 
-                    string r = Path.Combine(System.Environment.CurrentDirectory, processName + ".dll");
-
-                    si.FileName = "dotnet";
-                    si.Arguments = "\"" + r + "\" -r";
+                    string r = Path.Combine(System.Environment.CurrentDirectory, processName);
+                    
+                    si.FileName = r;
+                    si.Arguments = "-r";
 
                     Process.Start(si);
 
@@ -278,124 +276,62 @@ namespace STEM.Sys
 
         public static void CloseChildren()
         {
-            if (SystemRuntime == Runtime.Core)
+            try
             {
-                try
+                List<string> tops = Directory.GetDirectories(System.Environment.CurrentDirectory, "*", SearchOption.TopDirectoryOnly).ToList();
+
+                foreach (string top in tops)
                 {
-                    List<string> dirs = new List<string>();
-                    int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-                    foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("dotnet"))
-                    {
-                        if (p.Id == pid)
-                            continue;
-
-                        foreach (ProcessModule m in p.Modules)
-                        {
-                            if (m.ModuleName.Equals("STEM.SurgeService.dll", StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                if (m.FileName.StartsWith(System.Environment.CurrentDirectory))
-                                {
-                                    dirs.Add(STEM.Sys.IO.Path.GetDirectoryName(m.FileName));
-
-                                    try
-                                    {
-                                        p.Kill();
-                                    }
-                                    catch { }
-                                }
-                            }
-                        }
-                    }
+                    bool hadExe = false;
 
                     try
                     {
-                        foreach (string dir in dirs)
+                        if (Directory.Exists(top))
                         {
-                            if (Directory.Exists(dir))
+                            List<string> dirs = Directory.GetDirectories(top, "*", SearchOption.TopDirectoryOnly).ToList();
+                            foreach (string dir in dirs)
                             {
-                                try
+                                if (Directory.Exists(dir))
                                 {
-                                    Directory.Delete(dir, true);
-                                }
-                                catch { }
-                            }
-                        }
+                                    string exeName = Directory.GetFiles(dir, "*.exe").FirstOrDefault();
 
-                        string sbd = Path.Combine(System.Environment.CurrentDirectory, "Sandboxes");
-
-                        if (Directory.Exists(sbd))
-                        {
-                            try
-                            {
-                                Directory.Delete(sbd, true);
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
-                }
-                catch { }
-            }
-            else
-            {
-                try
-                {
-                    List<string> tops = Directory.GetDirectories(System.Environment.CurrentDirectory, "*", SearchOption.TopDirectoryOnly).ToList();
-
-                    foreach (string top in tops)
-                    {
-                        bool hadExe = false;
-
-                        try
-                        {
-                            if (Directory.Exists(top))
-                            {
-                                List<string> dirs = Directory.GetDirectories(top, "*", SearchOption.TopDirectoryOnly).ToList();
-                                foreach (string dir in dirs)
-                                {
-                                    if (Directory.Exists(dir))
+                                    if (exeName != null)
                                     {
-                                        string exeName = Directory.GetFiles(dir, "*.exe").FirstOrDefault();
+                                        hadExe = true;
 
-                                        if (exeName != null)
+                                        foreach (System.Diagnostics.Process proc in System.Diagnostics.Process.GetProcessesByName(Path.GetFileNameWithoutExtension(exeName)))
                                         {
-                                            hadExe = true;
-
-                                            foreach (System.Diagnostics.Process proc in System.Diagnostics.Process.GetProcessesByName(Path.GetFileNameWithoutExtension(exeName)))
-                                            {
-                                                try
-                                                {
-                                                    if (proc.MainModule.FileName.Equals(exeName, StringComparison.InvariantCultureIgnoreCase))
-                                                        proc.Kill();
-                                                    else
-                                                        continue;
-                                                }
-                                                catch { }
-                                            }
-
                                             try
                                             {
-                                                STEM.Sys.IO.Directory.STEM_Delete(dir, false);
+                                                if (proc.MainModule.FileName.Equals(exeName, StringComparison.InvariantCultureIgnoreCase))
+                                                    proc.Kill();
+                                                else
+                                                    continue;
                                             }
                                             catch { }
                                         }
 
-                                        if (hadExe)
-                                            try
-                                            {
-                                                STEM.Sys.IO.Directory.STEM_Delete(top, false);
-                                            }
-                                            catch { }
+                                        try
+                                        {
+                                            STEM.Sys.IO.Directory.STEM_Delete(dir, false);
+                                        }
+                                        catch { }
                                     }
+
+                                    if (hadExe)
+                                        try
+                                        {
+                                            STEM.Sys.IO.Directory.STEM_Delete(top, false);
+                                        }
+                                        catch { }
                                 }
                             }
                         }
-                        catch { }
                     }
+                    catch { }
                 }
-                catch { }
             }
+            catch { }
         }
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
