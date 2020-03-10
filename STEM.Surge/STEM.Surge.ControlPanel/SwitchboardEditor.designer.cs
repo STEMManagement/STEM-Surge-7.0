@@ -29,28 +29,10 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.fileSourcesGridView = new System.Windows.Forms.DataGridView();
-            this.Notes = new System.Windows.Forms.DataGridViewImageColumn();
-            this.enableDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.sourceDirectoryDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.directoryFilterDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.fileFilterDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.recurseDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.PingOnPoll = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.scanDelaySecondsDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ControllerFilename = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.maxBranchLoadDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ipLooselyBoundDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.Sandbox = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.UseAltAssembliesOnly = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.CoordinatedManagerIPs = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.LimitToBranchIPs = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ImpersonateUser = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.LocalUserImpersonation = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.ImpersonationPassword = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.fileSourcesDataTableBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.Save = new System.Windows.Forms.ToolStripButton();
@@ -72,6 +54,25 @@
             this.clearFilter = new System.Windows.Forms.ToolStripButton();
             this.filterMask = new System.Windows.Forms.ToolStripTextBox();
             this.managerConfiguration = new System.Windows.Forms.Button();
+            this.Notes = new System.Windows.Forms.DataGridViewImageColumn();
+            this.editController = new System.Windows.Forms.DataGridViewImageColumn();
+            this.enableDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.sourceDirectoryDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.directoryFilterDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.fileFilterDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.recurseDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.PingOnPoll = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.scanDelaySecondsDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ControllerFilename = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.maxBranchLoadDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ipLooselyBoundDataGridViewCheckBoxColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.Sandbox = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.UseAltAssembliesOnly = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.CoordinatedManagerIPs = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.LimitToBranchIPs = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ImpersonateUser = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.LocalUserImpersonation = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.ImpersonationPassword = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.fileSourcesGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileSourcesDataTableBindingSource)).BeginInit();
             this.toolStrip1.SuspendLayout();
@@ -87,17 +88,18 @@
             this.fileSourcesGridView.AutoGenerateColumns = false;
             this.fileSourcesGridView.BackgroundColor = System.Drawing.SystemColors.ButtonFace;
             this.fileSourcesGridView.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.Color.LightGray;
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.fileSourcesGridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.LightGray;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.fileSourcesGridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.fileSourcesGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.fileSourcesGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Notes,
+            this.editController,
             this.enableDataGridViewCheckBoxColumn,
             this.sourceDirectoryDataGridViewTextBoxColumn,
             this.directoryFilterDataGridViewTextBoxColumn,
@@ -121,159 +123,16 @@
             this.fileSourcesGridView.GridColor = System.Drawing.Color.LightGray;
             this.fileSourcesGridView.Location = new System.Drawing.Point(0, 0);
             this.fileSourcesGridView.Name = "fileSourcesGridView";
-            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle6.BackColor = System.Drawing.Color.LightGray;
-            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.fileSourcesGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.Color.LightGray;
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.fileSourcesGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.fileSourcesGridView.Size = new System.Drawing.Size(1285, 250);
             this.fileSourcesGridView.TabIndex = 0;
-            // 
-            // Notes
-            // 
-            this.Notes.HeaderText = "";
-            this.Notes.Image = global::STEM.Surge.ControlPanel.Properties.Resources.notes;
-            this.Notes.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
-            this.Notes.MinimumWidth = 20;
-            this.Notes.Name = "Notes";
-            this.Notes.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.Notes.Width = 20;
-            // 
-            // enableDataGridViewCheckBoxColumn
-            // 
-            this.enableDataGridViewCheckBoxColumn.DataPropertyName = "Enable";
-            this.enableDataGridViewCheckBoxColumn.HeaderText = "Enable";
-            this.enableDataGridViewCheckBoxColumn.Name = "enableDataGridViewCheckBoxColumn";
-            this.enableDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.enableDataGridViewCheckBoxColumn.Width = 60;
-            // 
-            // sourceDirectoryDataGridViewTextBoxColumn
-            // 
-            this.sourceDirectoryDataGridViewTextBoxColumn.DataPropertyName = "SourceDirectory";
-            this.sourceDirectoryDataGridViewTextBoxColumn.HeaderText = "Source";
-            this.sourceDirectoryDataGridViewTextBoxColumn.Name = "sourceDirectoryDataGridViewTextBoxColumn";
-            this.sourceDirectoryDataGridViewTextBoxColumn.ToolTipText = "Use STEM IP Spanning Notation to save configuration time";
-            this.sourceDirectoryDataGridViewTextBoxColumn.Width = 300;
-            // 
-            // directoryFilterDataGridViewTextBoxColumn
-            // 
-            this.directoryFilterDataGridViewTextBoxColumn.DataPropertyName = "DirectoryFilter";
-            this.directoryFilterDataGridViewTextBoxColumn.HeaderText = "Directory Filter";
-            this.directoryFilterDataGridViewTextBoxColumn.Name = "directoryFilterDataGridViewTextBoxColumn";
-            this.directoryFilterDataGridViewTextBoxColumn.ToolTipText = "Use \'|\' to separate multiple entries. Use \'!\' to specify an exclusive filter.";
-            // 
-            // fileFilterDataGridViewTextBoxColumn
-            // 
-            this.fileFilterDataGridViewTextBoxColumn.DataPropertyName = "FileFilter";
-            this.fileFilterDataGridViewTextBoxColumn.HeaderText = "File Filter";
-            this.fileFilterDataGridViewTextBoxColumn.Name = "fileFilterDataGridViewTextBoxColumn";
-            this.fileFilterDataGridViewTextBoxColumn.ToolTipText = "Use \'|\' to separate multiple entries. Use \'!\' to specify an exclusive filter.";
-            // 
-            // recurseDataGridViewCheckBoxColumn
-            // 
-            this.recurseDataGridViewCheckBoxColumn.DataPropertyName = "Recurse";
-            this.recurseDataGridViewCheckBoxColumn.HeaderText = "Recurse";
-            this.recurseDataGridViewCheckBoxColumn.Name = "recurseDataGridViewCheckBoxColumn";
-            this.recurseDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.recurseDataGridViewCheckBoxColumn.Width = 60;
-            // 
-            // PingOnPoll
-            // 
-            this.PingOnPoll.DataPropertyName = "PingOnPoll";
-            this.PingOnPoll.HeaderText = "Pingable Source";
-            this.PingOnPoll.Name = "PingOnPoll";
-            this.PingOnPoll.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            // 
-            // scanDelaySecondsDataGridViewTextBoxColumn
-            // 
-            this.scanDelaySecondsDataGridViewTextBoxColumn.DataPropertyName = "ScanDelaySeconds";
-            this.scanDelaySecondsDataGridViewTextBoxColumn.HeaderText = "Scan Delay Seconds";
-            this.scanDelaySecondsDataGridViewTextBoxColumn.Name = "scanDelaySecondsDataGridViewTextBoxColumn";
-            this.scanDelaySecondsDataGridViewTextBoxColumn.ToolTipText = "The shorter the delay, the higher the scan priority";
-            this.scanDelaySecondsDataGridViewTextBoxColumn.Width = 60;
-            // 
-            // ControllerFilename
-            // 
-            this.ControllerFilename.DataPropertyName = "ControllerFilename";
-            this.ControllerFilename.HeaderText = "Controller";
-            this.ControllerFilename.Name = "ControllerFilename";
-            this.ControllerFilename.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.ControllerFilename.Width = 300;
-            // 
-            // maxBranchLoadDataGridViewTextBoxColumn
-            // 
-            this.maxBranchLoadDataGridViewTextBoxColumn.DataPropertyName = "MaxBranchLoad";
-            this.maxBranchLoadDataGridViewTextBoxColumn.HeaderText = "Maximum Branch Load";
-            this.maxBranchLoadDataGridViewTextBoxColumn.Name = "maxBranchLoadDataGridViewTextBoxColumn";
-            this.maxBranchLoadDataGridViewTextBoxColumn.ToolTipText = "Consider the worst case in concert with all other rows in this Switchboard";
-            this.maxBranchLoadDataGridViewTextBoxColumn.Width = 60;
-            // 
-            // ipLooselyBoundDataGridViewCheckBoxColumn
-            // 
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.DataPropertyName = "IpLooselyBound";
-            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle5.NullValue = false;
-            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.DefaultCellStyle = dataGridViewCellStyle5;
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.HeaderText = "Allow Cross Branch Assignment";
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.Name = "ipLooselyBoundDataGridViewCheckBoxColumn";
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.ToolTipText = "Allow files sourced by this row to run on a different Branch when found on an Act" +
-    "ive Branch.";
-            this.ipLooselyBoundDataGridViewCheckBoxColumn.Width = 60;
-            // 
-            // Sandbox
-            // 
-            this.Sandbox.DataPropertyName = "Sandbox";
-            this.Sandbox.HeaderText = "Sandbox";
-            this.Sandbox.Name = "Sandbox";
-            this.Sandbox.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            // 
-            // UseAltAssembliesOnly
-            // 
-            this.UseAltAssembliesOnly.DataPropertyName = "UseAltAssembliesOnly";
-            this.UseAltAssembliesOnly.HeaderText = "Sandbox With Alt Assemblies Only";
-            this.UseAltAssembliesOnly.Name = "UseAltAssembliesOnly";
-            this.UseAltAssembliesOnly.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            // 
-            // CoordinatedManagerIPs
-            // 
-            this.CoordinatedManagerIPs.DataPropertyName = "CoordinatedManagerIPs";
-            this.CoordinatedManagerIPs.HeaderText = "Coordinated Manager IPs";
-            this.CoordinatedManagerIPs.Name = "CoordinatedManagerIPs";
-            this.CoordinatedManagerIPs.ToolTipText = "Coordinate assignment with a Deployment Manager that is also assigning files from" +
-    " this source";
-            this.CoordinatedManagerIPs.Width = 120;
-            // 
-            // LimitToBranchIPs
-            // 
-            this.LimitToBranchIPs.DataPropertyName = "LimitToBranchIPs";
-            this.LimitToBranchIPs.HeaderText = "Limit To Branch IPs";
-            this.LimitToBranchIPs.Name = "LimitToBranchIPs";
-            // 
-            // ImpersonateUser
-            // 
-            this.ImpersonateUser.DataPropertyName = "ImpersonateUser";
-            this.ImpersonateUser.HeaderText = "Impersonate User";
-            this.ImpersonateUser.Name = "ImpersonateUser";
-            this.ImpersonateUser.ToolTipText = "Is a different user account needed in order to access these files";
-            // 
-            // LocalUserImpersonation
-            // 
-            this.LocalUserImpersonation.DataPropertyName = "LocalUserImpersonation";
-            this.LocalUserImpersonation.HeaderText = "Local User Impersonation";
-            this.LocalUserImpersonation.Name = "LocalUserImpersonation";
-            this.LocalUserImpersonation.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.LocalUserImpersonation.ToolTipText = "Is the impersonated user account on this machine or the data source";
-            // 
-            // ImpersonationPassword
-            // 
-            this.ImpersonationPassword.DataPropertyName = "ImpersonationPassword";
-            this.ImpersonationPassword.HeaderText = "Impersonation Password";
-            this.ImpersonationPassword.Name = "ImpersonationPassword";
             // 
             // fileSourcesDataTableBindingSource
             // 
@@ -479,6 +338,162 @@
             this.managerConfiguration.UseVisualStyleBackColor = true;
             this.managerConfiguration.Click += new System.EventHandler(this.managerConfiguration_Click);
             // 
+            // Notes
+            // 
+            this.Notes.Frozen = true;
+            this.Notes.HeaderText = "";
+            this.Notes.Image = global::STEM.Surge.ControlPanel.Properties.Resources.notes;
+            this.Notes.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
+            this.Notes.MinimumWidth = 20;
+            this.Notes.Name = "Notes";
+            this.Notes.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.Notes.ToolTipText = "Edit Notes";
+            this.Notes.Width = 20;
+            // 
+            // editController
+            // 
+            this.editController.Frozen = true;
+            this.editController.HeaderText = "";
+            this.editController.Image = global::STEM.Surge.ControlPanel.Properties.Resources.depolyment_controller;
+            this.editController.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
+            this.editController.MinimumWidth = 20;
+            this.editController.Name = "editController";
+            this.editController.ToolTipText = "Edit Deployment Controller";
+            this.editController.Width = 20;
+            // 
+            // enableDataGridViewCheckBoxColumn
+            // 
+            this.enableDataGridViewCheckBoxColumn.DataPropertyName = "Enable";
+            this.enableDataGridViewCheckBoxColumn.HeaderText = "Enable";
+            this.enableDataGridViewCheckBoxColumn.Name = "enableDataGridViewCheckBoxColumn";
+            this.enableDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.enableDataGridViewCheckBoxColumn.Width = 60;
+            // 
+            // sourceDirectoryDataGridViewTextBoxColumn
+            // 
+            this.sourceDirectoryDataGridViewTextBoxColumn.DataPropertyName = "SourceDirectory";
+            this.sourceDirectoryDataGridViewTextBoxColumn.HeaderText = "Source";
+            this.sourceDirectoryDataGridViewTextBoxColumn.Name = "sourceDirectoryDataGridViewTextBoxColumn";
+            this.sourceDirectoryDataGridViewTextBoxColumn.ToolTipText = "Use STEM IP Spanning Notation to save configuration time";
+            this.sourceDirectoryDataGridViewTextBoxColumn.Width = 300;
+            // 
+            // directoryFilterDataGridViewTextBoxColumn
+            // 
+            this.directoryFilterDataGridViewTextBoxColumn.DataPropertyName = "DirectoryFilter";
+            this.directoryFilterDataGridViewTextBoxColumn.HeaderText = "Directory Filter";
+            this.directoryFilterDataGridViewTextBoxColumn.Name = "directoryFilterDataGridViewTextBoxColumn";
+            this.directoryFilterDataGridViewTextBoxColumn.ToolTipText = "Use \'|\' to separate multiple entries. Use \'!\' to specify an exclusive filter.";
+            // 
+            // fileFilterDataGridViewTextBoxColumn
+            // 
+            this.fileFilterDataGridViewTextBoxColumn.DataPropertyName = "FileFilter";
+            this.fileFilterDataGridViewTextBoxColumn.HeaderText = "File Filter";
+            this.fileFilterDataGridViewTextBoxColumn.Name = "fileFilterDataGridViewTextBoxColumn";
+            this.fileFilterDataGridViewTextBoxColumn.ToolTipText = "Use \'|\' to separate multiple entries. Use \'!\' to specify an exclusive filter.";
+            // 
+            // recurseDataGridViewCheckBoxColumn
+            // 
+            this.recurseDataGridViewCheckBoxColumn.DataPropertyName = "Recurse";
+            this.recurseDataGridViewCheckBoxColumn.HeaderText = "Recurse";
+            this.recurseDataGridViewCheckBoxColumn.Name = "recurseDataGridViewCheckBoxColumn";
+            this.recurseDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.recurseDataGridViewCheckBoxColumn.Width = 60;
+            // 
+            // PingOnPoll
+            // 
+            this.PingOnPoll.DataPropertyName = "PingOnPoll";
+            this.PingOnPoll.HeaderText = "Pingable Source";
+            this.PingOnPoll.Name = "PingOnPoll";
+            this.PingOnPoll.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            // 
+            // scanDelaySecondsDataGridViewTextBoxColumn
+            // 
+            this.scanDelaySecondsDataGridViewTextBoxColumn.DataPropertyName = "ScanDelaySeconds";
+            this.scanDelaySecondsDataGridViewTextBoxColumn.HeaderText = "Scan Delay Seconds";
+            this.scanDelaySecondsDataGridViewTextBoxColumn.Name = "scanDelaySecondsDataGridViewTextBoxColumn";
+            this.scanDelaySecondsDataGridViewTextBoxColumn.ToolTipText = "The shorter the delay, the higher the scan priority";
+            this.scanDelaySecondsDataGridViewTextBoxColumn.Width = 60;
+            // 
+            // ControllerFilename
+            // 
+            this.ControllerFilename.DataPropertyName = "ControllerFilename";
+            this.ControllerFilename.HeaderText = "Controller";
+            this.ControllerFilename.Name = "ControllerFilename";
+            this.ControllerFilename.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.ControllerFilename.Width = 300;
+            // 
+            // maxBranchLoadDataGridViewTextBoxColumn
+            // 
+            this.maxBranchLoadDataGridViewTextBoxColumn.DataPropertyName = "MaxBranchLoad";
+            this.maxBranchLoadDataGridViewTextBoxColumn.HeaderText = "Maximum Branch Load";
+            this.maxBranchLoadDataGridViewTextBoxColumn.Name = "maxBranchLoadDataGridViewTextBoxColumn";
+            this.maxBranchLoadDataGridViewTextBoxColumn.ToolTipText = "Consider the worst case in concert with all other rows in this Switchboard";
+            this.maxBranchLoadDataGridViewTextBoxColumn.Width = 60;
+            // 
+            // ipLooselyBoundDataGridViewCheckBoxColumn
+            // 
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.DataPropertyName = "IpLooselyBound";
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.NullValue = false;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.DefaultCellStyle = dataGridViewCellStyle2;
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.HeaderText = "Allow Cross Branch Assignment";
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.Name = "ipLooselyBoundDataGridViewCheckBoxColumn";
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.ToolTipText = "Allow files sourced by this row to run on a different Branch when found on an Act" +
+    "ive Branch.";
+            this.ipLooselyBoundDataGridViewCheckBoxColumn.Width = 60;
+            // 
+            // Sandbox
+            // 
+            this.Sandbox.DataPropertyName = "Sandbox";
+            this.Sandbox.HeaderText = "Sandbox";
+            this.Sandbox.Name = "Sandbox";
+            this.Sandbox.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            // 
+            // UseAltAssembliesOnly
+            // 
+            this.UseAltAssembliesOnly.DataPropertyName = "UseAltAssembliesOnly";
+            this.UseAltAssembliesOnly.HeaderText = "Sandbox With Alt Assemblies Only";
+            this.UseAltAssembliesOnly.Name = "UseAltAssembliesOnly";
+            this.UseAltAssembliesOnly.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            // 
+            // CoordinatedManagerIPs
+            // 
+            this.CoordinatedManagerIPs.DataPropertyName = "CoordinatedManagerIPs";
+            this.CoordinatedManagerIPs.HeaderText = "Coordinated Manager IPs";
+            this.CoordinatedManagerIPs.Name = "CoordinatedManagerIPs";
+            this.CoordinatedManagerIPs.ToolTipText = "Coordinate assignment with a Deployment Manager that is also assigning files from" +
+    " this source";
+            this.CoordinatedManagerIPs.Width = 120;
+            // 
+            // LimitToBranchIPs
+            // 
+            this.LimitToBranchIPs.DataPropertyName = "LimitToBranchIPs";
+            this.LimitToBranchIPs.HeaderText = "Limit To Branch IPs";
+            this.LimitToBranchIPs.Name = "LimitToBranchIPs";
+            // 
+            // ImpersonateUser
+            // 
+            this.ImpersonateUser.DataPropertyName = "ImpersonateUser";
+            this.ImpersonateUser.HeaderText = "Impersonate User";
+            this.ImpersonateUser.Name = "ImpersonateUser";
+            this.ImpersonateUser.ToolTipText = "Is a different user account needed in order to access these files";
+            // 
+            // LocalUserImpersonation
+            // 
+            this.LocalUserImpersonation.DataPropertyName = "LocalUserImpersonation";
+            this.LocalUserImpersonation.HeaderText = "Local User Impersonation";
+            this.LocalUserImpersonation.Name = "LocalUserImpersonation";
+            this.LocalUserImpersonation.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.LocalUserImpersonation.ToolTipText = "Is the impersonated user account on this machine or the data source";
+            // 
+            // ImpersonationPassword
+            // 
+            this.ImpersonationPassword.DataPropertyName = "ImpersonationPassword";
+            this.ImpersonationPassword.HeaderText = "Impersonation Password";
+            this.ImpersonationPassword.Name = "ImpersonationPassword";
+            // 
             // SwitchboardEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -533,6 +548,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button managerConfiguration;
         private System.Windows.Forms.DataGridViewImageColumn Notes;
+        private System.Windows.Forms.DataGridViewImageColumn editController;
         private System.Windows.Forms.DataGridViewCheckBoxColumn enableDataGridViewCheckBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn sourceDirectoryDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn directoryFilterDataGridViewTextBoxColumn;

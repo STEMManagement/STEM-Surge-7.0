@@ -37,7 +37,7 @@ namespace STEM.Surge.ControlPanel
 
             Bind();
         }
-
+        
         private void FileSourcesGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {            
             if (e.ColumnIndex == 0)
@@ -45,7 +45,12 @@ namespace STEM.Surge.ControlPanel
                 e.Value = Surge.ControlPanel.Properties.Resources.notes;
             }
 
-            if (e.ColumnIndex == 17) // && !(e.Value is System.DBNull) && !String.IsNullOrEmpty((string)e.Value))
+            if (e.ColumnIndex == 1)
+            {
+                e.Value = Surge.ControlPanel.Properties.Resources.depolyment_controller;
+            }
+
+            if (e.ColumnIndex == 18) // && !(e.Value is System.DBNull) && !String.IsNullOrEmpty((string)e.Value))
             {
                 fileSourcesGridView.Rows[e.RowIndex].Tag = e.Value;
 
@@ -55,12 +60,12 @@ namespace STEM.Surge.ControlPanel
                     e.Value = "";
             }
 
-            if (fileSourcesGridView.Rows[e.RowIndex].IsNewRow && e.ColumnIndex == 13)
+            if (fileSourcesGridView.Rows[e.RowIndex].IsNewRow && e.ColumnIndex == 14)
             {
                 e.Value = "[MANAGERS]";
             }
 
-            if (fileSourcesGridView.Rows[e.RowIndex].IsNewRow && e.ColumnIndex == 14)
+            if (fileSourcesGridView.Rows[e.RowIndex].IsNewRow && e.ColumnIndex == 15)
             {
                 e.Value = "[BRANCHES]";
             }
@@ -70,9 +75,15 @@ namespace STEM.Surge.ControlPanel
         {
             if (e.ColumnIndex == 0)
             {
-                string sourceDirectory = (string)fileSourcesGridView.Rows[e.RowIndex].Cells[2].Value;
-                string directoryFilter = (string)fileSourcesGridView.Rows[e.RowIndex].Cells[3].Value;
-                string fileFilter = (string)fileSourcesGridView.Rows[e.RowIndex].Cells[4].Value;
+                string sourceDirectory = (string)fileSourcesGridView.Rows[e.RowIndex].Cells[3].Value;
+                string directoryFilter = (string)fileSourcesGridView.Rows[e.RowIndex].Cells[4].Value;
+                string fileFilter = (string)fileSourcesGridView.Rows[e.RowIndex].Cells[5].Value;
+
+                if (String.IsNullOrEmpty(sourceDirectory) || String.IsNullOrEmpty(directoryFilter) || String.IsNullOrEmpty(fileFilter))
+                {
+                    MessageBox.Show(this, "Please configure the row before adding notes.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
 
                 string srID = GenerateSwitchboardRowIDs.GenerateSwitchboardRowID(sourceDirectory, directoryFilter, fileFilter);
 
@@ -80,6 +91,30 @@ namespace STEM.Surge.ControlPanel
                 n.ShowDialog(this);
 
                 return;
+            }
+            else if (e.ColumnIndex == 1)
+            {
+                lock (fileSourcesGridView)
+                {
+                    DataGridViewRow r = fileSourcesGridView.Rows[e.RowIndex];
+
+                    string d = r.Cells[9].Value.ToString();
+
+                    if (d == "")
+                        d = null;
+                    else
+                        d = d + ".dc";
+
+                    ControllerEditorForm cef = new ControllerEditorForm(_UIActor, d);
+
+                    cef.ShowDialog(this);
+
+                    if (cef.ControllerFilename != null && cef.ControllerFilename != d)
+                    {
+                        UpdateControllerFilenames();
+                        r.Cells[9].Value = STEM.Sys.IO.Path.GetFileNameWithoutExtension(cef.ControllerFilename);
+                    }
+                }
             }
         }
 
@@ -100,11 +135,22 @@ namespace STEM.Surge.ControlPanel
             {
                 DataGridViewRow r = fileSourcesGridView.Rows[e.RowIndex];
 
-                string d = r.Cells[8].Value.ToString();
+                string d = r.Cells[9].Value.ToString();
 
-                ControllerEditorForm cef = new ControllerEditorForm(_UIActor, d + ".dc");
+                if (d == "")
+                    d = null;
+                else
+                    d = d + ".dc";
 
-                cef.Show(this);
+                ControllerEditorForm cef = new ControllerEditorForm(_UIActor, d);
+
+                cef.ShowDialog(this);
+
+                if (cef.ControllerFilename != null && cef.ControllerFilename != d)
+                {
+                    UpdateControllerFilenames();
+                    r.Cells[9].Value = STEM.Sys.IO.Path.GetFileNameWithoutExtension(cef.ControllerFilename);
+                }
             }
         }
                 
@@ -225,7 +271,7 @@ namespace STEM.Surge.ControlPanel
                     errMsg += "File Filter cannot be empty.\r\n";
                 }
 
-                if (String.IsNullOrEmpty(r.ControllerFilename))
+                if (r.IsControllerFilenameNull())
                 {
                     errMsg += "Deployment Controller cannot be empty.\r\n";
                 }
@@ -250,14 +296,14 @@ namespace STEM.Surge.ControlPanel
 
         void fileSourcesGridView_CellEnter(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.ColumnIndex == 7)
+            if (e.ColumnIndex == 9)
                 UpdateControllerFilenames();
         }
 
         void fileSourcesGridView_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
         {
             TextBox t = e.Control as TextBox;
-            if (t != null && fileSourcesGridView.CurrentCell.ColumnIndex == 17)
+            if (t != null && fileSourcesGridView.CurrentCell.ColumnIndex == 18)
                 t.UseSystemPasswordChar = true;
             else if (t != null)
                 t.UseSystemPasswordChar = false;
@@ -299,8 +345,8 @@ namespace STEM.Surge.ControlPanel
             if (_UIActor.DeploymentManagerConfiguration.MessageConnection == null || _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration == null)
                 return;
 
-            List<string> cf = _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.FileSources.Select(i => i.ControllerFilename).ToList();
-            cf.AddRange(_UIActor.DeploymentManagerConfiguration.DeploymentControllers.Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)));
+            List<string> cf = _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration.FileSources.Where(i => !i.IsControllerFilenameNull()).Select(i => i.ControllerFilename).ToList();
+            cf.AddRange(_UIActor.DeploymentManagerConfiguration.DeploymentControllers.Where(i => i.Content != null).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i.Filename)));
 
             cf = cf.Distinct().ToList();
 
@@ -313,9 +359,11 @@ namespace STEM.Surge.ControlPanel
         {
             lock (_SwitchboardConfiguration)
             {
+                fileSourcesGridView.EndEdit();
+
                 foreach (DataGridViewRow r in fileSourcesGridView.Rows)
                 {
-                    if ((string)r.Cells[2].Value == "")
+                    if ((string)r.Cells[3].Value == "")
                     {
                         if (fileSourcesGridView.Rows.Count > 1)
                         {
@@ -324,32 +372,26 @@ namespace STEM.Surge.ControlPanel
                         }
                     }
 
-                    if ((string)r.Cells[3].Value == "")
+                    if ((string)r.Cells[4].Value == "")
                     {
                         MessageBox.Show(this, "You must enter a Directory Filter.", "Configuration Error", MessageBoxButtons.OK);
                         return;
                     }
 
-                    if ((string)r.Cells[4].Value == "")
+                    if ((string)r.Cells[5].Value == "")
                     {
                         MessageBox.Show(this, "You must enter a File Filter.", "Configuration Error", MessageBoxButtons.OK);
                         return;
                     }
 
-                    if (r.Cells[8].Value is DBNull)
+                    if (r.Cells[9].Value is DBNull)
                     {
                         MessageBox.Show(this, "You must select a Deployment Controller.", "Configuration Error", MessageBoxButtons.OK);
                         return;
                     }
                 }
 
-                fileSourcesGridView.EndEdit();
                 fileSourcesDataTableBindingSource.EndEdit();
-
-                if (_SwitchboardConfiguration.FileSources.Count == 1 && _SwitchboardConfiguration.FileSources[0].SourceDirectory == "")
-                {
-                    _SwitchboardConfiguration.FileSources.Clear();
-                }
 
                 foreach (SwitchboardConfig.FileSourcesRow r in _SwitchboardConfiguration.FileSources)
                 {
@@ -367,7 +409,11 @@ namespace STEM.Surge.ControlPanel
 
                 _DirtyConfig = false;
 
-                _UIActor.SubmitSwitchboardConfigurationUpdate(_SwitchboardConfiguration);
+                if (!_UIActor.SubmitSwitchboardConfigurationUpdate(_SwitchboardConfiguration, false))
+                {
+                    MessageBox.Show(this, "There was an error saving the configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
                 Save.Enabled = false;
                 Cancel.Enabled = false;
@@ -390,7 +436,7 @@ namespace STEM.Surge.ControlPanel
                 return;
 
             if (_SwitchboardConfiguration.Settings.Count == 0)
-                _SwitchboardConfiguration.Settings.AddSettingsRow("", 30, "localhost:8080");
+                _SwitchboardConfiguration.Settings.AddSettingsRow("", 30, "localhost:3000");
 
             if (_SwitchboardConfiguration.Settings[0].RedundantDeploymentManagers != synchronizedManagers.Text.Trim())
             {
@@ -407,7 +453,7 @@ namespace STEM.Surge.ControlPanel
                 return;
 
             if (_SwitchboardConfiguration.Settings.Count == 0)
-                _SwitchboardConfiguration.Settings.AddSettingsRow("", 30, "localhost:8080");
+                _SwitchboardConfiguration.Settings.AddSettingsRow("", 30, "localhost:3000");
 
             if (_SwitchboardConfiguration.Settings[0].GrafanaURL != grafanaUrl.Text.Trim())
             {
@@ -432,23 +478,6 @@ namespace STEM.Surge.ControlPanel
             }
         }
 
-        private void PostMortemCache_TextChanged(object sender, EventArgs e)
-        {
-            if (_UIActor.DeploymentManagerConfiguration.MessageConnection == null || _UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration == null)
-                return;
-
-            if (_SwitchboardConfiguration.Settings.Count == 0)
-                _SwitchboardConfiguration.Settings.AddSettingsRow("", 30, "localhost:8080");
-
-            //if (_SwitchboardConfiguration.Settings[0].PostMortemCacheDirectory != postMortemCache.Text.Trim())
-            //{
-            //    _SwitchboardConfiguration.Settings[0].PostMortemCacheDirectory = postMortemCache.Text.Trim();
-            //    _DirtyConfig = true;
-            //    Save.Enabled = true;
-            //    Cancel.Enabled = true;
-            //}
-        }
-
         ManagerKVP _ManagerKVP = null;
 
         private void ManagerMacroMap_Click(object sender, EventArgs e)
@@ -468,8 +497,7 @@ namespace STEM.Surge.ControlPanel
 
             _ManagerKVP = new ManagerKVP(_SwitchboardConfiguration);
         }
-
-
+        
         IpPreferenceMap _IpPreferenceMap = null;
 
         private void IpPreferenceMap_Click(object sender, EventArgs e)
