@@ -41,6 +41,8 @@ namespace STEM.Surge
 
         public _ControllerManager ControllerManager { get; private set; }
 
+        bool RequiredTargetNameCoordination = false;
+
         public InitiationSourceLockOwner(_ControllerManager controllerManager)
         {
             InitiationSource = null;
@@ -61,17 +63,36 @@ namespace STEM.Surge
             {
                 if (initiationSource != null)
                 {
-                    string key = initiationSource;
                     _FileDeploymentController fileBasis = ControllerManager.ValidatedController as _FileDeploymentController;
                     if (fileBasis != null)
                         if (fileBasis.RequireTargetNameCoordination)
-                            key = STEM.Sys.IO.Path.GetFileName(initiationSource);
+                        {
+                            RequiredTargetNameCoordination = true;
+                        }
 
-                    if (ControllerManager.KeyManager.Lock(key, this, ControllerManager.CoordinateWith))
+                    if (ControllerManager.KeyManager.Lock(initiationSource, this, ControllerManager.CoordinateWith))
                     {
-                        LockTime = DateTime.UtcNow;
-                        InitiationSource = initiationSource;
-                        return true;
+                        if (RequiredTargetNameCoordination)
+                        {
+                            string key = STEM.Sys.IO.Path.GetFileName(initiationSource);
+
+                            if (ControllerManager.KeyManager.Lock(key, this, ControllerManager.CoordinateWith))
+                            {
+                                LockTime = DateTime.UtcNow;
+                                InitiationSource = initiationSource;
+                                return true;
+                            }
+                            else
+                            {
+                                ControllerManager.KeyManager.Unlock(initiationSource, this);
+                            }
+                        }
+                        else
+                        {
+                            LockTime = DateTime.UtcNow;
+                            InitiationSource = initiationSource;
+                            return true;
+                        }
                     }
                 }
 
@@ -180,7 +201,10 @@ namespace STEM.Surge
                     if (message != null)
                         try
                         {
-                            _ExecutionCompletePool.BeginAsync(new ExecutionComplete(ControllerManager, DeploymentDetails, message), TimeSpan.FromMilliseconds(100));
+                            _DeploymentController controller = ControllerManager.ValidatedController;
+
+                            if (controller != null)
+                                _ExecutionCompletePool.BeginAsync(new ExecutionComplete(ControllerManager, DeploymentDetails, controller, message), TimeSpan.FromMilliseconds(100));
                             //if (ControllerManager.CurrentPhase != _ControllerManager.ExecutionPhase.Disposing)
                             //{
                             //    DateTime n = DateTime.UtcNow;
@@ -217,13 +241,13 @@ namespace STEM.Surge
                     if (InitiationSource != null)
                         try
                         {
-                            string key = InitiationSource;
-                            _FileDeploymentController fileBasis = ControllerManager.ValidatedController as _FileDeploymentController;
-                            if (fileBasis != null)
-                                if (fileBasis.RequireTargetNameCoordination)
-                                    key = STEM.Sys.IO.Path.GetFileName(InitiationSource);
+                            if (RequiredTargetNameCoordination)
+                            {
+                                string key = STEM.Sys.IO.Path.GetFileName(InitiationSource);
+                                ControllerManager.KeyManager.Unlock(key, this);
+                            }
 
-                            ControllerManager.KeyManager.Unlock(key, this);
+                            ControllerManager.KeyManager.Unlock(InitiationSource, this);
                         }
                         catch (Exception ex)
                         {
@@ -251,12 +275,14 @@ namespace STEM.Surge
         {
             _ControllerManager _ControllerManager;
             DeploymentDetails _DeploymentDetails;
+            _DeploymentController _Controller;
             STEM.Surge.Messages.ExecutionCompleted _Message;
 
-            public ExecutionComplete(_ControllerManager controllerManager, DeploymentDetails deploymentDetails, STEM.Surge.Messages.ExecutionCompleted msg)
+            public ExecutionComplete(_ControllerManager controllerManager, DeploymentDetails deploymentDetails, _DeploymentController controller, STEM.Surge.Messages.ExecutionCompleted msg)
             {
                 _ControllerManager = controllerManager;
                 _DeploymentDetails = deploymentDetails;
+                _Controller = controller;
                 _Message = msg;
             }
 
@@ -269,20 +295,15 @@ namespace STEM.Surge
                         DateTime n = DateTime.UtcNow;
                         DateTime e = DateTime.UtcNow;
 
-                        _DeploymentController controller = _ControllerManager.ValidatedController;
-
-                        if (controller == null)
-                            throw new Exception("ValidatedController is null.");
-
                         try
                         {
                             if (_DeploymentDetails != null)
                             {
-                                controller.ExecutionComplete(_DeploymentDetails, _Message.Exceptions);
-                                controller.InstructionMessageReceived(_Message, _DeploymentDetails);
+                                _Controller.ExecutionComplete(_DeploymentDetails, _Message.Exceptions);
+                                _Controller.InstructionMessageReceived(_Message, _DeploymentDetails);
                             }
 
-                            controller.MessageReceived(_Message);
+                            _Controller.MessageReceived(_Message);
 
                             e = DateTime.UtcNow;
                             if ((e - n).TotalMilliseconds > 1000)
@@ -313,33 +334,34 @@ namespace STEM.Surge
 
         public void Verify(string key)
         {
+            if (ExecutionCompleted)
+            {
+                try
+                {
+                    ControllerManager.KeyManager.Unlock(key, this);
+                }
+                catch (Exception ex)
+                {
+                    STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                }
+                finally
+                {
+                    InitiationSource = null;
+                }
+
+                return;
+            }
+
             if (InitiationSource == null)
                 InitiationSource = key;
 
             if (DeploymentDetails != null && DeploymentDetails.Completed != DateTime.MinValue)
             {
-                if (ExecutionCompleted)
-                {
-                    try
-                    {
-                        ControllerManager.KeyManager.Unlock(key, this);
-                    }
-                    catch (Exception ex)
-                    {
-                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                    }
-                    finally
-                    {
-                        InitiationSource = null;
-                    }
-                }
-                else
-                {
-                    Unlock();
-                }
+                Unlock();
+                return;
             }
 
-            if ((DateTime.UtcNow - LockTime).TotalMinutes > 10 && !ExecutionCompleted)
+            if ((DateTime.UtcNow - LockTime).TotalMinutes > 10)
             {
                 if (DeploymentDetails == null)
                 {
@@ -357,7 +379,7 @@ namespace STEM.Surge
                     Unlock();
                 }
             }
-            else if ((DateTime.UtcNow - LockTime).TotalMinutes > 2 && !ExecutionCompleted)
+            else if ((DateTime.UtcNow - LockTime).TotalMinutes > 2)
             {
                 if (DeploymentDetails == null)
                 {
@@ -378,28 +400,7 @@ namespace STEM.Surge
             else if ((DateTime.UtcNow - LockTime).TotalMinutes > 1)
             {
                 if (Branch == null)
-                {
-                    if (ExecutionCompleted)
-                    {
-                        if (InitiationSource != null)
-                            try
-                            {
-                                ControllerManager.KeyManager.Unlock(key, this);
-                            }
-                            catch (Exception ex)
-                            {
-                                STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                            }
-                            finally
-                            {
-                                InitiationSource = null;
-                            }
-                    }
-                    else
-                    {
-                        Unlock();
-                    }
-                }
+                    Unlock();
             }
         }
     }
