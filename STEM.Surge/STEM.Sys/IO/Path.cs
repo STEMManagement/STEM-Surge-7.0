@@ -105,11 +105,13 @@ namespace STEM.Sys.IO
             if (String.IsNullOrEmpty(path))
                 return "";
 
-            int i = path.LastIndexOf('.');
+            string s = STEM.Sys.IO.Path.GetFileName(path);
+
+            int i = s.LastIndexOf('.');
             if (i < 0)
                 return "";
 
-            return path.Substring(i);
+            return s.Substring(i);
         }
 
         /// <summary>
