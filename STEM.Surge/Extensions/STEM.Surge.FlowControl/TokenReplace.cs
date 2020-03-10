@@ -57,7 +57,7 @@ namespace STEM.Surge.FlowControl
             {
                 STEM.Sys.Serialization.Dictionary<string, string> map = WindowsReplacementMap;
 
-                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                if (!STEM.Sys.Control.IsWindows)
                     map = LinuxReplacementMap;
 
                 for (int x = OrdinalPosition + 1; x < InstructionSet.Instructions.Count; x++)
