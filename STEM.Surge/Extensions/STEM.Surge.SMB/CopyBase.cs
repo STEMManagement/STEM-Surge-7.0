@@ -192,7 +192,19 @@ namespace STEM.Surge.SMB
 
                 foreach (string src in sources)
                 {
-                    foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(src, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false))
+                    List<string> files = null;
+
+                    if (!RecurseSource && !FileFilter.Contains("|") && !FileFilter.Contains("!") && !FileFilter.Contains("<>") && !FileFilter.Contains("?") && !FileFilter.Contains("*"))
+                    {
+                        files = new List<string>();
+                        files.Add(Path.Combine(src, FileFilter));
+                    }
+                    else
+                    {
+                        files = STEM.Sys.IO.Directory.STEM_GetFiles(src, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false);
+                    }
+
+                    foreach (string s in files)
                     {
                         try
                         {

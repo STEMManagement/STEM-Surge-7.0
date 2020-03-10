@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
 
@@ -96,7 +97,19 @@ namespace STEM.Surge.SMB
             SourcePath = STEM.Sys.IO.Path.AdjustPath(SourcePath);
             try
             {
-                foreach (string file in STEM.Sys.IO.Directory.STEM_GetFiles(SourcePath, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), ExpandSource))
+                List<string> files = null;
+
+                if (!ExpandSource && !RecurseSource && !FileFilter.Contains("|") && !FileFilter.Contains("!") && !FileFilter.Contains("<>") && !FileFilter.Contains("?") && !FileFilter.Contains("*"))
+                {
+                    files = new List<string>();
+                    files.Add(Path.Combine(SourcePath, FileFilter));
+                }
+                else
+                {
+                    files = STEM.Sys.IO.Directory.STEM_GetFiles(SourcePath, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), ExpandSource);
+                }
+
+                foreach (string file in files)
                 {
                     try
                     {
