@@ -549,7 +549,7 @@ namespace STEM.Surge
         /// Submit an update to the SwitchboardConfig
         /// </summary>
         /// <param name="switchboardConfiguration">The updated configuration</param>
-        public void SubmitSwitchboardConfigurationUpdate(SwitchboardConfig switchboardConfiguration)
+        public bool SubmitSwitchboardConfigurationUpdate(SwitchboardConfig switchboardConfiguration, bool invokeConfigUpdated)
         {
             lock (_DeploymentManagerConfigurationMutex)
             {
@@ -557,33 +557,37 @@ namespace STEM.Surge
                 {
                     _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent = switchboardConfiguration.GetXml();
                     _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc = DateTime.UtcNow;
-                    SendToAll(_DeploymentManagerConfiguration);
+                    if (!Send(_DeploymentManagerConfiguration))
+                        return false;
 
                     try
                     {
-                        try
-                        {
-                            if (onUpdateStatusMessage != null)
-                                onUpdateStatusMessage(this, "Configuration Update Received: " + _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc.ToString("G"));
-                        }
-                        catch { }
-
-                        foreach (EventHandler h in onSwitchboardConfigUpdated.GetInvocationList())
-                            h(this, ResolveEventArgs.Empty);
+                        if (onUpdateStatusMessage != null)
+                            onUpdateStatusMessage(this, "Configuration Update Received: " + _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc.ToString("G"));
                     }
                     catch { }
+
+                    if (invokeConfigUpdated)
+                        try
+                        {
+                            foreach (EventHandler h in onSwitchboardConfigUpdated.GetInvocationList())
+                                h(this, ResolveEventArgs.Empty);
+                        }
+                        catch { }
                 }
+
+                return true;
             }
         }
 
         /// <summary>
         /// Submit the entire DeploymentManagerConfiguration message
         /// </summary>
-        public void SubmitConfigurationUpdate()
+        public bool SubmitConfigurationUpdate()
         {
             lock (_DeploymentManagerConfigurationMutex)
             {
-                SendToAll(_DeploymentManagerConfiguration);
+                return Send(_DeploymentManagerConfiguration);
             }
         }
 
