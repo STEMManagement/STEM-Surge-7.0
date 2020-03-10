@@ -49,7 +49,7 @@ namespace STEM.Surge.SMB
         {
             try
             {
-                bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+                bool isWindows = STEM.Sys.Control.IsWindows;
 
                 if (!isWindows)
                     return true;
