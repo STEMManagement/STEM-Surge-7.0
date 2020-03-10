@@ -76,6 +76,7 @@
             this.strings.Size = new System.Drawing.Size(557, 225);
             this.strings.TabIndex = 3;
             this.strings.Text = "";
+            this.strings.WordWrap = false;
             // 
             // StringCollectionEditor
             // 
