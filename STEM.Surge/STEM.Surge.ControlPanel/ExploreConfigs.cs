@@ -446,11 +446,6 @@ namespace STEM.Surge.ControlPanel
                             }
                         }
 
-                        if (removed > 0)
-                        {
-                            _UIActor.SubmitSwitchboardConfigurationUpdate(_SwitchboardConfig);
-                        }
-
                         _SwitchboardKVP = _SwitchboardConfig.ConfigurationMacroMap.ToDictionary(i => i[0].ToString(), i => i[1].ToString());
 
                         foreach (string key in _DeploymentControllers.Keys)
@@ -486,9 +481,10 @@ namespace STEM.Surge.ControlPanel
                             catch { }
                         }
 
-                        _UIActor.SubmitConfigurationUpdate();
-
-                        MessageBox.Show(this, "Cleanup complete. Removed " + removed + " references.", "Finished", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        if (_UIActor.SubmitConfigurationUpdate())
+                            MessageBox.Show(this, "Cleanup complete. Removed " + removed + " references.", "Finished", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        else
+                            MessageBox.Show(this, "There was an error saving the configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
             }
         }

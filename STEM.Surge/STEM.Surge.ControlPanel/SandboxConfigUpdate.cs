@@ -46,7 +46,8 @@ namespace STEM.Surge.ControlPanel
                         t.Enable = true;
                 }
 
-                _UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration);
+                if (!_UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration, true))
+                    MessageBox.Show(this, "There was an error saving the configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -298,7 +299,8 @@ namespace STEM.Surge.ControlPanel
 
             if (_Disabled.Count > 0)
             {
-                _UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration);
+                if (!_UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration, true))
+                    MessageBox.Show(this, "There was an error saving the configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             foreach (DataGridViewRow r in updateEntries.Rows)
@@ -443,7 +445,8 @@ namespace STEM.Surge.ControlPanel
                         t.Enable = true;
                 }
 
-                _UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration);
+                if (!_UIActor.SubmitSwitchboardConfigurationUpdate(_UIActor.DeploymentManagerConfiguration.SwitchboardConfiguration, true))
+                    MessageBox.Show(this, "There was an error saving the configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             _Disabled = null;

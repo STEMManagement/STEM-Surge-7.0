@@ -241,8 +241,12 @@ namespace STEM.Surge.ControlPanel
 
                         cfg.AcceptChanges();
 
-                        _UIActor.SubmitSwitchboardConfigurationUpdate(cfg);
-                        
+                        if (!_UIActor.SubmitSwitchboardConfigurationUpdate(cfg, true))
+                        {
+                            MessageBox.Show(this, "There was an error saving the configuration!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
                         ((DataGridViewCheckBoxCell)row.Cells[0]).Value = fsr.Enable;
 
                         break;
