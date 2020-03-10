@@ -104,8 +104,10 @@ namespace STEM.Sys.IO
 
                         break;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        if (r == 0)
+                            throw new Exception("Failed to delete " + adjustedFilename + ".", ex);
                     }
 
                     if (r > 0)
