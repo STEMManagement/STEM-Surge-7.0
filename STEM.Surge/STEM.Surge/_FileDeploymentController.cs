@@ -83,6 +83,7 @@ namespace STEM.Surge
             TemplateKVP["[LastAccessTimeUtc]"] = "yyyy-MM-dd HH.mm.ss.fff";
             TemplateKVP["[CreationTimeUtc]"] = "yyyy-MM-dd HH.mm.ss.fff";
             TemplateKVP["[SourceAddress]"] = "Reserved";
+            TemplateKVP["[SourceMachineName]"] = "Reserved";
         }
 
         /// <summary>
@@ -130,6 +131,7 @@ namespace STEM.Surge
             }
 
             kvp["[SourceAddress]"] = STEM.Sys.IO.Path.IPFromPath(initiationSource);
+            kvp["[SourceMachineName]"] = STEM.Sys.IO.Net.MachineName(kvp["[SourceAddress]"]);
 
             string xml = iSetTemplate.SerializationSourceInstructionDocument;
 
