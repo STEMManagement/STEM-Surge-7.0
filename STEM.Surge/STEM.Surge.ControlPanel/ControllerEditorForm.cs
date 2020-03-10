@@ -12,11 +12,15 @@ namespace STEM.Surge.ControlPanel
 {
     public partial class ControllerEditorForm : Form
     {
+        public string ControllerFilename { get; private set; }
+
         public ControllerEditorForm(UIActor messageClient, string controllerFilename)
         {
             InitializeComponent();
 
             FormClosing += ControllerEditorForm_FormClosing;
+
+            ControllerFilename = controllerFilename;
 
             controllerEditor1.Bind(controllerFilename, messageClient, true);
         }
@@ -28,8 +32,11 @@ namespace STEM.Surge.ControlPanel
                 if (MessageBox.Show(this, "Cancel Changes?", "Unsaved", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.No)
                 {
                     e.Cancel = true;
+                    return;
                 }
             }
+
+            ControllerFilename = controllerEditor1.ControllerFilename;
         }
     }
 }

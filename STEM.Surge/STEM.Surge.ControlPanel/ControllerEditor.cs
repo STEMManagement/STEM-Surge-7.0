@@ -26,6 +26,8 @@ namespace STEM.Surge.ControlPanel
 
         public EventHandler onSaved;
         public EventHandler onInstructionSetTemplateSaved;
+        
+        public string ControllerFilename { get; private set; }        
 
         public ControllerEditor()
         {
@@ -150,6 +152,7 @@ namespace STEM.Surge.ControlPanel
             }
 
             deploymentControllerName.Text = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DC.Filename);
+            ControllerFilename = _DC.Filename;
 
             detailsLabel.Text = _ActiveController.VersionDescriptor.TypeName;
 
@@ -208,6 +211,7 @@ namespace STEM.Surge.ControlPanel
                         openTemplate.Visible = true;
 
                         deploymentControllerName.Text = "NewController";
+                        ControllerFilename = "NewController.dc";
 
                         _DC = new FileDescription();
                         _DC.CreationTimeUtc = DateTime.UtcNow;
@@ -258,6 +262,7 @@ namespace STEM.Surge.ControlPanel
                     }
 
                     deploymentControllerName.Text = STEM.Sys.IO.Path.GetFileNameWithoutExtension(_DC.Filename);
+                    ControllerFilename = _DC.Filename;
 
                     detailsLabel.Text = _ActiveController.VersionDescriptor.TypeName;
 
@@ -318,6 +323,7 @@ namespace STEM.Surge.ControlPanel
                 return;
 
             string fileName = deploymentControllerName.Text.Trim();
+            ControllerFilename = fileName + ".dc";
 
             if (fileName.Length < 1)
             {

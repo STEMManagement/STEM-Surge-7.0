@@ -41,11 +41,11 @@
             this.openTemplate = new System.Windows.Forms.ToolStripButton();
             this.detailsLabel = new System.Windows.Forms.ToolStripLabel();
             this.macroPlaceholderGrid = new System.Windows.Forms.DataGridView();
+            this.toolStrip3 = new System.Windows.Forms.ToolStrip();
+            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             this.Insert = new System.Windows.Forms.DataGridViewButtonColumn();
             this.Placeholder = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.toolStrip3 = new System.Windows.Forms.ToolStrip();
-            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
@@ -188,6 +188,23 @@
             this.macroPlaceholderGrid.Size = new System.Drawing.Size(847, 171);
             this.macroPlaceholderGrid.TabIndex = 15;
             // 
+            // toolStrip3
+            // 
+            this.toolStrip3.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+            this.toolStrip3.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripLabel2});
+            this.toolStrip3.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip3.Name = "toolStrip3";
+            this.toolStrip3.Size = new System.Drawing.Size(847, 25);
+            this.toolStrip3.TabIndex = 14;
+            this.toolStrip3.Text = "toolStrip3";
+            // 
+            // toolStripLabel2
+            // 
+            this.toolStripLabel2.Name = "toolStripLabel2";
+            this.toolStripLabel2.Size = new System.Drawing.Size(105, 22);
+            this.toolStripLabel2.Text = "Value Placeholders";
+            // 
             // Insert
             // 
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
@@ -209,27 +226,10 @@
             // 
             // Value
             // 
+            this.Value.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.Value.HeaderText = "Value";
             this.Value.MinimumWidth = 275;
             this.Value.Name = "Value";
-            this.Value.Width = 275;
-            // 
-            // toolStrip3
-            // 
-            this.toolStrip3.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            this.toolStrip3.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripLabel2});
-            this.toolStrip3.Location = new System.Drawing.Point(0, 0);
-            this.toolStrip3.Name = "toolStrip3";
-            this.toolStrip3.Size = new System.Drawing.Size(847, 25);
-            this.toolStrip3.TabIndex = 14;
-            this.toolStrip3.Text = "toolStrip3";
-            // 
-            // toolStripLabel2
-            // 
-            this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(105, 22);
-            this.toolStripLabel2.Text = "Value Placeholders";
             // 
             // ControllerEditor
             // 
@@ -263,14 +263,14 @@
         private System.Windows.Forms.ToolStripLabel toolStripLabel2;
         private System.Windows.Forms.PropertyGrid controllerProperties;
         private System.Windows.Forms.ToolStrip toolStrip2;
-        private System.Windows.Forms.DataGridViewButtonColumn Insert;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Placeholder;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
         private System.Windows.Forms.ToolStrip toolStrip4;
         private System.Windows.Forms.ToolStripButton save;
         private System.Windows.Forms.ToolStripButton openTemplate;
         private System.Windows.Forms.ToolStripLabel detailsLabel;
         private System.Windows.Forms.ToolStripLabel toolStripLabel1;
         private System.Windows.Forms.ToolStripTextBox deploymentControllerName;
+        private System.Windows.Forms.DataGridViewButtonColumn Insert;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Placeholder;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
     }
 }
