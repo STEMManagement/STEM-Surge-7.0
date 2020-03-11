@@ -70,20 +70,23 @@ namespace STEM.Surge.PostGreSQL
                 }
 
                 LoadFile me = new LoadFile(this, FileList[FileList.Count - 1], loaders);
-                
+
                 lock (loaders)
                     loaders.Add(me);
-                
+
                 me.CallExecute();
 
                 while (loaders.Count > 0)
                     System.Threading.Thread.Sleep(10);
 
-                ImportDataTable(_ISet, _ISet.TableName);
-                ImportDataTable(_Instructions, _Instructions.TableName);
+                if (Exceptions.Count == 0)
+                {
+                    ImportDataTable(_ISet, _ISet.TableName);
+                    ImportDataTable(_Instructions, _Instructions.TableName);
 
-                foreach (string file in _Files)
-                    System.IO.File.Delete(file);
+                    foreach (string file in _Files)
+                        System.IO.File.Delete(file);
+                }
             }
             catch (Exception ex)
             {
@@ -125,7 +128,11 @@ namespace STEM.Surge.PostGreSQL
 
                     _Ins._Files.Add(_File);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    lock (_Ins.Exceptions)
+                        _Ins.Exceptions.Add(ex);
+                }
 
                 lock (_Loaders)
                     _Loaders.Remove(this);
