@@ -59,7 +59,7 @@ namespace STEM.Surge.PostGreSQL
             }
         }
 
-        protected void ImportDataTable(Authentication auth, DataTable dt, string tableName)
+        public void ImportDataTable(Authentication auth, DataTable dt, string tableName)
         {
             Authentication x = Authentication;
 

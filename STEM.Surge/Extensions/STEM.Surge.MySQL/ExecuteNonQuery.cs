@@ -59,7 +59,7 @@ namespace STEM.Surge.MySQL
             }
         }
 
-        protected void ImportDataTable(Authentication auth, DataTable dt, string tableName, int retry)
+        public void ImportDataTable(Authentication auth, DataTable dt, string tableName, int retry)
         {
             Authentication x = Authentication;
 
