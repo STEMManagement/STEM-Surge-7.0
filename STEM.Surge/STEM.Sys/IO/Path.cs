@@ -197,14 +197,13 @@ namespace STEM.Sys.IO
         public static string FirstTokenOfPath(string path)
         {
             string p = STEM.Sys.IO.Path.AdjustPath(path);
-            string machine = Net.MachineIP(); 
-            if (p != null && (p.StartsWith("\\", StringComparison.InvariantCultureIgnoreCase) || p.StartsWith("/", StringComparison.InvariantCultureIgnoreCase)))
-            {
-                machine = p.TrimStart('\\').TrimStart('/');
 
-                if (machine.IndexOf(System.IO.Path.DirectorySeparatorChar) != -1)
-                    machine = machine.Substring(0, machine.IndexOf(System.IO.Path.DirectorySeparatorChar));
-            }
+            string machine = p.TrimStart('\\').TrimStart('/');
+            if (p.Contains(":"))
+                return Net.MachineIP();
+
+            if (machine.IndexOf(System.IO.Path.DirectorySeparatorChar) != -1)
+                machine = machine.Substring(0, machine.IndexOf(System.IO.Path.DirectorySeparatorChar));
 
             return machine;
         }
@@ -600,6 +599,9 @@ namespace STEM.Sys.IO
         /// <returns>platform adjusted path</returns>
         public static string AdjustPath(string path)
         {
+            if (path == null)
+                return "";
+
             if (System.IO.Path.DirectorySeparatorChar == '/')
                 path = path.Replace('\\', System.IO.Path.DirectorySeparatorChar).TrimEnd(System.IO.Path.DirectorySeparatorChar);
             else
