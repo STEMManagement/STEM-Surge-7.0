@@ -50,13 +50,15 @@ namespace STEM.Surge.ObjectTracking
 
         protected override bool _Run()
         {
+            List<Exception> exceptions = null;
+
             try
             {
                 if (InstructionSet.InstructionSetContainer.ContainsKey(EventName))
                 {
                     Guid eventID = (Guid)InstructionSet.InstructionSetContainer[EventName];
 
-                    if (!ILogger.GetLogger(LoggerName).LogEventMetadata(eventID, Metadata))
+                    if (!ILogger.GetLogger(LoggerName).LogEventMetadata(eventID, Metadata, out exceptions))
                         throw new Exception("Failed to record event metadata.");
                 }
                 else
@@ -67,6 +69,9 @@ namespace STEM.Surge.ObjectTracking
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
+
+                if (exceptions != null)
+                    Exceptions.AddRange(exceptions);
             }
 
             return Exceptions.Count == 0;

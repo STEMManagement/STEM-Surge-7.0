@@ -53,18 +53,23 @@ namespace STEM.Surge.ObjectTracking
 
         protected override bool _Run()
         {
+            List<Exception> exceptions = null;
+
             try
             {
                 Guid objectID = Guid.Parse(ObjectID);
 
                 InstructionSet.InstructionSetContainer["ObjectID"] = objectID;
 
-                if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName, DateTime.Parse(CreationTime)))
+                if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName, DateTime.Parse(CreationTime), out exceptions))
                     throw new Exception("Failed to record object info.");
             }
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
+
+                if (exceptions != null)
+                    Exceptions.AddRange(exceptions);
             }
 
             return Exceptions.Count == 0;

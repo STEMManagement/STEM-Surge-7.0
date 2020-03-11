@@ -58,6 +58,8 @@ namespace STEM.Surge.ObjectTracking
 
         protected override bool _Run()
         {
+            List<Exception> exceptions = null;
+
             try
             {
                 Guid objectID = Guid.Empty;
@@ -68,23 +70,23 @@ namespace STEM.Surge.ObjectTracking
                 if (objectID == Guid.Empty && GenerateObjectID)
                 {
                     objectID = Guid.NewGuid();
-                    if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName))
+                    if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName, out exceptions))
                         throw new Exception("Failed to record object info.");
 
                     InstructionSet.InstructionSetContainer["ObjectID"] = objectID;
                 }
                 else if (UpdateObjectName)
                 {
-                    if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName))
+                    if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName, out exceptions))
                         throw new Exception("Failed to record object info.");
                 }
 
                 Guid eventID = Guid.Empty;
 
                 if (objectID == Guid.Empty)
-                    eventID = ILogger.GetLogger(LoggerName).LogEvent(ObjectName, EventName, InstructionSet.ProcessName);
+                    eventID = ILogger.GetLogger(LoggerName).LogEvent(ObjectName, EventName, InstructionSet.ProcessName, out exceptions);
                 else
-                    eventID = ILogger.GetLogger(LoggerName).LogEvent(objectID, EventName, InstructionSet.ProcessName);
+                    eventID = ILogger.GetLogger(LoggerName).LogEvent(objectID, EventName, InstructionSet.ProcessName, out exceptions);
 
                 if (eventID == Guid.Empty)
                 {
@@ -99,6 +101,9 @@ namespace STEM.Surge.ObjectTracking
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
+
+                if (exceptions != null)
+                    Exceptions.AddRange(exceptions);
             }
 
             return Exceptions.Count == 0;
