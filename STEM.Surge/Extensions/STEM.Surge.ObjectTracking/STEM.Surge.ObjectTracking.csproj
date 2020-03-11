@@ -57,6 +57,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordEventMetadata.cs" />
     <Compile Include="RecordObjectInfo.cs" />
+    <Compile Include="LogProcessEvent.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
