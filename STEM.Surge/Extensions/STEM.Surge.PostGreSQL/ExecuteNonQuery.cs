@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Data;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -51,6 +52,21 @@ namespace STEM.Surge.PostGreSQL
             {
                 Authentication = auth;
                 base.ExecuteNonQuery(sql, retry);
+            }
+            finally
+            {
+                Authentication = x;
+            }
+        }
+
+        protected void ImportDataTable(Authentication auth, DataTable dt, string tableName)
+        {
+            Authentication x = Authentication;
+
+            try
+            {
+                Authentication = auth;
+                base.ImportDataTable(dt, tableName);
             }
             finally
             {
