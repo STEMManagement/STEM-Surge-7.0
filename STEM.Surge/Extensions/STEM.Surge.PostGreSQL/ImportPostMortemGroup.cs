@@ -121,12 +121,15 @@ namespace STEM.Surge.PostGreSQL
 
                 try
                 {
-                    string xml = System.IO.File.ReadAllText(_File);
+                    if (System.IO.File.Exists(_File))
+                    {
+                        string xml = System.IO.File.ReadAllText(_File);
 
-                    if (_File.EndsWith(".is", StringComparison.InvariantCultureIgnoreCase))
-                        _Ins.IngestInstructionSet(xml, _Ins._ISet, _Ins._Instructions);
+                        if (_File.EndsWith(".is", StringComparison.InvariantCultureIgnoreCase))
+                            _Ins.IngestInstructionSet(xml, _Ins._ISet, _Ins._Instructions);
 
-                    _Ins._Files.Add(_File);
+                        _Ins._Files.Add(_File);
+                    }
                 }
                 catch (Exception ex)
                 {
