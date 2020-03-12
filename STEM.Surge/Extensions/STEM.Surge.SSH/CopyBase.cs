@@ -523,28 +523,25 @@ namespace STEM.Surge.SSH
             {
                 switch (ZeroFilesAction)
                 {
+
                     case FailureAction.SkipRemaining:
-                        Exceptions.Clear();
                         SkipRemaining();
-                        break;
+                        return true;
 
                     case FailureAction.SkipNext:
-                        Exceptions.Clear();
                         SkipNext();
-                        break;
+                        return true;
 
                     case FailureAction.SkipToLabel:
-                        Exceptions.Clear();
                         SkipForwardToFlowControlLabel(FailureActionLabel);
-                        break;
+                        return true;
 
                     case FailureAction.Rollback:
                         RollbackAllPreceedingAndSkipRemaining();
                         break;
 
                     case FailureAction.Continue:
-                        Exceptions.Clear();
-                        break;
+                        return true;
                 }
 
                 Message = "0 Files Actioned\r\n" + Message;

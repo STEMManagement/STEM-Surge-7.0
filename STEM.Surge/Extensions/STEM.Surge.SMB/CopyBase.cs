@@ -312,7 +312,6 @@ namespace STEM.Surge.SMB
                         break;
 
                     case FailureAction.Continue:
-                        Exceptions.Clear();
                         return true;
                 }
 
