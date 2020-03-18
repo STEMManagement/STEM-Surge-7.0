@@ -37,7 +37,6 @@
 /STEM.Surge/STEM.Sys/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Azure/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.BasicControllers/bin/Release/netstandard2.0
-/STEM.Surge/Extensions/STEM.Surge.Compression
 /STEM.Surge/Extensions/STEM.Surge.DropBox/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.ErrorCleaner/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Fisher/bin/Release/netstandard2.0
@@ -117,3 +116,7 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/Extensions/STEM.Surge.ObjectTracking/obj
 /STEM.Surge/Extensions/STEM.Surge.SQLServer/bin/Debug
 /STEM.Surge/STEM.Surge.ControlPanel
+/STEM.Surge/Extensions/STEM.Surge.HealthMonitoring/obj/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.HealthMonitoring/obj
+/STEM.Surge/Extensions/STEM.Surge.Compression/bin/Release
+/STEM.Surge/Extensions/STEM.Surge.Compression/obj/Release
