@@ -384,7 +384,7 @@ namespace STEM.Surge.SSH
 
                 try
                 {
-                    while (client.Exists(unique))
+                    while (FileExists(server, port, unique))
                     {
                         unique = string.Format("{0}/{1}_{2}{3}",
                             STEM.Sys.IO.Path.GetDirectoryName(file),
