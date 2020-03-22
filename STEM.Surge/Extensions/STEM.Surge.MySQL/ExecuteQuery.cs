@@ -25,7 +25,7 @@ namespace STEM.Surge.MySQL
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("ExecuteQuery")]
     [Description("Execute a query and put the resulting DataSet in a container for others to use.")]
-    public class ExecuteQuery : MySQLBaseInstruction
+    public class ExecuteQuery : MySqlBaseInstruction
     {
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will be executed.")]
         public List<string> Sql { get; set; }

@@ -29,7 +29,7 @@ namespace STEM.Surge.MySQL
     [Description("Customize an InstructionSet Template using the column names from a query as implicit [PlaceHolders]. " +
         "(e.g. if 'Sql to be executed' is 'SELECT ID, StreetAddress, PhoneNumber, Email FROM People' and 'Row Key Column Index (0-Based)' is set to '0' then " +
         "for each ID an InstructionSet Template will be customized with possible placeholder replacement for [ID], [StreetAddress], [PhoneNumber], and [Email])")]
-    public class MySQLController : STEM.Surge.DeploymentController
+    public class MySqlController : STEM.Surge.DeploymentController
     {
         [Category("MySQL Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
@@ -47,7 +47,7 @@ namespace STEM.Surge.MySQL
         [DisplayName("Attempt assignment of every result row before requery"), DescriptionAttribute("")]
         public bool OnlyRequeryWhenResultListHasBeenCompletelyProcessed { get; set; }
 
-        public MySQLController()
+        public MySqlController()
         {
             Authentication = new Authentication();
             Sql = new List<string>();

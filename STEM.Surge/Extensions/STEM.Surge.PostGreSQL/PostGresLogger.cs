@@ -17,73 +17,128 @@
 
 
 /*
-  
--- Sample Database Schema
 
-CREATE TABLE `objects` (
-  `id` varchar(36) NOT NULL,
-  `name` varchar(200) NOT NULL DEFAULT '',
-  `creationtime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `namehash` bigint NOT NULL,
-  UNIQUE KEY `idx_objects_id` (`id`),
-  KEY `idx_objects_namehash` (`namehash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- Suggested Database Schema
 
 
-CREATE TABLE `events` (
-  `id` varchar(36) NOT NULL,
-  `objectid` varchar(36) NOT NULL,
-  `eventname` varchar(200) NOT NULL DEFAULT '',
-  `machinename` varchar(200) NOT NULL DEFAULT '',
-  `processname` varchar(200) NOT NULL DEFAULT '',
-  `eventtime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY `idx_events_id` (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE event_log.objects
+(
+    id uuid NOT NULL,
+    name character varying COLLATE pg_catalog."default" NOT NULL,
+    creationtime timestamp without time zone NOT NULL,
+    namehash bigint NOT NULL
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
 
+ALTER TABLE event_log.objects
+    OWNER to postgres;
 
-CREATE TABLE `eventmetadata` (
-  `eventid` varchar(36) NOT NULL,
-  `metadata` varchar(16000) NOT NULL DEFAULT '',
-  `metadatahash` bigint NOT NULL,
-  UNIQUE KEY `idx_eventmetadata_metadatahash` (`eventid`, `metadatahash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE UNIQUE INDEX ix_objects_id
+    ON event_log.objects USING btree
+    (id ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+CREATE INDEX ix_objects_namehash
+    ON event_log.objects USING btree
+    (namehash ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+CREATE TABLE event_log.events
+(
+    id uuid NOT NULL,
+    objectid uuid NOT NULL,
+    eventname character varying COLLATE pg_catalog."default" NOT NULL,
+    machinename character varying COLLATE pg_catalog."default" NOT NULL,
+    processname character varying COLLATE pg_catalog."default" NOT NULL,
+    eventtime timestamp without time zone NOT NULL
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE event_log.events
+    OWNER to postgres;
+       
+CREATE TABLE event_log.event_metadata
+(
+    eventid uuid NOT NULL,
+    metadata character varying COLLATE pg_catalog."default" NOT NULL,
+    metadatahash bigint NOT NULL
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE event_log.event_metadata
+    OWNER to postgres;
+
+CREATE UNIQUE INDEX ix_eventmetadata_eventid
+    ON event_log.event_metadata USING btree
+    (eventid ASC NULLS LAST, metadatahash ASC NULLS LAST)
+    TABLESPACE pg_default;
+
+CREATE INDEX ix_eventmetadata_metadatahash
+    ON event_log.event_metadata USING btree
+    (metadatahash ASC NULLS LAST)
+    TABLESPACE pg_default;
+
 
 -- Sample LogObjectSql
 
-UPDATE objects SET creationtime = '[ObjectCreationTime]' 
-WHERE id = '[ObjectID]' OR namehash = [ObjectNameHash] AND '[ObjectCreationTime]' <> '1970-01-01 00:00';
-INSERT INTO objects
-SELECT '[ObjectID]', '[ObjectName]', '[ObjectCreationTime]', [ObjectNameHash] 
-WHERE NOT EXISTS (SELECT 0 FROM objects WHERE id = '[ObjectID]' OR namehash = [ObjectNameHash])
+DO $$
+BEGIN
+	IF EXISTS (SELECT 0 FROM event_log.objects WHERE namehash = [ObjectNameHash])
+	THEN
+		IF '[ObjectCreationTime]' <> '1970-01-01 00:00'
+		THEN
+			UPDATE event_log.objects SET creationtime = '[ObjectCreationTime]' WHERE namehash = [ObjectNameHash];
+		END IF;
+	ELSE
+		INSERT INTO event_log.objects
+		SELECT '[ObjectID]', '[ObjectName]', '[ObjectCreationTime]', [ObjectNameHash];
+	END IF;
+END $$;
 
 -- Sample LogEventSql
 
-INSERT events 
-SELECT '[EventID]', objects.id, '[EventName]', '[MachineName]', '[ProcessName]', '[EventTime]'
-FROM objects
-WHERE (objects.id = '[ObjectID]') OR ('[ObjectID]' = '' AND objects.name = '[ObjectName]')
+INSERT INTO event_log.events 
+SELECT '[EventID]', objects.ID, '[EventName]', '[MachineName]', '[ProcessName]', '[EventTime]'
+FROM event_log.objects
+WHERE (objects.ID = '[ObjectID]') OR ('[ObjectID]' = '' AND objects.Name = '[ObjectName]');
+
 
 -- Sample LogMetaSql
 
-INSERT INTO eventmetadata
-SELECT '[EventID]', '[EventMetadata]', [EventMetadataHash]
-WHERE NOT EXISTS (SELECT 0 FROM eventmetadata WHERE eventid = '[EventID]' AND metadatahash = [EventMetadataHash])
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT 0 FROM event_log.event_metadata WHERE eventid = '[EventID]' AND metadatahash = [EventMetadataHash])
+	THEN
+		INSERT INTO event_log.event_metadata 
+		SELECT '[EventID]', '[EventMetadata]', [EventMetadataHash];	
+	END IF;
+END $$;
+
+
 
 */
-
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using STEM.Surge.Logging;
 
-namespace STEM.Surge.MySQL
+namespace STEM.Surge.PostGreSQL
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
-    [DisplayName("MySql Logger")]
-    [Description("Plants a named ILogger in session that is backed by a MySql Database. " +
+    [DisplayName("PostGreSql Logger")]
+    [Description("Plants a named ILogger in session that is backed by a PostGreSql Database. " +
         "This is used by the STEM.Surge.ObjectTracking extension or directly through ILogger.GetLogger(loggerName).")]
-    public class MySqlLogger : ILogger
+    public class PostGresLogger : ILogger
     {
         [Category("Logger")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
@@ -99,7 +154,7 @@ namespace STEM.Surge.MySQL
 
         [Category("Logger")]
         [DisplayName("Log Event Metadata"), DescriptionAttribute("This is the Sql that will be executed for each LogEventMetadata call.")]
-        public virtual List<string> LogMetaSql { get; set; }
+        public virtual  List<string> LogMetaSql { get; set; }
 
         [Category("Logger")]
         [DisplayName("Log Object Sql"), DescriptionAttribute("This is the Sql that will be executed for each SetObjectInfo call.")]
@@ -108,7 +163,7 @@ namespace STEM.Surge.MySQL
         [Category("Logger")]
         [DisplayName("Available Placeholders"), DescriptionAttribute("The placeholders available for use in your Sql.")]
         [ReadOnly(true)]
-        public virtual List<string> AvailablePlaceholders 
+        public virtual List<string> AvailablePlaceholders
         {
             get
             {
@@ -130,7 +185,7 @@ namespace STEM.Surge.MySQL
             }
         }
 
-        public MySqlLogger()
+        public PostGresLogger()
         {
             Authentication = new Authentication();
             TimeoutRetryAttempts = 3;
@@ -144,14 +199,14 @@ namespace STEM.Surge.MySQL
             exceptions = new List<Exception>();
 
             Guid eventID = Guid.NewGuid();
-            bool success = BulkLoad(new List<EventData>(new EventData[]{ new EventData {
+            bool success = BulkLoad(new List<EventData>( new EventData[]{ new EventData {
                 EventID = eventID,
                 ObjectID = objectID,
                 ObjectName = "",
                 EventName = eventName,
                 ProcessName = processName,
                 MachineName = STEM.Sys.IO.Net.MachineName(),
-                EventTime = eventTime } }), out exceptions);
+                EventTime = eventTime } } ), out exceptions);
 
             if (success)
                 return eventID;
@@ -222,9 +277,9 @@ namespace STEM.Surge.MySQL
                     map["[MachineName]"] = e.MachineName;
                     map["[ProcessName]"] = e.ProcessName;
                     map["[EventName]"] = e.EventName;
-                    map["[EventTime]"] = e.EventTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    map["[EventTime]"] = e.EventTime.ToString("G");
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -261,9 +316,9 @@ namespace STEM.Surge.MySQL
                     map["[ObjectID]"] = o.ID.ToString();
                     map["[ObjectName]"] = o.Name;
                     map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(o.Name).ToString();
-                    map["[ObjectCreationTime]"] = o.CreationTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    map["[ObjectCreationTime]"] = o.CreationTime.ToString("G");
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -301,7 +356,7 @@ namespace STEM.Surge.MySQL
                     map["[EventMetadata]"] = e.Metadata;
                     map["[EventMetadataHash]"] = STEM.Sys.State.KeyManager.GetHash(e.Metadata).ToString();
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();

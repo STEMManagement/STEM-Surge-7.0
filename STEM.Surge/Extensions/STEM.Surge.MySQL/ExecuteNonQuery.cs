@@ -25,7 +25,7 @@ namespace STEM.Surge.MySQL
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("ExecuteNonQuery")]
     [Description("Execute an action against a database (i.e. insert, update, delete).")]
-    public class ExecuteNonQuery : MySQLBaseInstruction
+    public class ExecuteNonQuery : MySqlBaseInstruction
     {
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will be executed.")]
         public List<string> Sql { get; set; }

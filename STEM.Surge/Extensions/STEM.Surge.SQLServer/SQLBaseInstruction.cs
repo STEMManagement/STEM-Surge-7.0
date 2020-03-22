@@ -16,16 +16,10 @@
  */
 
 using System;
-using System.IO;
-using System.Xml.Serialization;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Data;
 using System.Data.SqlClient;
 using STEM.Sys;
-using STEM.Sys.Security;
-using STEM.Surge;
 
 namespace STEM.Surge.SQLServer
 {

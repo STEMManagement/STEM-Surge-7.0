@@ -54,7 +54,7 @@ namespace STEM.Surge.MySQL
 
         public Authentication()
         {
-            SqlConnectionString = "Server=localhost;Database=MySQL80;Uid=root;sqlservermode=True;Pooling=True;maximumpoolsize=5;default command timeout=20;";
+            SqlConnectionString = "Server=localhost;Database=MySQL80;Uid=root;sqlservermode=True;Pooling=True;AllowLoadLocalInfile=true;maximumpoolsize=5;default command timeout=20;";
             SqlPassword = "";
         }
 

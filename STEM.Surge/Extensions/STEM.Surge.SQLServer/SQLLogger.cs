@@ -20,54 +20,85 @@
   
 -- Sample Database Schema
 
-CREATE TABLE `objects` (
-  `id` varchar(36) NOT NULL,
-  `name` varchar(200) NOT NULL DEFAULT '',
-  `creationtime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `namehash` bigint NOT NULL,
-  UNIQUE KEY `idx_objects_id` (`id`),
-  KEY `idx_objects_namehash` (`namehash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+USE [SurgeEventLog]
+
+CREATE TABLE [dbo].[Objects](
+	[ID] [uniqueidentifier] NOT NULL,
+	[Name] [nvarchar](max) NOT NULL,
+	[CreationTime] [datetime] NOT NULL,
+	[NameHash] [bigint] NOT NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 
-CREATE TABLE `events` (
-  `id` varchar(36) NOT NULL,
-  `objectid` varchar(36) NOT NULL,
-  `eventname` varchar(200) NOT NULL DEFAULT '',
-  `machinename` varchar(200) NOT NULL DEFAULT '',
-  `processname` varchar(200) NOT NULL DEFAULT '',
-  `eventtime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY `idx_events_id` (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE UNIQUE NONCLUSTERED INDEX[PK_Objects] ON[dbo].[Objects]
+(
+  [ID] ASC
+) WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = ON, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]
+
+CREATE NONCLUSTERED INDEX[ix_objects_namehash] ON[dbo].[Objects]
+(
+  [NameHash] ASC
+) WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]
 
 
-CREATE TABLE `eventmetadata` (
-  `eventid` varchar(36) NOT NULL,
-  `metadata` varchar(16000) NOT NULL DEFAULT '',
-  `metadatahash` bigint NOT NULL,
-  UNIQUE KEY `idx_eventmetadata_metadatahash` (`eventid`, `metadatahash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE [dbo].[Events](
+	[ID] [uniqueidentifier] NOT NULL,
+	[ObjectID] [uniqueidentifier] NOT NULL,
+	[EventName] [nvarchar](50) NOT NULL,
+	[MachineName] [nvarchar](50) NOT NULL,
+	[ProcessName] [nvarchar](50) NOT NULL,
+	[EventTime] [datetime] NOT NULL
+) ON [PRIMARY]
+
+CREATE UNIQUE NONCLUSTERED INDEX [PK_Events] ON [dbo].[Events]
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = ON, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+
+
+
+CREATE TABLE [dbo].[EventMetadata](
+	[EventID] [uniqueidentifier] NOT NULL,
+	[Metadata] [nvarchar](max) NOT NULL,
+	[MetadataHash] [bigint] NOT NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+CREATE UNIQUE NONCLUSTERED INDEX [ix_eventmetadata_metadatahash] ON [dbo].[EventMetadata]
+(
+	[EventID] ASC,
+	[MetadataHash] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = ON, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+
 
 -- Sample LogObjectSql
+IF EXISTS (SELECT 0 FROM Objects WHERE ID = '[ObjectID]')
+BEGIN
+UPDATE Objects SET CreationTime = '[ObjectCreationTime]', Name = '[ObjectName]', NameHash = [ObjectNameHash] WHERE ID = '[ObjectID]'
+END
+ELSE IF EXISTS (SELECT 0 FROM Objects WHERE ID = '[ObjectID]' OR NameHash = [ObjectNameHash])
+BEGIN
+UPDATE Objects SET CreationTime = '[ObjectCreationTime]' WHERE ID = '[ObjectID]' OR NameHash = [ObjectNameHash]
+END
+ELSE
+BEGIN
+INSERT Objects
+SELECT '[ObjectID]', '[ObjectName]', '[ObjectCreationTime]', [ObjectNameHash]
+END
 
-UPDATE objects SET creationtime = '[ObjectCreationTime]' 
-WHERE id = '[ObjectID]' OR namehash = [ObjectNameHash] AND '[ObjectCreationTime]' <> '1970-01-01 00:00';
-INSERT INTO objects
-SELECT '[ObjectID]', '[ObjectName]', '[ObjectCreationTime]', [ObjectNameHash] 
-WHERE NOT EXISTS (SELECT 0 FROM objects WHERE id = '[ObjectID]' OR namehash = [ObjectNameHash])
 
 -- Sample LogEventSql
-
-INSERT events 
-SELECT '[EventID]', objects.id, '[EventName]', '[MachineName]', '[ProcessName]', '[EventTime]'
-FROM objects
-WHERE (objects.id = '[ObjectID]') OR ('[ObjectID]' = '' AND objects.name = '[ObjectName]')
+INSERT Events 
+SELECT '[EventID]', [Objects].ID, '[EventName]', '[MachineName]', '[ProcessName]', '[EventTime]'
+FROM [Objects]
+WHERE ([Objects].ID = '[ObjectID]') OR ('[ObjectID]' = '' AND [Objects].NameHash = [ObjectNameHash])
 
 -- Sample LogMetaSql
-
-INSERT INTO eventmetadata
+IF NOT EXISTS (SELECT 0 FROM EventMetadata WHERE EventID = '[EventID]' AND MetadataHash = [EventMetadataHash])
+BEGIN
+INSERT EventMetadata
 SELECT '[EventID]', '[EventMetadata]', [EventMetadataHash]
-WHERE NOT EXISTS (SELECT 0 FROM eventmetadata WHERE eventid = '[EventID]' AND metadatahash = [EventMetadataHash])
+END
 
 */
 
@@ -77,13 +108,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using STEM.Surge.Logging;
 
-namespace STEM.Surge.MySQL
+namespace STEM.Surge.SQLServer
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
-    [DisplayName("MySql Logger")]
-    [Description("Plants a named ILogger in session that is backed by a MySql Database. " +
+    [DisplayName("SQL Server Logger")]
+    [Description("Plants a named ILogger in session that is backed by a SQL Server Database. " +
         "This is used by the STEM.Surge.ObjectTracking extension or directly through ILogger.GetLogger(loggerName).")]
-    public class MySqlLogger : ILogger
+    public class SQLLogger : ILogger
     {
         [Category("Logger")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
@@ -130,7 +161,7 @@ namespace STEM.Surge.MySQL
             }
         }
 
-        public MySqlLogger()
+        public SQLLogger()
         {
             Authentication = new Authentication();
             TimeoutRetryAttempts = 3;
@@ -222,9 +253,9 @@ namespace STEM.Surge.MySQL
                     map["[MachineName]"] = e.MachineName;
                     map["[ProcessName]"] = e.ProcessName;
                     map["[EventName]"] = e.EventName;
-                    map["[EventTime]"] = e.EventTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    map["[EventTime]"] = e.EventTime.ToString("G");
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -261,9 +292,9 @@ namespace STEM.Surge.MySQL
                     map["[ObjectID]"] = o.ID.ToString();
                     map["[ObjectName]"] = o.Name;
                     map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(o.Name).ToString();
-                    map["[ObjectCreationTime]"] = o.CreationTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    map["[ObjectCreationTime]"] = o.CreationTime.ToString("G");
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -301,7 +332,7 @@ namespace STEM.Surge.MySQL
                     map["[EventMetadata]"] = e.Metadata;
                     map["[EventMetadataHash]"] = STEM.Sys.State.KeyManager.GetHash(e.Metadata).ToString();
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();

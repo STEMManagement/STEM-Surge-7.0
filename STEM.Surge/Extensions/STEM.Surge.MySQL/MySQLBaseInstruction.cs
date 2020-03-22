@@ -30,13 +30,13 @@ namespace STEM.Surge.MySQL
     [Serializable()]
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("SQLBaseInstruction")]
-    public abstract class MySQLBaseInstruction : Instruction, IDisposable
+    public abstract class MySqlBaseInstruction : Instruction, IDisposable
     {
         [Category("MySQL Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
 
-        public MySQLBaseInstruction()
+        public MySqlBaseInstruction()
         {
             Authentication = new Authentication();
         }
@@ -136,6 +136,7 @@ namespace STEM.Surge.MySQL
                             s.FileName = tmpFile;
                             s.FieldTerminator = ",";
                             s.FieldQuotationCharacter = '"';
+                            s.Local = true;
                             s.Load();
 
                             break;
