@@ -391,7 +391,7 @@ namespace STEM.Sys.IO
                 {
                     lock (_Resolved)
                     {
-                        _Resolved["."] = new Resolved { IPV4Address = MachineIP(), MachineName = System.Net.Dns.GetHostEntry("127.0.0.1").HostName, LastResolved = DateTime.UtcNow };
+                        _Resolved["."] = new Resolved { IPV4Address = MachineIP(), MachineName = System.Net.Dns.GetHostEntry(Environment.MachineName).HostName, LastResolved = DateTime.UtcNow };
                         _Resolved["local"] = _Resolved["."];
                         _Resolved["localhost"] = _Resolved["."];
                         _Resolved["127.0.0.1"] = _Resolved["."];
