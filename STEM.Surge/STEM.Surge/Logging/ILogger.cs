@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 
 namespace STEM.Surge.Logging
 {
     public abstract class ILogger : Instruction
     {
+        [Category("Logger")]
+        [DisplayName("Logger Name"), DescriptionAttribute("The name used to recall this logger from Session via GetLogger().")]
         public string LoggerName { get; set; }
 
         public static ILogger GetLogger(string loggerName)
