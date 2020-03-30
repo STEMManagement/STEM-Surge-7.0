@@ -15,6 +15,25 @@
     <PackageReference Include="AWSSDK.SQS" Version="3.3.102.25" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\STEM.Surge.BasicControllers\STEM.Surge.BasicControllers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="STEM.Surge.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Surge.7.0.0.0.dll</HintPath>
+    </Reference>
+    <Reference Include="STEM.Surge.Internal.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Surge.Internal.7.0.0.0.dll</HintPath>
+    </Reference>
+    <Reference Include="STEM.Sys.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Sys.7.0.0.0.dll</HintPath>
+    </Reference>
+    <Reference Include="STEM.Sys.Internal.7.0.0.0">
+      <HintPath>..\..\RequiredDlls\STEM.Sys.Internal.7.0.0.0.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="md &quot;$(SolutionDir)Binaries\Extensions\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)Binaries\Extensions&quot;" />
   </Target>

@@ -34,6 +34,9 @@
   <PropertyGroup>
     <ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="STEM.Surge.7.0.0.0">
       <HintPath>..\..\RequiredDlls\STEM.Surge.7.0.0.0.dll</HintPath>
