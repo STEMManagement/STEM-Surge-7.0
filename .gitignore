@@ -122,3 +122,5 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/Extensions/STEM.Surge.Compression/obj/Release
 /STEM.Surge/Extensions/STEM.Surge.HealthMonitoring/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.S3/bin/Release
+/STEM.Surge/Extensions/STEM.Surge.Compatibility/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.Compatibility/obj
