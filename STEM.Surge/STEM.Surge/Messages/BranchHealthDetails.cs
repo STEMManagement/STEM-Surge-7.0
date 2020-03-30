@@ -33,7 +33,7 @@ namespace STEM.Surge.Messages
         public string BranchName { get; set; }
         public string OSDescription { get; set; }
         public int ThreadCount { get; set; }
-        public List<string> ErrorIDs { get; set; }
+        public int ErrorCount { get; set; }
         public int ProcessorCount { get; set; }
         public double ProcessorOverload { get; set; }
         public int MBRam { get; set; }
@@ -45,9 +45,12 @@ namespace STEM.Surge.Messages
         public DateTime SurgeInternalBuildDate { get; set; }
         public DateTime SysInternalBuildDate { get; set; }
         public DateTime GenerationTime { get; set; }
+        public int MessageBacklog { get; set; }
 
         public BranchHealthDetails()
         {
+            MessageBacklog = 0;
+
             BranchIP = STEM.Sys.IO.Net.MachineIP();
             BranchName = STEM.Sys.IO.Net.MachineName();
             OSDescription = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
@@ -80,7 +83,7 @@ namespace STEM.Surge.Messages
             LoadedInstructionSets = new List<string>();
             StaticInstructionSets = new List<string>();
             BranchState = STEM.Surge.BranchState.Online;
-            ErrorIDs = new List<string>();
+            ErrorCount = 0;
             ProcessorCount = (int)(STEM.Sys.Threading.ThreadPool.ProcessorOverload * Environment.ProcessorCount);
 
             if (ProcessorCount < 1)
@@ -106,9 +109,9 @@ namespace STEM.Surge.Messages
             if (ProcessorCount < 1)
                 ProcessorCount = 1;
 
-            ErrorIDs = new List<string>();
+            ErrorCount = 0;
             if (Directory.Exists(errorDir))
-                ErrorIDs = Directory.GetFiles(errorDir).Select(i => STEM.Sys.IO.Path.GetFileNameWithoutExtension(i)).ToList();
+                ErrorCount = Directory.GetFiles(errorDir).Count();
 
             GenerationTime = DateTime.UtcNow;
         }
