@@ -34,13 +34,14 @@ namespace STEM.Surge.Messages
             public string BranchName { get; set; }
             public int ThreadCount { get; set; }
             public DateTime LastStateReport { get; set; }
-            public List<string> ErrorIDs { get; set; }
+            public int ErrorCount { get; set; }
             public int ProcessorCount { get; set; }
             public int MBRam { get; set; }
             public STEM.Surge.BranchState BranchState { get; set; }
             public List<string> StaticInstructionSets { get; set; }
             public int Assigned { get; set; }
             public int Processing { get; set; }
+            public int MessageBacklog { get; set; }
 
             public DateTime SurgeBuildDate { get; set; }
             public DateTime SysBuildDate { get; set; }
@@ -51,14 +52,14 @@ namespace STEM.Surge.Messages
             {
                 LastStateReport = DateTime.MinValue;
                 StaticInstructionSets = new List<string>();
-                ErrorIDs = new List<string>();
+                ErrorCount = 0;
             }
 
             internal Entry(_BranchEntry e)
             {
                 LastStateReport = DateTime.MinValue;
                 StaticInstructionSets = new List<string>();
-                ErrorIDs = new List<string>();
+                ErrorCount = 0;
                 CopyFrom(e);
             }
 
@@ -75,7 +76,7 @@ namespace STEM.Surge.Messages
                 MBRam = e.MBRam;
                 StaticInstructionSets = e.StaticInstructionSets;
                 BranchState = e.BranchState;
-                ErrorIDs = e.ErrorIDs.ToList();
+                ErrorCount = e.ErrorCount;
                 ProcessorCount = e.ProcessorCount;
                 SurgeBuildDate = e.SurgeBuildDate;
                 SysBuildDate = e.SysBuildDate;
@@ -96,10 +97,11 @@ namespace STEM.Surge.Messages
                 MBRam = e.MBRam;
                 StaticInstructionSets = e.StaticInstructionSets;
                 BranchState = e.BranchState;
-                ErrorIDs = e.ErrorIDs.ToList();
+                ErrorCount = e.ErrorCount;
                 ProcessorCount = e.ProcessorCount;
                 Assigned = e.InstructionSetsAssigned;
                 Processing = e.InstructionSetsProcessing;
+                MessageBacklog = e.MessageBacklog;
                 SurgeBuildDate = e.SurgeBuildDate;
                 SysBuildDate = e.SysBuildDate;
                 SurgeInternalBuildDate = e.SurgeInternalBuildDate;
