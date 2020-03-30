@@ -215,7 +215,9 @@ namespace STEM.Surge
                 lock (_DeploymentManagerConfigurationMutex)
                     if (!_Connected && connection.RemoteAddress == PrimaryDeploymentManagerIP)
                     {
-                        c.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true));
+                        AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                        a.Compress = true;
+                        c.Send(a);
 
                         _LastAssemblyList = DateTime.UtcNow;
 
@@ -255,7 +257,9 @@ namespace STEM.Surge
                     if (_AsmPool.LoadLevel == 0 && (DateTime.UtcNow - _LastAssemblyList).TotalSeconds > 3)
                     {
                         _LastAssemblyList = DateTime.UtcNow;
-                        connection.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true));
+                        AssemblyList asm = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                        asm.Compress = true;
+                        connection.Send(asm);
                     }
 
                     System.Threading.Thread.Sleep(1000);
@@ -270,7 +274,9 @@ namespace STEM.Surge
                 return;
             }
 
-            connection.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true));
+            AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+            a.Compress = true;
+            connection.Send(a);
         }
         
         /// <summary>
@@ -604,6 +610,7 @@ namespace STEM.Surge
             public string ManagerIP { get; set; }
             public DateTime LastManagerReport { get; set; }
             public Dictionary<string, DateTime> LastBranchReport { get; set; }
+            public Dictionary<string, int> MessageBacklog { get; set; }
         }
 
         /// <summary>
@@ -643,7 +650,7 @@ namespace STEM.Surge
 
                     if (mrt == null)
                     {
-                        mrt = new ManagerReportTimes { ManagerIP = m.MessageConnection.RemoteAddress, LastBranchReport = new Dictionary<string, DateTime>() };
+                        mrt = new ManagerReportTimes { ManagerIP = m.MessageConnection.RemoteAddress, LastBranchReport = new Dictionary<string, DateTime>(), MessageBacklog = new Dictionary<string, int>() };
                         _ManagerReportTimes.Add(mrt);
                     }
 
@@ -655,6 +662,7 @@ namespace STEM.Surge
 
                         mrt.LastManagerReport = m.TimeReceived;
                         mrt.LastBranchReport[e.BranchIP] = e.LastStateReport;
+                        mrt.MessageBacklog[e.BranchIP] = e.MessageBacklog;
 
                         if (o == null)
                         {
@@ -938,7 +946,12 @@ namespace STEM.Surge
                 onUpdateStatusMessage(this, "Connection (" + connection.RemoteAddress + ") Message Backlog: 0");
             }
 
-            if (message is ActiveDeploymentManagers)
+            if (message is ConnectionType)
+            {
+                ConnectionType m = message as ConnectionType;
+                m.Respond(new MessageReceived(m.MessageID));
+            }
+            else if (message is ActiveDeploymentManagers)
             {
                 _ActiveDeploymentManagers = message as ActiveDeploymentManagers;
             }
@@ -1048,6 +1061,16 @@ namespace STEM.Surge
                     {
                         _AsmPool.RunOnce(new System.Threading.ParameterizedThreadStart(LoadAsm), m);
                     }
+                }
+
+                if (aList.Descriptions.Count == 0)
+                {
+                    while (_AsmPool.LoadLevel > 0)
+                        System.Threading.Thread.Sleep(10);
+
+                    AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                    a.Compress = true;
+                    aList.MessageConnection.Send(a);
                 }
             }
             else if (message is FileTransfer)

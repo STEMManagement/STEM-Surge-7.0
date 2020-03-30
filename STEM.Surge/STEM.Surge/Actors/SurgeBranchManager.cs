@@ -698,6 +698,8 @@ namespace STEM.Surge
 
                     AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
 
+                    a.Compress = true;
+
                     if (!_Connection.Send(a))
                     {
                         endAsync = true;
@@ -1137,7 +1139,12 @@ namespace STEM.Surge
         {
             try
             {
-                if (message is AssemblyInitializationComplete)
+                if (message is ConnectionType)
+                {
+                    ConnectionType m = message as ConnectionType;
+                    m.Respond(new MessageReceived(m.MessageID));
+                }
+                else if (message is AssemblyInitializationComplete)
                 {
                     if (!_AssemblyInitializationComplete)
                         while (_AsmPool.LoadLevel > 0)
@@ -1259,7 +1266,7 @@ namespace STEM.Surge
                 else if (message is SetServiceConfiguration)
                 {
                     SetServiceConfiguration m = message as SetServiceConfiguration;
-                                       
+
                     try
                     {
                         if (File.Exists(Path.Combine(Environment.CurrentDirectory, "SurgeService.cfg")))
@@ -1311,6 +1318,17 @@ namespace STEM.Surge
                     m.UseSSL = newConfig.Settings[0].UseSSL;
 
                     message.Respond(m);
+                }
+                else if (message is StopStaticInstructionSet)
+                {
+                    StopStaticInstructionSet m = message as StopStaticInstructionSet;
+
+                    Runner r = null;
+                    lock (_Statics)
+                        r = _Statics.FirstOrDefault(i => i.AssignInstructionSet.InitiationSource.Equals(m.Name, StringComparison.InvariantCultureIgnoreCase));
+
+                    if (r != null)
+                        r.Dispose();
                 }
                 else if (message is InstructionSetRequested)
                 {
@@ -1513,6 +1531,19 @@ namespace STEM.Surge
                         }
                     }
                 }
+                else if (message is GetErrorIDs)
+                {
+                    List<string> ids = new List<string>();
+
+                    if (Directory.Exists(ErrorDirectory))
+                        try
+                        {
+                            ids = Directory.GetFiles(ErrorDirectory, "*").Select(i => Path.GetFileNameWithoutExtension(i)).ToList();
+                        }
+                        catch { }
+
+                    message.Respond(new ErrorIDs { BranchIP = message.ReceivedAtAddress(), IDs = ids });
+                }
                 else if (message is ClearErrors)
                 {
                     ClearErrors m = message as ClearErrors;
@@ -1601,10 +1632,15 @@ namespace STEM.Surge
                             catch { }
                     }
 
-                    //while (_AsmPool.LoadLevel > 0)
-                    //    System.Threading.Thread.Sleep(10);
+                    if (aList.Descriptions.Count == 0)
+                    {
+                        while (_AsmPool.LoadLevel > 0)
+                            System.Threading.Thread.Sleep(10);
 
-                    //connection.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true));
+                        AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                        a.Compress = true;
+                        aList.MessageConnection.Send(a);
+                    }
                 }
                 else if (message is FileTransfer)
                 {
@@ -1793,8 +1829,13 @@ namespace STEM.Surge
                     try
                     {
                         if (_AsmPool.LoadLevel == 0)
-                            if (connection.Send(new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true)))
+                        {
+                            AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                            a.Compress = true;
+
+                            if (connection.Send(a))
                                 lastAsmListing = DateTime.UtcNow;
+                        }
                     }
                     catch (Exception ex)
                     {
