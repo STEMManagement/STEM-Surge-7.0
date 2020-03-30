@@ -26,11 +26,11 @@ namespace STEM.Surge.Messages
         public string PollError { get; set; }
         public string DeploymentControllerID { get; set; }
         public double PollTimeMilliseconds { get; set; }
-        public List<string> Listing { get; set; }
+        public STEM.Sys.Serialization.Dictionary<string, List<string>> Listing { get; set; }
 
         public PollResult()
         {
-            Listing = new List<string>();
+            Listing = new Sys.Serialization.Dictionary<string, List<string>>();
             PollError = "";
         }
     }

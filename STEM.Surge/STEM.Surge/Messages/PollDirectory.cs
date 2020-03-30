@@ -84,14 +84,18 @@ namespace STEM.Surge.Messages
                         else
                             results = STEM.Sys.IO.Directory.STEM_GetDirectories(dir, DirectoryFilter, Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false);
 
-                        PollResult p = new PollResult() { PollTimeMilliseconds = (DateTime.UtcNow - start).TotalMilliseconds, Listing = results, DeploymentControllerID = DeploymentControllerID, PollError = "" };
+                        STEM.Sys.Serialization.Dictionary<string, List<string>> ret = new Sys.Serialization.Dictionary<string, List<string>>();
+                        foreach (string d in results.Select(i => System.IO.Path.GetDirectoryName(i)).Distinct())
+                            ret[d] = results.Where(i => System.IO.Path.GetDirectoryName(i) == d).Select(i => System.IO.Path.GetFileName(i)).ToList();
+
+                        PollResult p = new PollResult() { PollTimeMilliseconds = (DateTime.UtcNow - start).TotalMilliseconds, Listing = ret, DeploymentControllerID = DeploymentControllerID, PollError = "" };
 
                         foreach (MessageConnection d in managers)
                             d.Send(p);
                     }
                     else
                     {
-                        PollResult p = new PollResult() { PollTimeMilliseconds = (DateTime.UtcNow - start).TotalMilliseconds, Listing = new List<string>(), DeploymentControllerID = DeploymentControllerID, PollError = dir + " does not exist." };
+                        PollResult p = new PollResult() { PollTimeMilliseconds = (DateTime.UtcNow - start).TotalMilliseconds, Listing = new Sys.Serialization.Dictionary<string, List<string>>(), DeploymentControllerID = DeploymentControllerID, PollError = dir + " does not exist." };
 
                         foreach (MessageConnection d in managers)
                             d.Send(p);
