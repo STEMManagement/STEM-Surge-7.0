@@ -54,9 +54,9 @@ namespace STEM.Surge
         public abstract STEM.Surge.BranchState BranchState { get; }
 
         /// <summary>
-        /// InstructionSet IDs of current errors (includes sandboxes)
+        /// Current error count (includes sandboxes)
         /// </summary>
-        public abstract List<string> ErrorIDs { get; }
+        public abstract int ErrorCount { get; }
 
         /// <summary>
         /// Number of threads in the main Surge Branch service
@@ -72,6 +72,11 @@ namespace STEM.Surge
         /// The number of processors on the server * ProcessorOverload
         /// </summary>
         public abstract int ProcessorCount { get; }
+
+        /// <summary>
+        /// The number of messages from this Branch backlogged on this DeploymentManager
+        /// </summary>
+        public abstract int MessageBacklog { get; }
 
         /// <summary>
         /// The names of the Static InstructionSets running on this Branch
