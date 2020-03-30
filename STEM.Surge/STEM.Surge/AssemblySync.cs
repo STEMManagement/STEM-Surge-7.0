@@ -69,7 +69,12 @@ namespace STEM.Surge
             bool initComplete = true;
 
             lock (AssemblyList)
-                initComplete = AssemblyList.Descriptions.Select(i => STEM.Sys.IO.Path.AdjustPath(i.Filename)).Where(i => !list.Descriptions.Exists(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).Equals(i, StringComparison.InvariantCultureIgnoreCase))).Count() == 0;
+            {
+                IEnumerable<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+                IEnumerable<string> localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+
+                initComplete = localContent.Except(listContent).Count() == 0;
+            }
             
             if (initComplete)
                 list.MessageConnection.Send(new AssemblyInitializationComplete());
@@ -106,34 +111,33 @@ namespace STEM.Surge
                 {
                     AssemblyList send = new AssemblyList();
                     send.Path = list.Path;
-
-                    foreach (STEM.Sys.IO.FileDescription f in AssemblyList.Descriptions)
+                    
+                    IEnumerable<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+                    IEnumerable<string> localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+                    
+                    foreach (string name in localContent.Except(listContent).ToList())
                     {
-                        if (!list.Descriptions.Exists(i => STEM.Sys.IO.Path.AdjustPath(i.Filename).Equals(STEM.Sys.IO.Path.AdjustPath(f.Filename), StringComparison.InvariantCultureIgnoreCase)))
+                        STEM.Sys.IO.FileDescription f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+
+                        send.Descriptions.Add(f);
+                        list.Descriptions.Add(new STEM.Sys.IO.FileDescription(f.Filepath, f.Filename, false));
+
+                        if (!list.MessageConnection.Send(send))
                         {
-                            send.Descriptions.Add(f);
-                            list.Descriptions.Add(new STEM.Sys.IO.FileDescription(f.Filepath, f.Filename, false));
-
-                            if (send.Descriptions.Count == 4)
+                            try
                             {
-                                if (!list.MessageConnection.Send(send))
-                                {
-                                    try
-                                    {
-                                        STEM.Sys.EventLog.WriteEntry("AssemblySync.DeliverDelta", "SendAssemblyList: Forced disconnect, " + list.MessageConnection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
+                                STEM.Sys.EventLog.WriteEntry("AssemblySync.DeliverDelta", "SendAssemblyList: Forced disconnect, " + list.MessageConnection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
 
-                                        list.MessageConnection.Close();
-                                        connectionClosed = true;
-                                    }
-                                    catch { }
-
-                                    return;
-                                }
-
-                                send.Descriptions.Clear();
-                                deliveredAsms = true;
+                                list.MessageConnection.Close();
+                                connectionClosed = true;
                             }
+                            catch { }
+
+                            return;
                         }
+
+                        send.Descriptions.Clear();
+                        deliveredAsms = true;
                     }
 
                     if (send.Descriptions.Count > 0)
