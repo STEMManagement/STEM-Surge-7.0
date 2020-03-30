@@ -282,6 +282,8 @@ namespace STEM.Surge.SSH
         public List<SftpFile> ListDirectory(string server, int port,
             string directory, SSHListType listType, bool recurse, string directoryFilter, string fileFilter)
         {
+            SftpClient client = OpenSftpClient(server, port);
+
             directory = AdjustPath(server, directory);
 
             List<SftpFile> ret = new List<SftpFile>();
@@ -292,7 +294,7 @@ namespace STEM.Surge.SSH
             Regex exclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
             Regex inclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
 
-            ListDirectory(server, port,
+            ListDirectory(client,
                 ret, directoriesListed,
                 directory, listType, recurse,
                 exclusiveDirectoryFilters, inclusiveDirectoryFilters,
@@ -301,7 +303,7 @@ namespace STEM.Surge.SSH
             return ret;
         }
 
-        void ListDirectory(string server, int port,
+        void ListDirectory(SftpClient client,
             List<SftpFile> sshListItems, List<string> directoriesListed,
             string directory, SSHListType listType, bool recurse,
             Regex exclusiveDirectoryFilters, Regex inclusiveDirectoryFilters,
@@ -311,8 +313,6 @@ namespace STEM.Surge.SSH
 
             try
             {
-                SftpClient client = OpenSftpClient(server, port);
-
                 try
                 {
                     foreach (SftpFile i in client.ListDirectory(directory))
@@ -331,7 +331,7 @@ namespace STEM.Surge.SSH
                             if (recurse && !directoriesListed.Contains(i.FullName))
                             {
                                 directoriesListed.Add(i.FullName);
-                                ListDirectory(server, port,
+                                ListDirectory(client,
                                                 sshListItems, directoriesListed,
                                                 i.FullName, listType, recurse,
                                                 exclusiveDirectoryFilters, inclusiveDirectoryFilters,
