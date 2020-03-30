@@ -272,14 +272,14 @@ namespace STEM.Surge.PostGreSQL
                 {
                     map["[EventID]"] = e.EventID.ToString();
                     map["[ObjectID]"] = e.ObjectID.ToString();
-                    map["[ObjectName]"] = e.ObjectName;
-                    map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(e.ObjectName).ToString();
-                    map["[MachineName]"] = e.MachineName;
-                    map["[ProcessName]"] = e.ProcessName;
-                    map["[EventName]"] = e.EventName;
+                    map["[ObjectName]"] = e.ObjectName.Replace("\"", "'").Replace("''", "'").Replace("'", "''");
+                    map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(map["[ObjectName]"]).ToString();
+                    map["[MachineName]"] = e.MachineName.Replace("\"", "'").Replace("''", "'").Replace("'", "''");
+                    map["[ProcessName]"] = e.ProcessName.Replace("\"", "'").Replace("''", "'").Replace("'", "''");
+                    map["[EventName]"] = e.EventName.Replace("\"", "'").Replace("''", "'").Replace("'", "''");
                     map["[EventTime]"] = e.EventTime.ToString("G");
 
-                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false) + ";\r\n";
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -314,16 +314,14 @@ namespace STEM.Surge.PostGreSQL
                 foreach (ObjectData o in objects)
                 {
                     map["[ObjectID]"] = o.ID.ToString();
-                    map["[ObjectName]"] = o.Name;
-                    map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(o.Name).ToString();
+                    map["[ObjectName]"] = o.Name.Replace("\"", "'").Replace("''", "'").Replace("'", "''");
+                    map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(map["[ObjectName]"]).ToString();
                     map["[ObjectCreationTime]"] = o.CreationTime.ToString("G");
 
-                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false) + ";\r\n";
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
-
-                cat = STEM.Surge.KVPMapUtils.ApplyKVP(cat, map, false);
 
                 enq.Execute(Authentication, cat, TimeoutRetryAttempts);
             }
@@ -353,15 +351,13 @@ namespace STEM.Surge.PostGreSQL
                 foreach (EventMetadata e in meta)
                 {
                     map["[EventID]"] = e.EventID.ToString();
-                    map["[EventMetadata]"] = e.Metadata;
-                    map["[EventMetadataHash]"] = STEM.Sys.State.KeyManager.GetHash(e.Metadata).ToString();
+                    map["[EventMetadata]"] = e.Metadata.Replace("\"", "'").Replace("''", "'").Replace("'", "''");
+                    map["[EventMetadataHash]"] = STEM.Sys.State.KeyManager.GetHash(map["[EventMetadata]"]).ToString();
 
-                    cat += "\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false) + ";\r\n";
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
-
-                cat = STEM.Surge.KVPMapUtils.ApplyKVP(cat, map, false);
 
                 enq.Execute(Authentication, cat, TimeoutRetryAttempts);
             }
