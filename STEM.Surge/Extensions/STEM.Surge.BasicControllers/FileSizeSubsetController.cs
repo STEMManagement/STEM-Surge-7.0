@@ -139,7 +139,7 @@ namespace STEM.Surge.BasicControllers
 
                 lock (range)
                 {
-                    SizeRange.Load load = range.ActiveLoads.OrderBy(i => i.Loaded.Count).ThenBy(i => i.LastAssignment).FirstOrDefault();
+                    SizeRange.Load load = range.ActiveLoads.Where(i => limitedToBranches.Count() == 0 || limitedToBranches.Contains(i.IP)).OrderBy(i => i.Loaded.Count).ThenBy(i => i.LastAssignment).FirstOrDefault();
 
                     if (load != null && load.Loaded.Count < range.MaxLoadPerBranch)
                     {
