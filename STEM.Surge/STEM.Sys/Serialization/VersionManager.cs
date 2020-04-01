@@ -618,29 +618,6 @@ namespace STEM.Sys.Serialization
                 catch { }
         }
 
-        static public List<string> LoadedDlls()
-        {
-            List<string> ret = new List<string>();
-
-            lock (_Cached)
-                _Cached.ToList().ForEach(i =>
-                {
-                    foreach (_Cache c in _Caches.ToList())
-                    {
-                        string f = Path.Combine(c.Path, i);
-                        if (File.Exists(f))
-                        {
-                            if (!ret.Contains(f))
-                                ret.Add(f);
-
-                            break;
-                        }
-                    }
-                });
-
-            return ret;
-        }
-
         static public Dictionary<string, string> TransformedFileListing(string cacheDirectory)
         {
             Dictionary<string, string> found = new Dictionary<string, string>();
@@ -757,10 +734,8 @@ namespace STEM.Sys.Serialization
                         return vcFile;
                     }
                 }
-
-                xform = Path.Combine(VersionCache, xform);
-
-                vcFile = xform;
+                
+                vcFile = Path.Combine(VersionCache, xform);
                 if (!renameSourceAssemblies)
                     vcFile = Path.Combine(VersionCache, STEM.Sys.IO.Path.GetFileName(file));
 
@@ -902,17 +877,15 @@ namespace STEM.Sys.Serialization
                     if (File.Exists(vcFile))
                     {
                         lock (_Cached)
-                            if (!_Cached.Contains(STEM.Sys.IO.Path.GetFileName(vcFile).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                            if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                             {
                                 try
                                 {
-                                    _Cached.Add(STEM.Sys.IO.Path.GetFileName(vcFile).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-
-                                    AssemblyName asmName = AssemblyName.GetAssemblyName(vcFile);
-
-                                    if (!_Cached.Contains(asmName.ToString().ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                                    _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                                    
+                                    if (!_Cached.Contains(xform.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                                     {
-                                        Assembly asm = VersionManagerALC.LoadFromFile(vcFile, null);
+                                        Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
 
                                         if (asm == null)
                                             throw new Exception(file + " could not be loaded.");
@@ -925,7 +898,7 @@ namespace STEM.Sys.Serialization
                                         lock (_AssemblyByName)
                                             _AssemblyByName[aName] = asm;
 
-                                        _Cached.Add(asmName.ToString().ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                                        _Cached.Add(xform.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
 
                                         try
                                         {
@@ -957,12 +930,6 @@ namespace STEM.Sys.Serialization
                                 catch (Exception ex)
                                 {
                                     STEM.Sys.EventLog.WriteEntry("VersionManager.Cache", new Exception("Could not load " + vcFile, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-
-                                    //try
-                                    //{
-                                    //    File.Delete(xform);
-                                    //}
-                                    //catch { }
                                 }
                             }
                             else

@@ -9,19 +9,18 @@ namespace STEM.Sys.Serialization
     {
         protected override Assembly Load(AssemblyName assemblyName)
         {
-            if (_AssemblyMap.ContainsKey(assemblyName))
-            {
-                return _AssemblyMap[assemblyName];
-            }
+            Assembly asm = _AssemblyMap.Values.FirstOrDefault(i => i.GetName().ToString() == assemblyName.ToString());
+            if (asm != null)
+                return asm;
 
             return base.LoadFromAssemblyName(assemblyName);
         }
 
         static List<VersionManagerALC> _ALCs = new List<VersionManagerALC>();
-        static Dictionary<AssemblyName, VersionManagerALC> _ContextMap = new Dictionary<AssemblyName, VersionManagerALC>();
-        Dictionary<AssemblyName, Assembly> _AssemblyMap = new Dictionary<AssemblyName, Assembly>();
+        static Dictionary<string, VersionManagerALC> _ContextMap = new Dictionary<string, VersionManagerALC>();
+        Dictionary<string, Assembly> _AssemblyMap = new Dictionary<string, Assembly>();
 
-        public static Assembly LoadFromFile(string path, VersionManagerALC context)
+        public static Assembly LoadFromFile(string path, string xform, VersionManagerALC context)
         {
             lock (_ALCs)
             {
@@ -29,8 +28,8 @@ namespace STEM.Sys.Serialization
                 {
                     AssemblyName asmName = AssemblyName.GetAssemblyName(path);
 
-                    if (_ContextMap.ContainsKey(asmName))
-                        return _ContextMap[asmName]._AssemblyMap[asmName];
+                    if (_ContextMap.ContainsKey(xform))
+                        return _ContextMap[xform]._AssemblyMap[xform];
 
                     VersionManagerALC c = _ALCs.FirstOrDefault(i => i == context);
                     if (c != null)
@@ -38,8 +37,8 @@ namespace STEM.Sys.Serialization
                         try
                         {
                             Assembly assembly = c.LoadFromAssemblyPath(path);
-                            c._AssemblyMap[assembly.GetName()] = assembly;
-                            _ContextMap[asmName] = c;
+                            c._AssemblyMap[xform] = assembly;
+                            _ContextMap[xform] = c;
 
                             return assembly;
                         }
@@ -51,7 +50,7 @@ namespace STEM.Sys.Serialization
                     {
                         foreach (VersionManagerALC i in _ALCs)
                         {
-                            Assembly assembly = LoadFromFile(path, i);
+                            Assembly assembly = LoadFromFile(path, xform, i);
 
                             if (assembly != null)
                                 return assembly;
@@ -60,7 +59,7 @@ namespace STEM.Sys.Serialization
 
                     VersionManagerALC newContext = new VersionManagerALC();
                     _ALCs.Add(newContext);
-                    return LoadFromFile(path, newContext);
+                    return LoadFromFile(path, xform, newContext);
                 }
                 catch { }
 
