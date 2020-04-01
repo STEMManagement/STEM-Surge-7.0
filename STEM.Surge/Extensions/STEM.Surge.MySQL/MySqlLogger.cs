@@ -224,7 +224,7 @@ namespace STEM.Surge.MySQL
                     map["[EventName]"] = e.EventName;
                     map["[EventTime]"] = e.EventTime.ToString("yyyy-MM-dd HH:mm:ss");
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false) + ";\r\n";
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -263,7 +263,7 @@ namespace STEM.Surge.MySQL
                     map["[ObjectNameHash]"] = STEM.Sys.State.KeyManager.GetHash(o.Name).ToString();
                     map["[ObjectCreationTime]"] = o.CreationTime.ToString("yyyy-MM-dd HH:mm:ss");
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false) + ";\r\n";
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
@@ -301,7 +301,7 @@ namespace STEM.Surge.MySQL
                     map["[EventMetadata]"] = e.Metadata;
                     map["[EventMetadataHash]"] = STEM.Sys.State.KeyManager.GetHash(e.Metadata).ToString();
 
-                    cat += ";\r\n" + STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false);
+                    cat += STEM.Surge.KVPMapUtils.ApplyKVP(sql, map, false) + ";\r\n";
                 }
 
                 ExecuteNonQuery enq = new ExecuteNonQuery();
