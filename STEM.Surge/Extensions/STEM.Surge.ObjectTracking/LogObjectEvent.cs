@@ -66,6 +66,12 @@ namespace STEM.Surge.ObjectTracking
 
                 if (InstructionSet.InstructionSetContainer.ContainsKey("ObjectID"))
                     objectID = (Guid)InstructionSet.InstructionSetContainer["ObjectID"];
+                
+                if (objectID != Guid.Empty && UpdateObjectName)
+                {
+                    if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName, out exceptions))
+                        throw new Exception("Failed to record object info.");
+                }
 
                 if (objectID == Guid.Empty && GenerateObjectID)
                 {
@@ -74,11 +80,6 @@ namespace STEM.Surge.ObjectTracking
                         throw new Exception("Failed to record object info.");
 
                     InstructionSet.InstructionSetContainer["ObjectID"] = objectID;
-                }
-                else if (UpdateObjectName)
-                {
-                    if (!ILogger.GetLogger(LoggerName).SetObjectInfo(objectID, ObjectName, out exceptions))
-                        throw new Exception("Failed to record object info.");
                 }
 
                 Guid eventID = Guid.Empty;
