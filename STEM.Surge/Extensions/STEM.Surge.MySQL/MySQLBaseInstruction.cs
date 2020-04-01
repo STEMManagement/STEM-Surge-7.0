@@ -115,8 +115,8 @@ namespace STEM.Surge.MySQL
 
                 foreach (DataRow row in dt.Rows)
                 {
-                    IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString());
-                    sb.AppendLine(string.Join(",", fields));
+                    IEnumerable<string> fields = row.ItemArray.Select(i => i.GetType() == typeof(DateTime) ? ((DateTime)i).ToString("yyyy-MM-dd HH:mm:ss") : i.ToString());
+                    sb.AppendLine(string.Join("\",\"", fields));
                 }
 
                 System.IO.File.WriteAllText(tmpFile, sb.ToString());
