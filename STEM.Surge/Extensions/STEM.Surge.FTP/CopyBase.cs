@@ -362,6 +362,9 @@ namespace STEM.Surge.FTP
                             try
                             {
                                 bool success = false;
+
+                                Exception lastEX = null;
+
                                 foreach (string d in destinations)
                                 {
                                     try
@@ -520,13 +523,15 @@ namespace STEM.Surge.FTP
                                     }
                                     catch (Exception ex)
                                     {
+                                        lastEX = ex;
+
                                         if (DestinationActionRule == DestinationRule.AllOrNone)
                                             throw ex;
                                     }
                                 }
 
                                 if (!success)
-                                    throw new Exception("No successful actions taken for " + s);
+                                    throw new Exception("No successful actions taken for " + s, lastEX);
 
                                 if (Action == ActionType.Move)
                                 {
