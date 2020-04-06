@@ -33,6 +33,10 @@ namespace STEM.Surge.S3
     public class Authentication : IAuthentication
     {
         [Category("S3")]
+        [DisplayName("Allow Bucket Control"), DescriptionAttribute("Is the user allowed to list, create, and delete Buckets?")]
+        public bool AllowBucketControl { get; set; }
+
+        [Category("S3")]
         [DisplayName("Region"), DescriptionAttribute("What is the S3 Region?")]
         public string Region { get; set; }
 
@@ -80,6 +84,7 @@ namespace STEM.Surge.S3
 
         public Authentication()
         {
+            AllowBucketControl = false;
             Region = "us-east-1";
             ServiceURL = "";
             AccessKey = "";
@@ -160,7 +165,10 @@ namespace STEM.Surge.S3
         }
 
         public List<S3Bucket> ListBuckets()
-        {            
+        {
+            if (!AllowBucketControl)
+                return new List<S3Bucket>();
+
             System.Threading.Tasks.Task<ListBucketsResponse> listResponse = Client.ListBucketsAsync();
             listResponse.Wait();
             return listResponse.Result.Buckets;
@@ -389,6 +397,14 @@ namespace STEM.Surge.S3
                 }
                 else
                 {
+                    if (!AllowBucketControl)
+                        return new FDCDirectoryInfo
+                        {
+                            CreationTimeUtc = DateTime.UtcNow,
+                            LastAccessTimeUtc = DateTime.UtcNow,
+                            LastWriteTimeUtc = DateTime.UtcNow
+                        }; // Assume it exists?
+
                     foreach (S3Bucket b in ListBuckets())
                     {
                         if (b.BucketName.Equals(bucket, StringComparison.InvariantCultureIgnoreCase))
@@ -433,7 +449,7 @@ namespace STEM.Surge.S3
                     System.Threading.Tasks.Task<PutObjectResponse> r = Client.PutObjectAsync(new PutObjectRequest { BucketName = bucket, Key = prefix });
                     r.Wait();
                 }
-                else
+                else if (AllowBucketControl)
                 {
                     System.Threading.Tasks.Task<PutBucketResponse> r = Client.PutBucketAsync(new PutBucketRequest { BucketName = bucket });
                     r.Wait();
@@ -483,7 +499,7 @@ namespace STEM.Surge.S3
                         t.Wait();
                     }
                 }
-                else
+                else if (AllowBucketControl)
                 {
                     System.Threading.Tasks.Task t = Client.DeleteBucketAsync(new DeleteBucketRequest { BucketName = bucket });
                     t.Wait();
