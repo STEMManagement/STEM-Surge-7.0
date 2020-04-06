@@ -16,14 +16,11 @@
  */
 
 using System;
-using System.IO;
-using System.Xml.Serialization;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
+using System.Reflection;
 using System.Linq;
 using Npgsql;
-using STEM.Sys.Security;
 
 namespace STEM.Surge.PostGreSQL
 {
@@ -142,7 +139,53 @@ namespace STEM.Surge.PostGreSQL
 
                     CustomizeInstructionSet(clone, kvp, recommendedBranchIP, initiationSource, false);
 
-                    return new DeploymentDetails(clone, recommendedBranchIP);
+                    DeploymentDetails dd = new DeploymentDetails(clone, recommendedBranchIP);
+
+                    if (dd != null)
+                    {
+                        foreach (Instruction ins in dd.ISet.Instructions)
+                        {
+                            foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
+                            {
+                                IAuthentication a = prop.GetValue(ins) as IAuthentication;
+
+                                if (a.VersionDescriptor.TypeName == "STEM.Surge.PostGreSQL.Authentication")
+                                {
+                                    PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabaseAddress");
+                                    if (i != null)
+                                    {
+                                        string k = i.GetValue(a) as string;
+                                        if (String.IsNullOrEmpty(k))
+                                        {
+                                            i.SetValue(a, Authentication.PostGresDatabaseAddress);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabasePort");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.PostGresDatabasePort);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabaseName");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.PostGresDatabaseName);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresUser");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.PostGresUser);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresPassword");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.PostGresPassword);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "UseIntegratedSecurity");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.UseIntegratedSecurity);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return dd;
                 }
             }
             catch (Exception ex)

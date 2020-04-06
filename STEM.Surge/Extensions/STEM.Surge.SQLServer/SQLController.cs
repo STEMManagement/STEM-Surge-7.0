@@ -19,6 +19,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using System.Linq;
 using System.Data.SqlClient;
 
@@ -142,7 +143,49 @@ namespace STEM.Surge.SQLServer
 
                     CustomizeInstructionSet(clone, kvp, recommendedBranchIP, initiationSource, false);
 
-                    return new DeploymentDetails(clone, recommendedBranchIP);
+                    DeploymentDetails dd = new DeploymentDetails(clone, recommendedBranchIP);
+
+                    if (dd != null)
+                    {
+                        foreach (Instruction ins in dd.ISet.Instructions)
+                        {
+                            foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
+                            {
+                                IAuthentication a = prop.GetValue(ins) as IAuthentication;
+
+                                if (a.VersionDescriptor.TypeName == "STEM.Surge.SQLServer.Authentication")
+                                {
+                                    PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlDatabaseAddress");
+                                    if (i != null)
+                                    {
+                                        string k = i.GetValue(a) as string;
+                                        if (String.IsNullOrEmpty(k))
+                                        {
+                                            i.SetValue(a, Authentication.SqlDatabaseAddress);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlUser");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.SqlUser);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlPassword");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.SqlPassword);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlDatabaseName");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.SqlDatabaseName);
+
+                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "UseIntegratedSecurity");
+                                            if (i != null)
+                                                i.SetValue(a, Authentication.UseIntegratedSecurity);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return dd;
                 }
             }
             catch (Exception ex)
