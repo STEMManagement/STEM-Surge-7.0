@@ -95,62 +95,63 @@ namespace STEM.Surge.SSH
 
         public SftpClient OpenSftpClient(string server, int port)
         {
+            string clientKey = server + ":" + port + ":" + User + ":" + Password + ":" + KeyFile;
+            SftpClient conn = null;
+
             lock (_SftpClients)
             {
-                string clientKey = server + ":" + port + ":" + User + ":" + Password + ":" + KeyFile;
-
                 if (!_SftpClients.ContainsKey(clientKey))
                     _SftpClients[clientKey] = new Queue<SftpClient>();
 
-                SftpClient conn = null;
-
                 if (_SftpClients[clientKey].Count > 0)
                     conn = _SftpClients[clientKey].Dequeue();
+            }
 
-                if (conn != null)
-                {
-                    if (!conn.IsConnected)
-                        conn.Connect();
-
-                    return conn;
-                }
-
-                AuthenticationMethod authenticationMethod = null;
-
-                if (!String.IsNullOrEmpty(KeyFile))
-                {
-                    string kf = null;
-
-                    foreach (string f in STEM.Sys.IO.Path.OrderPathsWithSubnet(KeyFile, STEM.Sys.IO.Net.MachineIP()))
-                        if (System.IO.File.Exists(f))
-                        {
-                            kf = f;
-                            break;
-                        }
-
-                    if (kf == null)
-                        throw new System.Exception("No file could be found from " + KeyFile);
-
-                    if (!String.IsNullOrEmpty(Password))
-                    {
-                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf, Password) });
-                    }
-                    else
-                    {
-                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf) });
-                    }
-                }
-                else
-                {
-                    authenticationMethod = new PasswordAuthenticationMethod(User, Password);
-                }
-
-                conn = new SftpClient(new ConnectionInfo(server, port, User, new AuthenticationMethod[] { authenticationMethod }));
-
-                conn.Connect();
+            if (conn != null)
+            {
+                if (!conn.IsConnected)
+                    conn.Connect();
 
                 return conn;
             }
+
+            AuthenticationMethod authenticationMethod = null;
+
+            if (!String.IsNullOrEmpty(KeyFile))
+            {
+                string kf = null;
+
+                foreach (string f in STEM.Sys.IO.Path.OrderPathsWithSubnet(KeyFile, STEM.Sys.IO.Net.MachineIP()))
+                    if (System.IO.File.Exists(f))
+                    {
+                        kf = f;
+                        break;
+                    }
+
+                if (kf == null)
+                    throw new System.Exception("No file could be found from " + KeyFile);
+
+                if (!String.IsNullOrEmpty(Password))
+                {
+                    authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf, Password) });
+                }
+                else
+                {
+                    authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf) });
+                }
+            }
+            else
+            {
+                authenticationMethod = new PasswordAuthenticationMethod(User, Password);
+            }
+
+            conn = new SftpClient(new ConnectionInfo(server, port, User, new AuthenticationMethod[] { authenticationMethod }));
+
+            conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+
+            conn.Connect();
+
+            return conn;
         }
 
         public void RecycleClient(SftpClient client)
@@ -167,19 +168,19 @@ namespace STEM.Surge.SSH
                     _SftpClients[clientKey].Enqueue(client);
                     return;
                 }
-
-                try
-                {
-                    client.Disconnect();
-                }
-                catch { }
-
-                try
-                {
-                    client.Dispose();
-                }
-                catch { }
             }
+
+            try
+            {
+                client.Disconnect();
+            }
+            catch { }
+
+            try
+            {
+                client.Dispose();
+            }
+            catch { }
         }
 
         static Dictionary<string, Queue<SshClient>> _SshClients = new Dictionary<string, Queue<SshClient>>();
