@@ -16,9 +16,8 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using RdKafka;
+using Confluent.Kafka;
 
 namespace STEM.Surge.Kafka
 {
@@ -28,16 +27,8 @@ namespace STEM.Surge.Kafka
     public class ContainerToTopic : STEM.Surge.Instruction
     {
         [Category("Kafka Server")]
-        [DisplayName("Server Address"), DescriptionAttribute("What is the Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("Kafka Server")]
-        [DisplayName("Server Port"), DescriptionAttribute("What is the Server Port?")]
-        public string Port { get; set; }
-
-        [Category("Kafka Server")]
-        [DisplayName("Topic Name"), Description("The Topic to which the data is to be published.")]
-        public string TopicName { get; set; }
+        [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
+        public Authentication Authentication { get; set; }
 
         [DisplayName("Container Data Key")]
         [Description("The key in the container where the data is loaded.")]
@@ -57,10 +48,7 @@ namespace STEM.Surge.Kafka
 
         public ContainerToTopic()
         {
-            ServerAddress = "[QueueServerAddress]";
-            Port = "[QueueServerPort]";
-
-            TopicName = "[TopicName]";
+            Authentication = new Authentication();
 
             ContainerDataKey = "[TargetNameWithoutExt]";
             TargetContainer = ContainerType.InstructionSetContainer;
@@ -121,24 +109,19 @@ namespace STEM.Surge.Kafka
 
                             break;
                     }
-
-                    byte[] data = null;
-
+                        
                     if (bData != null && bData.Length > 0)
-                        data = bData;
-
-                    if (data == null)
-                        if (sData != null && sData.Length > 0)
-                            data = System.Text.Encoding.UTF8.GetBytes(sData);
-                    
-                    if (data != null)
                     {
-                        using (Producer producer = new Producer(ServerAddress + ":" + Port))
+                        using (IProducer<Null, byte[]> p = new ProducerBuilder<Null, byte[]>(Authentication.ProducerConfig).Build())
                         {
-                            using (Topic topic = producer.Topic(TopicName))
-                            {
-                                topic.Produce(data).Wait();
-                            }
+                            p.Produce(Authentication.TopicName, new Message<Null, byte[]> { Value = bData });
+                        }
+                    }
+                    else if (sData != null && sData.Length > 0)
+                    {
+                        using (IProducer<Null, string> p = new ProducerBuilder<Null, string>(Authentication.ProducerConfig).Build())
+                        {
+                            p.Produce(Authentication.TopicName, new Message<Null, string> { Value = sData });
                         }
                     }
 

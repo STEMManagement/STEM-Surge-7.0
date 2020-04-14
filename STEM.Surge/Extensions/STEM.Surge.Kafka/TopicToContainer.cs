@@ -18,7 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using RdKafka;
+using Confluent.Kafka;
 
 namespace STEM.Surge.Kafka
 {
@@ -28,16 +28,8 @@ namespace STEM.Surge.Kafka
     public class TopicToContainer : STEM.Surge.Instruction
     {
         [Category("Kafka Server")]
-        [DisplayName("Server Address"), DescriptionAttribute("What is the Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("Kafka Server")]
-        [DisplayName("Port"), DescriptionAttribute("What is the Server Port?")]
-        public string Port { get; set; }
-
-        [Category("Kafka Server")]
-        [DisplayName("Topic Name"), Description("The Topic from which the data is to be obtained.")]
-        public string TopicName { get; set; }
+        [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
+        public Authentication Authentication { get; set; }
 
         [DisplayName("Container Data Key")]
         [Description("The key in the container where the data is to be loaded.")]
@@ -65,10 +57,7 @@ namespace STEM.Surge.Kafka
 
         public TopicToContainer()
         {
-            ServerAddress = "[QueueServerAddress]";
-            Port = "[QueueServerPort]";
-
-            TopicName = "[TopicName]";
+            Authentication = new Authentication();
 
             ContentType = DataType.String;
 
@@ -89,9 +78,7 @@ namespace STEM.Surge.Kafka
                 InstructionSet.InstructionSetContainer[key] = _Data;
 
                 ContainerToTopic r = new ContainerToTopic();
-                r.ServerAddress = ServerAddress;
-                r.Port = Port;
-                r.TopicName = TopicName;
+                r.Authentication = Authentication;
                 r.ContainerDataKey = key;
                 r.TargetContainer = ContainerType.InstructionSetContainer;
                 r.Retry = 0;
@@ -112,61 +99,75 @@ namespace STEM.Surge.Kafka
                     string sData = null;
                     byte[] bData = null;
 
-                    using (EventConsumer consumer = new EventConsumer(new Config(), ServerAddress + ":" + Port))
-                    {
-                        consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(TopicName, 0, 0) });
-                        MessageAndError? msg = consumer.Consume(TimeSpan.FromSeconds(1));
-                        if (msg.HasValue)
-                            bData = msg.Value.Message.Payload;
-
-                        if (bData == null)
-                        {
-                            // No message available at this time.
-                            if (r < 0)
-                            {
-                                switch (ZeroItemsAction)
-                                {
-                                    case FailureAction.SkipRemaining:
-                                        Exceptions.Clear();
-                                        SkipRemaining();
-                                        break;
-
-                                    case FailureAction.SkipNext:
-                                        Exceptions.Clear();
-                                        SkipNext();
-                                        break;
-
-                                    case FailureAction.SkipToLabel:
-                                        Exceptions.Clear();
-                                        SkipForwardToFlowControlLabel(FailureActionLabel);
-                                        break;
-
-                                    case FailureAction.Rollback:
-                                        RollbackAllPreceedingAndSkipRemaining();
-                                        break;
-
-                                    case FailureAction.Continue:
-                                        Exceptions.Clear();
-                                        break;
-                                }
-
-                                Message = "0 Items Actioned\r\n" + Message;
-
-                                return Exceptions.Count == 0;
-                            }
-                            else
-                            {
-                                throw new Exception("No items in queue.");
-                            }
-                        }
-                    }
 
                     if (ContentType == DataType.String)
                     {
-                        sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
-                        bData = null;
+                        using (IConsumer<Ignore, string> c = new ConsumerBuilder<Ignore, string>(Authentication.ConsumerConfig(Guid.NewGuid().ToString(), AutoOffsetReset.Earliest)).Build())
+                        {
+                            c.Subscribe(Authentication.TopicName);
+
+
+                            ConsumeResult<Ignore, string> msg = c.Consume(RetryDelaySeconds * 1000);
+
+                            if (msg != null && msg.Message != null)
+                                sData = msg.Message.Value;
+                        }
+                    }
+                    else
+                    {
+                        using (IConsumer<Ignore, byte[]> c = new ConsumerBuilder<Ignore, byte[]>(Authentication.ConsumerConfig(Guid.NewGuid().ToString(), AutoOffsetReset.Earliest)).Build())
+                        {
+                            c.Subscribe(Authentication.TopicName);
+
+
+                            ConsumeResult<Ignore, byte[]> msg = c.Consume(RetryDelaySeconds * 1000);
+
+                            if (msg != null && msg.Message != null)
+                                bData = msg.Message.Value;
+                        }
                     }
 
+                    if (sData == null && bData == null)
+                    {
+                        // No message available at this time.
+                        if (r < 0)
+                        {
+                            switch (ZeroItemsAction)
+                            {
+                                case FailureAction.SkipRemaining:
+                                    Exceptions.Clear();
+                                    SkipRemaining();
+                                    break;
+
+                                case FailureAction.SkipNext:
+                                    Exceptions.Clear();
+                                    SkipNext();
+                                    break;
+
+                                case FailureAction.SkipToLabel:
+                                    Exceptions.Clear();
+                                    SkipForwardToFlowControlLabel(FailureActionLabel);
+                                    break;
+
+                                case FailureAction.Rollback:
+                                    RollbackAllPreceedingAndSkipRemaining();
+                                    break;
+
+                                case FailureAction.Continue:
+                                    Exceptions.Clear();
+                                    break;
+                            }
+
+                            Message = "0 Items Actioned\r\n" + Message;
+
+                            return Exceptions.Count == 0;
+                        }
+                        else
+                        {
+                            throw new Exception("No items in queue.");
+                        }
+                    }
+                    
                     switch (TargetContainer)
                     {
                         case ContainerType.InstructionSetContainer:

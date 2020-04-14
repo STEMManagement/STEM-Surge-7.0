@@ -16,9 +16,8 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using RdKafka;
+using Confluent.Kafka;
 
 namespace STEM.Surge.Kafka
 {
@@ -28,17 +27,9 @@ namespace STEM.Surge.Kafka
     public class FileToTopic : STEM.Surge.Instruction
     {
         [Category("Kafka Server")]
-        [DisplayName("Server Address"), DescriptionAttribute("What is the Server Address?")]
-        public string ServerAddress { get; set; }
+        [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
+        public Authentication Authentication { get; set; }
 
-        [Category("Kafka Server")]
-        [DisplayName("Server Port"), DescriptionAttribute("What is the Server Port?")]
-        public string Port { get; set; }
-
-        [Category("Kafka Server")]
-        [DisplayName("Topic Name"), Description("The Topic to which the data is to be published.")]
-        public string TopicName { get; set; }
-        
         [DisplayName("Source File")]
         [Description("The file from which the data is to be obtained.")]
         public string SourceFile { get; set; }
@@ -53,10 +44,7 @@ namespace STEM.Surge.Kafka
 
         public FileToTopic()
         {
-            ServerAddress = "[QueueServerAddress]";
-            Port = "[QueueServerPort]";
-
-            TopicName = "[TopicName]";
+            Authentication = new Authentication();
 
             SourceFile = @"[TargetPath]\[TargetName]";
 
@@ -80,12 +68,9 @@ namespace STEM.Surge.Kafka
 
                     if (bData != null)
                     {
-                        using (Producer producer = new Producer(ServerAddress + ":" + Port))
+                        using (IProducer<Null, byte[]> p = new ProducerBuilder<Null, byte[]>(Authentication.ProducerConfig).Build())
                         {
-                            using (Topic topic = producer.Topic(TopicName))
-                            {
-                                topic.Produce(bData).Wait();
-                            }
+                            p.Produce(Authentication.TopicName, new Message<Null, byte[]> { Value = bData });
                         }
                     }
 
