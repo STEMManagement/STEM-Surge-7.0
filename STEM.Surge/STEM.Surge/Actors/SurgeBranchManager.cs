@@ -415,7 +415,7 @@ namespace STEM.Surge
                     Directory.CreateDirectory(appPath);
 
                 if (sandboxID.StartsWith("1"))
-                    foreach (string dll in STEM.Sys.IO.Directory.STEM_GetFiles(STEM.Sys.Serialization.VersionManager.VersionCache, "*.dll", "!.Archive|!TEMP", SearchOption.AllDirectories, false))
+                    foreach (string dll in STEM.Sys.IO.Directory.STEM_GetFiles(STEM.Sys.Serialization.VersionManager.VersionCache, "*.dll|*.so|*.a|*.lib", "!.Archive|!TEMP", SearchOption.AllDirectories, false))
                     {
                         string file = dll.Replace(STEM.Sys.IO.Path.FirstTokenOfPath(dll), STEM.Sys.IO.Path.FirstTokenOfPath(STEM.Sys.Serialization.VersionManager.VersionCache)).Substring(STEM.Sys.Serialization.VersionManager.VersionCache.Length).Trim(Path.DirectorySeparatorChar);
                         file = Path.Combine(Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(STEM.Sys.Serialization.VersionManager.VersionCache)), file);
@@ -1328,7 +1328,11 @@ namespace STEM.Surge
                         r = _Statics.FirstOrDefault(i => i.AssignInstructionSet.InitiationSource.Equals(m.Name, StringComparison.InvariantCultureIgnoreCase));
 
                     if (r != null)
-                        r.Dispose();
+                        lock (_Statics)
+                        {
+                            _Statics.Remove(r);
+                            r.Dispose();
+                        }
                 }
                 else if (message is InstructionSetRequested)
                 {
@@ -1608,7 +1612,10 @@ namespace STEM.Surge
                         {
                             m.Save(STEM.Sys.IO.FileExistsAction.Overwrite);
                         }
-                        else if (m.Filename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
+                        else if (m.Filename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                            m.Filename.EndsWith(".so", StringComparison.InvariantCultureIgnoreCase) ||
+                            m.Filename.EndsWith(".a", StringComparison.InvariantCultureIgnoreCase) ||
+                            m.Filename.EndsWith(".lib", StringComparison.InvariantCultureIgnoreCase))
                         {
                             _AsmPool.RunOnce(new System.Threading.ParameterizedThreadStart(LoadAsm), m);
                         }
@@ -1668,7 +1675,10 @@ namespace STEM.Surge
                                 catch { }
                         }
                     }
-                    else if (m.DestinationFilename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
+                    else if (m.DestinationFilename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                        m.DestinationFilename.EndsWith(".so", StringComparison.InvariantCultureIgnoreCase) ||
+                        m.DestinationFilename.EndsWith(".a", StringComparison.InvariantCultureIgnoreCase) ||
+                        m.DestinationFilename.EndsWith(".lib", StringComparison.InvariantCultureIgnoreCase))
                     {
                         _AsmPool.RunOnce(new System.Threading.ParameterizedThreadStart(LoadAsm), m);
 

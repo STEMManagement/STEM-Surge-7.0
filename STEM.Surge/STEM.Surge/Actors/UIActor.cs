@@ -1057,7 +1057,10 @@ namespace STEM.Surge
                     {
                         m.Save(STEM.Sys.IO.FileExistsAction.Overwrite);
                     }
-                    else if (m.Filename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
+                    else if (m.Filename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                        m.Filename.EndsWith(".so", StringComparison.InvariantCultureIgnoreCase) ||
+                        m.Filename.EndsWith(".a", StringComparison.InvariantCultureIgnoreCase) ||
+                        m.Filename.EndsWith(".lib", StringComparison.InvariantCultureIgnoreCase))
                     {
                         _AsmPool.RunOnce(new System.Threading.ParameterizedThreadStart(LoadAsm), m);
                     }
@@ -1086,7 +1089,10 @@ namespace STEM.Surge
                     m.DestinationPath = STEM.Sys.Serialization.VersionManager.VersionCache;
                     m.Save();
                 }
-                else if (m.DestinationFilename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
+                else if (m.DestinationFilename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
+                    m.DestinationFilename.EndsWith(".so", StringComparison.InvariantCultureIgnoreCase) ||
+                    m.DestinationFilename.EndsWith(".a", StringComparison.InvariantCultureIgnoreCase) ||
+                    m.DestinationFilename.EndsWith(".lib", StringComparison.InvariantCultureIgnoreCase))
                 {
                     _AsmPool.RunOnce(new System.Threading.ParameterizedThreadStart(LoadAsm), m);
                 }

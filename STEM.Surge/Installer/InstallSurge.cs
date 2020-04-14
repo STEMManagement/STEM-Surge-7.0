@@ -79,7 +79,7 @@ namespace Installer
                 }
             }
             
-            foreach (string dll in Directory.GetFiles(@".\Package\STEM.SurgeService\Extensions", "*.dll"))
+            foreach (string dll in Directory.GetFiles(@".\Package\STEM.SurgeService\Extensions", "*"))
                 try
                 {
                     File.Copy(dll, Path.Combine(extensionsPath, Path.GetFileName(dll)), true);
@@ -95,7 +95,7 @@ namespace Installer
                 if (!Directory.Exists(np))
                     Directory.CreateDirectory(np);
 
-                foreach (string dll in Directory.GetFiles(dir, "*.dll"))
+                foreach (string dll in Directory.GetFiles(dir, "*"))
                     try
                     {
                         File.Copy(dll, Path.Combine(np, Path.GetFileName(dll)), true);
