@@ -37,6 +37,7 @@ namespace STEM.Surge.BasicControllers
         public DestinationPathElectionController()
         {
             DestinationLoadLimit = 0;
+            AllowThreadedAssignment = false;
         }
         
         class MapEntry
@@ -235,16 +236,19 @@ namespace STEM.Surge.BasicControllers
         Random _Random = new Random();
         public override DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)
         {
+            string orig = "";
+            string dp = null;
+
             try
             {
-                string dp = TemplateKVP.Keys.ToList().FirstOrDefault(i => i.Equals("[DestinationPath]", StringComparison.InvariantCultureIgnoreCase));
+                dp = TemplateKVP.Keys.ToList().FirstOrDefault(i => i.Equals("[DestinationPath]", StringComparison.InvariantCultureIgnoreCase));
 
                 if (_DestinationPath == null)
                 {
                     if (dp == null)
                         throw new Exception("No macro [DestinationPath] exists in this DeploymentController.");
 
-                    TemplateKVP["[DestinationPath]"] = TemplateKVP[dp];                
+                    orig = TemplateKVP["[DestinationPath]"] = TemplateKVP[dp];
 
                     _DestinationPath = TemplateKVP["[DestinationPath]"];
                 }
@@ -255,12 +259,19 @@ namespace STEM.Surge.BasicControllers
                     return null;
 
                 TemplateKVP["[DestinationPath]"] = TemplateKVP[dp] = destinationPath;
-                
-                return base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);                
+
+                return base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
             }
             catch (Exception ex)
             {
                 STEM.Sys.EventLog.WriteEntry("DestinationPathElectionController.GenerateDeploymentDetails", new Exception(InstructionSetTemplate + ": " + initiationSource, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+            }
+            finally
+            {
+                if (orig != "")
+                {
+                    TemplateKVP["[DestinationPath]"] = TemplateKVP[dp] = orig;
+                }
             }
 
             return null;
