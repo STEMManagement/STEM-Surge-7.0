@@ -418,7 +418,7 @@ namespace STEM.Surge.Azure
                             }
 
                             if (!success)
-                                throw new Exception("No successful actions taken for " + s, lastEX);
+                                throw new Exception("No successful actions taken for " + s + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
 
                             if (Action == ActionType.Move)
                             {

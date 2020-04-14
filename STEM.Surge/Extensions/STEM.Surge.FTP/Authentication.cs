@@ -27,7 +27,8 @@ using System.Text.RegularExpressions;
 using STEM.Sys.Security;
 
 namespace STEM.Surge.FTP
-{    public enum FTPListType { File, Directory, All }
+{    
+    public enum FTPListType { File, Directory, All }
 
     public class Authentication : IAuthentication
     {
