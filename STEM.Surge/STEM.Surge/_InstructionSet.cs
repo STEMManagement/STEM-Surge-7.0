@@ -688,7 +688,6 @@ namespace STEM.Surge
                             foreach (Exception e in i.Exceptions)
                             {
                                 STEM.Sys.EventLog.WriteEntry(ProcessName, e.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                                ec.Exceptions.Add(e);
                             }
                         }
 
