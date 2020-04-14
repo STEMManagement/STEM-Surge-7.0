@@ -69,6 +69,8 @@ namespace STEM.Surge
 
             set
             {
+                Exceptions.Clear();
+
                 if (value != null)
                     foreach (XElement n in value.Elements())
                         Exceptions.Add(new Exception(n.Value));
