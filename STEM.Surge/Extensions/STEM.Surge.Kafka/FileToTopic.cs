@@ -71,6 +71,7 @@ namespace STEM.Surge.Kafka
                         using (IProducer<Null, byte[]> p = new ProducerBuilder<Null, byte[]>(Authentication.ProducerConfig).Build())
                         {
                             p.Produce(Authentication.TopicName, new Message<Null, byte[]> { Value = bData });
+                            p.Flush(TimeSpan.FromSeconds(1));
                         }
                     }
 

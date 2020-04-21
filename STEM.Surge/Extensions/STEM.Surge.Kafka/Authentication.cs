@@ -96,8 +96,11 @@ namespace STEM.Surge.Kafka
 
             foreach (string f in STEM.Sys.IO.Directory.STEM_GetFiles(STEM.Sys.Serialization.VersionManager.VersionCache, lib, platform, System.IO.SearchOption.AllDirectories, false))
                 lib = f;
-            
-            Confluent.Kafka.Library.Load(lib);
+
+            if (STEM.Sys.Control.IsWindows)
+                Confluent.Kafka.Library.Load(lib);
+            else
+                System.IO.File.Copy(lib, System.IO.Path.Combine(Environment.CurrentDirectory, System.IO.Path.GetFileName(lib)), true);
 
             ServerAddress = "[QueueServerAddress]";
             Port = "[QueueServerPort]";

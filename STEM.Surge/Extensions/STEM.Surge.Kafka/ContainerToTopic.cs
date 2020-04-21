@@ -115,6 +115,7 @@ namespace STEM.Surge.Kafka
                         using (IProducer<Null, byte[]> p = new ProducerBuilder<Null, byte[]>(Authentication.ProducerConfig).Build())
                         {
                             p.Produce(Authentication.TopicName, new Message<Null, byte[]> { Value = bData });
+                            p.Flush(TimeSpan.FromSeconds(1));
                         }
                     }
                     else if (sData != null && sData.Length > 0)
@@ -122,6 +123,7 @@ namespace STEM.Surge.Kafka
                         using (IProducer<Null, string> p = new ProducerBuilder<Null, string>(Authentication.ProducerConfig).Build())
                         {
                             p.Produce(Authentication.TopicName, new Message<Null, string> { Value = sData });
+                            p.Flush(TimeSpan.FromSeconds(1));
                         }
                     }
 
