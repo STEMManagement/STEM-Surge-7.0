@@ -271,7 +271,7 @@ namespace STEM.Surge.SMB
                             }
 
                             if (!success)
-                                throw new Exception("No successful actions taken for " + s + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
+                                throw new Exception("No successful actions taken for " + s, lastEX); // + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
 
                             if (Action == ActionType.Move)
                                 File.Delete(STEM.Sys.IO.Path.AdjustPath(s));
