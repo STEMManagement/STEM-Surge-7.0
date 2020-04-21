@@ -68,13 +68,44 @@ namespace STEM.Surge
 
             bool initComplete = true;
 
-            lock (AssemblyList)
-            {
-                IEnumerable<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
-                IEnumerable<string> localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+            List<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+            List<string> localContent;
 
-                initComplete = localContent.Except(listContent).Count() == 0;
+            lock (AssemblyList)
+                localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+
+            string platform = "";
+
+            if (list.IsWindows)
+            {
+                platform = "win-x86";
+                if (list.IsX64)
+                    platform = "win-x64";
             }
+            else
+            {
+                platform = "linux-x86";
+                if (list.IsX64)
+                    platform = "linux-x64";
+            }
+
+            foreach (string name in localContent.ToList())
+            {
+                STEM.Sys.IO.FileDescription f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+
+                string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
+
+                if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
+                    localContent.Remove(name);
+                if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
+                    localContent.Remove(name);
+                if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
+                    localContent.Remove(name);
+                if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
+                    localContent.Remove(name);
+            }
+
+            initComplete = localContent.Except(listContent).Count() == 0;
             
             if (initComplete)
                 list.MessageConnection.Send(new AssemblyInitializationComplete());
@@ -111,6 +142,21 @@ namespace STEM.Surge
                 {
                     AssemblyList send = new AssemblyList();
                     send.Path = list.Path;
+
+                    string platform = "";
+
+                    if (list.IsWindows)
+                    {
+                        platform = "win-x86";
+                        if (list.IsX64)
+                            platform = "win-x64";
+                    }
+                    else
+                    {
+                        platform = "linux-x86";
+                        if (list.IsX64)
+                            platform = "linux-x64";
+                    }
                     
                     IEnumerable<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
                     IEnumerable<string> localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
@@ -118,6 +164,17 @@ namespace STEM.Surge
                     foreach (string name in localContent.Except(listContent).ToList())
                     {
                         STEM.Sys.IO.FileDescription f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+
+                        string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
+
+                        if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
+                            continue;
+                        if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
+                            continue;
+                        if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
+                            continue;
+                        if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
+                            continue;
 
                         send.Descriptions.Add(f);
                         list.Descriptions.Add(new STEM.Sys.IO.FileDescription(f.Filepath, f.Filename, false));
@@ -191,7 +248,7 @@ namespace STEM.Surge
 
         protected override void Execute(Sys.Threading.ThreadPool owner)
         {
-            foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(_ExtensionDirectory, "*.dll", "!.Archive|!TEMP", _Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
+            foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(_ExtensionDirectory, "*.dll|*.so|*.a|*.lib", "!.Archive|!TEMP", _Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
                 if (!AssemblyList.Descriptions.Exists(i => i.Filename == s.Substring(_ExtensionDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar)))
                     try
                     {

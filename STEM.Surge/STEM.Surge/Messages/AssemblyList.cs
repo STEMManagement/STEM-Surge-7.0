@@ -23,17 +23,25 @@ namespace STEM.Surge.Messages
 {
     public class AssemblyList : STEM.Sys.Messaging.FileList
     {
+        public bool IsWindows { get; set; }
+        public bool IsX64 { get; set; }
+
         public AssemblyList()
         {
+            IsWindows = STEM.Sys.Control.IsWindows;
+            IsX64 = STEM.Sys.Control.IsX64;            
         }
 
         public AssemblyList(string directory, bool recurse)
         {
+            IsWindows = STEM.Sys.Control.IsWindows;
+            IsX64 = STEM.Sys.Control.IsX64;
+
             base.Path = directory;
 
             directory = System.IO.Path.GetFullPath(directory);
 
-            foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(directory, "*.dll", "!.Archive|!TEMP", recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
+            foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(directory, "*.dll|*.so|*.a|*.lib", "!.Archive|!TEMP", recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
             {
                 if (!Descriptions.Exists(i => i.Filename == s.Substring(directory.Length).Trim(System.IO.Path.DirectorySeparatorChar)))
                     try

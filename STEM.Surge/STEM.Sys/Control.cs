@@ -39,13 +39,39 @@ namespace STEM.Sys
             private set;
         }
 
-        static readonly bool _IsWindows = System.Runtime.InteropServices.RuntimeInformation.OSDescription.StartsWith("Microsoft Windows", StringComparison.InvariantCultureIgnoreCase);
+        static readonly bool _IsWindows = false;
+        static readonly bool _IsX64 = true;
+
+        static Control()
+        {
+            _IsWindows = false;
+            try
+            {
+                _IsWindows = System.Runtime.InteropServices.RuntimeInformation.OSDescription.StartsWith("Microsoft Windows", StringComparison.InvariantCultureIgnoreCase);
+            }
+            catch { }
+
+            _IsX64 = true;
+            try
+            {
+                _IsX64 = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().StartsWith("X64", StringComparison.InvariantCultureIgnoreCase);
+            }
+            catch { }
+        }
 
         public static bool IsWindows
         {
             get
             {
                 return _IsWindows;
+            }
+        }
+
+        public static bool IsX64
+        {
+            get
+            {
+                return _IsX64;
             }
         }
 

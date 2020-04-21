@@ -55,24 +55,27 @@ namespace STEM.Sys.Serialization
                         lock (_AssemblyByName)
                             _AssemblyByName[aName] = asm;
 
-                        if (!_Cached.Contains(STEM.Sys.IO.Path.GetFileName(TransformFilename(asm.Location)).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                        if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location)).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                         {
-                            _Cached.Add(STEM.Sys.IO.Path.GetFileName(TransformFilename(asm.Location)).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-                            _CachedAssemblies[TransformFilename(asm.Location)] = asm;
+                            _Cached.Add(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location)).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                            _CachedAssemblies[System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location))] = asm;
                         }
 
-                        if (!_Cached.Contains(STEM.Sys.IO.Path.GetFileName(asm.Location).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                        if (!_Cached.Contains(asm.Location.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                         {
-                            _Cached.Add(STEM.Sys.IO.Path.GetFileName(asm.Location).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                            _Cached.Add(asm.Location.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
                             _CachedAssemblies[asm.Location] = asm;
                         }
                     }
                     catch { }
                 }
 
-                DirectoryInfo di = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+                List<FileInfo> infos = new List<FileInfo>();
+                foreach (string file in STEM.Sys.IO.Directory.STEM_GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll|*.so|*.a|*.lib", false))
+                    infos.Add(new FileInfo(file));
 
-                foreach (FileSystemInfo file in di.GetFileSystemInfos("*.dll", SearchOption.TopDirectoryOnly).OrderByDescending(i => i.LastWriteTimeUtc))
+                foreach (FileInfo file in infos.OrderByDescending(i => i.LastWriteTimeUtc))
+                {                    
                     lock (_Evaluated)
                         if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
                             if (!_Evaluated.ContainsKey(file.FullName.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
@@ -84,6 +87,7 @@ namespace STEM.Sys.Serialization
                                 }
                                 catch { }
                             }
+                }
 
                 AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolve);
                 AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(AssemblyResolve);
@@ -142,11 +146,11 @@ namespace STEM.Sys.Serialization
                     catch { }
             }
 
-            try
-            {
-                AddCache(AppDomain.CurrentDomain.BaseDirectory, false, false);
-            }
-            catch { }
+            //try
+            //{
+            //    AddCache(AppDomain.CurrentDomain.BaseDirectory, false, false);
+            //}
+            //catch { }
 
             AddCache(VersionCache, false, true);
             AddCache(caches, renameSourceAssemblies);
@@ -375,9 +379,11 @@ namespace STEM.Sys.Serialization
 
                     foreach (string dir in dirs)
                     {
-                        DirectoryInfo di = new DirectoryInfo(dir);
+                        List<FileInfo> infos = new List<FileInfo>();
+                        foreach (string file in STEM.Sys.IO.Directory.STEM_GetFiles(dir, "*.dll|*.so|*.a|*.lib", false))
+                            infos.Add(new FileInfo(file));
 
-                        foreach (FileSystemInfo file in di.GetFileSystemInfos("*.dll", SearchOption.TopDirectoryOnly).OrderByDescending(i => i.LastWriteTimeUtc))
+                        foreach (FileSystemInfo file in infos.OrderByDescending(i => i.LastWriteTimeUtc))
                             if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
                                 lock (_Evaluated)
                                     if (!_Evaluated.ContainsKey(file.FullName) || _Evaluated[file.FullName] != file.LastWriteTimeUtc)
@@ -578,7 +584,7 @@ namespace STEM.Sys.Serialization
             {
                 FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(file);
 
-                if (!string.IsNullOrEmpty(fvi.OriginalFilename))
+                if (!string.IsNullOrEmpty(fvi.OriginalFilename) && fvi.OriginalFilename.EndsWith(".DLL", StringComparison.InvariantCultureIgnoreCase))
                     return STEM.Sys.IO.Path.GetFileNameWithoutExtension(fvi.OriginalFilename) + "." + fvi.FileMajorPart + "." + fvi.FileMinorPart + "." + fvi.FileBuildPart + "." + fvi.FilePrivatePart + ".dll";
                 else
                     return STEM.Sys.IO.Path.GetFileName(file);
@@ -625,7 +631,7 @@ namespace STEM.Sys.Serialization
             {
                 try
                 {
-                    foreach (string dll in Directory.GetFiles(dir, "*.dll", SearchOption.TopDirectoryOnly))
+                    foreach (string dll in STEM.Sys.IO.Directory.STEM_GetFiles(dir, "*.dll|*.so|*.a|*.lib", false))
                         try
                         {
                             found[dll] = TransformFilename(dll);
@@ -729,12 +735,21 @@ namespace STEM.Sys.Serialization
                         catch { }
 
                         lock (_Cached)
-                            _Cached.Add(STEM.Sys.IO.Path.GetFileName(file).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                            _Cached.Add(file.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
 
                         return vcFile;
                     }
                 }
-                
+
+                if (file.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 ||
+                    file.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 ||
+                    file.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 ||
+                    file.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                {
+                    if (!xform.StartsWith("STEM."))
+                        renameSourceAssemblies = false;
+                }
+
                 vcFile = Path.Combine(VersionCache, xform);
                 if (!renameSourceAssemblies)
                     vcFile = Path.Combine(VersionCache, STEM.Sys.IO.Path.GetFileName(file));
@@ -883,7 +898,7 @@ namespace STEM.Sys.Serialization
                                 {
                                     _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
                                     
-                                    if (!_Cached.Contains(xform.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                                    //if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                                     {
                                         Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
 
@@ -898,7 +913,8 @@ namespace STEM.Sys.Serialization
                                         lock (_AssemblyByName)
                                             _AssemblyByName[aName] = asm;
 
-                                        _Cached.Add(xform.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                                        if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                                            _Cached.Add(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
 
                                         try
                                         {
@@ -918,14 +934,14 @@ namespace STEM.Sys.Serialization
                                                     STEM.Sys.EventLog.WriteEntry("VersionManager:onAssemblyLoaded", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                                                 }
                                     }
-                                    else
-                                    {
-                                        try
-                                        {
-                                            File.Delete(vcFile);
-                                        }
-                                        catch { }
-                                    }
+                                    //else
+                                    //{
+                                    //    try
+                                    //    {
+                                    //        File.Delete(vcFile);
+                                    //    }
+                                    //    catch { }
+                                    //}
                                 }
                                 catch (Exception ex)
                                 {
