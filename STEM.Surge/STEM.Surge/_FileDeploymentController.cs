@@ -519,7 +519,7 @@ namespace STEM.Surge
         {
             try
             {
-                if (!DirectoryExists(directory, user, password, isLocal))
+                if (DirectoryExists(directory, user, password, isLocal))
                 {
                     Impersonation impersonated = null;
                     try
@@ -573,7 +573,7 @@ namespace STEM.Surge
         {
             try
             {
-                if (!DirectoryExists(directory, user, password, isLocal))
+                if (DirectoryExists(directory, user, password, isLocal))
                 {
                     Impersonation impersonated = null;
                     try
