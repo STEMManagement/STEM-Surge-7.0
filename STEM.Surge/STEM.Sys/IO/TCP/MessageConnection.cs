@@ -296,6 +296,9 @@ namespace STEM.Sys.IO.TCP
         {
             try
             {
+                if (message.Contains("STEM.Sys.Messaging.ConnectionTest"))
+                    return;
+
                 if (_QueueReceivedData)
                     _MessageReceivedQueue.EnqueueObject(new object[] { message, received });
                 else
