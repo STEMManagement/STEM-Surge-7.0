@@ -35,7 +35,7 @@ namespace STEM.Sys.Serialization
             {
                 if (_CachePoller != null)
                     return;
-                
+
                 foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
                     try
@@ -75,7 +75,7 @@ namespace STEM.Sys.Serialization
                     infos.Add(new FileInfo(file));
 
                 foreach (FileInfo file in infos.OrderByDescending(i => i.LastWriteTimeUtc))
-                {                    
+                {
                     lock (_Evaluated)
                         if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
                             if (!_Evaluated.ContainsKey(file.FullName.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
@@ -335,7 +335,7 @@ namespace STEM.Sys.Serialization
             {
                 while (_CacherPool.LoadLevel > 0)
                     System.Threading.Thread.Sleep(10);
-             
+
                 try
                 {
                     List<_Cache> caches = null;
@@ -897,7 +897,7 @@ namespace STEM.Sys.Serialization
                                 try
                                 {
                                     _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-                                    
+
                                     //if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                                     {
                                         Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
