@@ -149,7 +149,7 @@ namespace STEM.Sys.IO.TCP
                             client.Connect(RemoteAddress, RemotePort);
 
                             _TcpClient = client;
-
+                            
                             if (_SslConnection)
                             {
                                 _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
@@ -247,7 +247,7 @@ namespace STEM.Sys.IO.TCP
             }
         }
 
-        List<byte[]> _Recycler = new List<byte[]>();
+        static List<byte[]> _Recycler = new List<byte[]>();
 
         byte[] GetBuffer(int size)
         {
@@ -291,44 +291,43 @@ namespace STEM.Sys.IO.TCP
                         {
                             int rcvd = 0;
 
-                            byte[] buf = null;
-                            if (client.Available > 0)
-                            {
-                                int avail = client.Available;
-                                buf = GetBuffer(avail);
+                            byte[] buf = GetBuffer(2097152);
 
-                                lastConnectionTest = DateTime.UtcNow;
-
-                                if (_SslStream != null)
+                            int pos = 0;
+                            lock (client)
+                                while (client.Available > 0 && pos < buf.Length)
                                 {
-                                    rcvd = _SslStream.Read(buf, 0, avail);
-                                }
-                                else
-                                {
-                                    rcvd = client.GetStream().Read(buf, 0, avail);
-                                }
+                                    lastConnectionTest = DateTime.UtcNow;
 
-                                if (rcvd > 0)
-                                {
-                                    int zeros = 0;
-                                    foreach (byte b in buf)
-                                        if (b != 0)
-                                            break;
-                                        else
-                                            zeros++;
-
-                                    if (zeros == rcvd)
+                                    if (_SslStream != null)
                                     {
-                                        buf = null;
-                                        continue;
+                                        rcvd = _SslStream.Read(buf, pos, buf.Length - pos);
                                     }
-                                    
-                                    if (buf != null)
-                                        Receive(buf, rcvd, DateTime.UtcNow); 
+                                    else
+                                    {
+                                        rcvd = client.GetStream().Read(buf, pos, buf.Length - pos);
+                                    }
+
+                                    pos += rcvd;
+
+                                    if (rcvd == 0)
+                                        break;
                                 }
+
+                            rcvd = pos;
+
+                            if (rcvd > 0)
+                            {
+                                Receive(buf, rcvd, DateTime.UtcNow); 
                             }
                             else
                             {
+                                if (buf != null)
+                                {
+                                    Recycle(buf);
+                                    buf = null;
+                                }
+
                                 if ((DateTime.UtcNow - lastConnectionTest).TotalSeconds > 5)
                                 {
                                     IsConnected();
@@ -369,35 +368,45 @@ namespace STEM.Sys.IO.TCP
             }
         }
 
+        static byte[] ConnectionTestMessage = STEM.Sys.IO.StringCompression.CompressString(new STEM.Sys.Messaging.ConnectionTest().Serialize());
+
         public bool IsConnected()
         {
             if (_CloseBroadcast && _TcpClient == null)
                 return false;
 
-            lock (_AccessMutex)
-            {
-                if (_TcpClient != null)
+            TcpClient client = _TcpClient;
+
+            if (client != null)
+                lock (client)
                 {
                     try
                     {
                         if (_SslStream != null)
                         {
-                            _SslStream.WriteByte(0);
+                            _SslStream.Write(ConnectionTestMessage, 0, ConnectionTestMessage.Length);
+                            _SslStream.Flush();
                         }
                         else
                         {
-                            _TcpClient.GetStream().WriteByte(0);
+                            client.GetStream().Write(ConnectionTestMessage, 0, ConnectionTestMessage.Length);
                         }
 
-                        if (_TcpClient.Connected)
+                        if (client.Connected)
                         {
                             return true;
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        string s = ex.ToString();
                     }
-                    
+                }
+
+            lock (_AccessMutex)
+            {
+                if (client == _TcpClient)
+                {
                     try
                     {
                         _TcpClient.Client.Shutdown(SocketShutdown.Both);
@@ -418,9 +427,9 @@ namespace STEM.Sys.IO.TCP
 
                     _TcpClient = null;
                     _SslStream = null;
-                }
 
-                BroadcastClose();
+                    BroadcastClose();
+                }
 
                 return false;
             }
@@ -465,7 +474,7 @@ namespace STEM.Sys.IO.TCP
                         _TcpClient.Close();
                     }
                     catch { }
-
+                    
                     _TcpClient = null;
                     _SslStream = null;
 
@@ -745,6 +754,7 @@ namespace STEM.Sys.IO.TCP
                                 if (_SslStream != null)
                                 {
                                     _SslStream.Write(message, offset, length - offset);
+                                    _SslStream.Flush();
                                 }
                                 else
                                 {
