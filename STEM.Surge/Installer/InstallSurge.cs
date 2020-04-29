@@ -178,6 +178,7 @@ namespace Installer
     <RemoteConfigurationDirectory>[REMOTECFG]</RemoteConfigurationDirectory>
     <AlternateAssemblyStore />
     <UseSSL>[USESSL]</UseSSL>
+    <CertificateFriendlyName>[CFN]</CertificateFriendlyName>
   </Settings>
 </ConfigurationDS>";
 
@@ -187,6 +188,7 @@ namespace Installer
             cfg = cfg.Replace("[POSTMORTEM]", postmortemOutputDir.Text.Trim());
             cfg = cfg.Replace("[REMOTECFG]", remoteConfigurationDir.Text.Trim());
             cfg = cfg.Replace("[USESSL]", useSSL.Checked.ToString().ToLower());
+            cfg = cfg.Replace("[CFN]", certificateFriendlyName.Text.Trim());
 
             File.WriteAllText(Path.Combine(installPath, "SurgeService.cfg"), cfg);
         }
