@@ -20,13 +20,14 @@ using System.Linq;
 using STEM.Sys.Messaging;
 using STEM.Surge.Messages;
 using STEM.Sys.IO.TCP;
+using System.Security.Cryptography.X509Certificates;
 
 namespace STEM.Surge
 {
     public class SurgeSandbox : SurgeBranchManager
     {
         public SurgeSandbox(int communicationPort, string postMortemCache)
-            : base(communicationPort, postMortemCache, false, true)
+            : base(communicationPort, postMortemCache, false, null, true)
         {
         }
 
