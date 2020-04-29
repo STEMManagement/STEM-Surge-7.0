@@ -30,6 +30,7 @@ namespace STEM.Surge.Messages
         public string PostMortemDirectory { get; set; }
         public string RemoteConfigurationDirectory { get; set; }
         public bool UseSSL { get; set; }
+        public string CertificateFriendlyName { get; set; }
 
         public SetServiceConfiguration()
         {
