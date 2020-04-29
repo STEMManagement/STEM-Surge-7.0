@@ -56,9 +56,12 @@ namespace STEM.Surge.SMB
                 Password = this.Detangle(value);
             }
         }
-        
-        [DisplayName("Pingable"), DescriptionAttribute("Are the remote computers pingable.")]
+
+        [DisplayName("Pingable"), DescriptionAttribute("Are the remote computers pingable?")]
         public bool Pingable { get; set; }
+
+        [DisplayName("Timeout (Minutes)"), DescriptionAttribute("How many minutes should we allow a net use to try?")]
+        public int TimeoutMinutes { get; set; }
 
         public SmbAuthenticate()
             : base()
@@ -68,6 +71,7 @@ namespace STEM.Surge.SMB
             User = "Username";
             Password = "Password";
             Pingable = true;
+            TimeoutMinutes = 5;
         }
 
         protected override void _Rollback()
@@ -103,7 +107,7 @@ namespace STEM.Surge.SMB
                 }
                 else
                 {
-                    threads = _Pool.ExecuteBatch(threads, TimeSpan.FromMinutes(5));
+                    threads = _Pool.ExecuteBatch(threads, TimeSpan.FromMinutes(TimeoutMinutes));
 
                     foreach (IThreadable i in threads)
                     {
@@ -116,11 +120,6 @@ namespace STEM.Surge.SMB
             {
                 Exceptions.Add(ex);
                 return false;
-            }
-
-            foreach (Exception ex in Exceptions)
-            {
-                STEM.Sys.EventLog.WriteEntry(InstructionSet.ProcessName, ex, Sys.EventLog.EventLogEntryType.Error);
             }
 
             return Exceptions.Count == 0;
