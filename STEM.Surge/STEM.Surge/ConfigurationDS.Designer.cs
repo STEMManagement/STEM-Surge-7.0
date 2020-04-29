@@ -293,6 +293,8 @@ namespace STEM.Surge {
             
             private global::System.Data.DataColumn columnUseSSL;
             
+            private global::System.Data.DataColumn columnCertificateFriendlyName;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             public SettingsDataTable() {
@@ -384,6 +386,14 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public global::System.Data.DataColumn CertificateFriendlyNameColumn {
+                get {
+                    return this.columnCertificateFriendlyName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -419,7 +429,7 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
-            public SettingsRow AddSettingsRow(int SurgeCommunicationPort, string SurgeDeploymentManagerAddress, double ProcessorOverload, string PostMortemDirectory, string RemoteConfigurationDirectory, string AlternateAssemblyStore, bool UseSSL) {
+            public SettingsRow AddSettingsRow(int SurgeCommunicationPort, string SurgeDeploymentManagerAddress, double ProcessorOverload, string PostMortemDirectory, string RemoteConfigurationDirectory, string AlternateAssemblyStore, bool UseSSL, string CertificateFriendlyName) {
                 SettingsRow rowSettingsRow = ((SettingsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         SurgeCommunicationPort,
@@ -428,7 +438,8 @@ namespace STEM.Surge {
                         PostMortemDirectory,
                         RemoteConfigurationDirectory,
                         AlternateAssemblyStore,
-                        UseSSL};
+                        UseSSL,
+                        CertificateFriendlyName};
                 rowSettingsRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowSettingsRow);
                 return rowSettingsRow;
@@ -458,6 +469,7 @@ namespace STEM.Surge {
                 this.columnRemoteConfigurationDirectory = base.Columns["RemoteConfigurationDirectory"];
                 this.columnAlternateAssemblyStore = base.Columns["AlternateAssemblyStore"];
                 this.columnUseSSL = base.Columns["UseSSL"];
+                this.columnCertificateFriendlyName = base.Columns["CertificateFriendlyName"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -477,6 +489,8 @@ namespace STEM.Surge {
                 base.Columns.Add(this.columnAlternateAssemblyStore);
                 this.columnUseSSL = new global::System.Data.DataColumn("UseSSL", typeof(bool), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnUseSSL);
+                this.columnCertificateFriendlyName = new global::System.Data.DataColumn("CertificateFriendlyName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnCertificateFriendlyName);
                 this.columnSurgeCommunicationPort.DefaultValue = ((int)(0));
                 this.columnSurgeDeploymentManagerAddress.DefaultValue = ((string)(""));
                 this.columnProcessorOverload.DefaultValue = ((double)(0D));
@@ -484,6 +498,7 @@ namespace STEM.Surge {
                 this.columnAlternateAssemblyStore.DefaultValue = ((string)(""));
                 this.columnUseSSL.AllowDBNull = false;
                 this.columnUseSSL.DefaultValue = ((bool)(false));
+                this.columnCertificateFriendlyName.DefaultValue = ((string)("STEM.Surge"));
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -735,6 +750,22 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public string CertificateFriendlyName {
+                get {
+                    if (this.IsCertificateFriendlyNameNull()) {
+                        return "STEM.Surge";
+                    }
+                    else {
+                        return ((string)(this[this.tableSettings.CertificateFriendlyNameColumn]));
+                    }
+                }
+                set {
+                    this[this.tableSettings.CertificateFriendlyNameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             public bool IsSurgeCommunicationPortNull() {
                 return this.IsNull(this.tableSettings.SurgeCommunicationPortColumn);
             }
@@ -803,6 +834,18 @@ namespace STEM.Surge {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             public void SetAlternateAssemblyStoreNull() {
                 this[this.tableSettings.AlternateAssemblyStoreColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public bool IsCertificateFriendlyNameNull() {
+                return this.IsNull(this.tableSettings.CertificateFriendlyNameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public void SetCertificateFriendlyNameNull() {
+                this[this.tableSettings.CertificateFriendlyNameColumn] = global::System.Convert.DBNull;
             }
         }
         
