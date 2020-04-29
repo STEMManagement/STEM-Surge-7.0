@@ -103,6 +103,8 @@ namespace STEM.Surge.BasicControllers
             public string IP { get; set; }
         }
 
+        protected string LastDestinationSelected { get; private set; }
+
         public override void CustomizeInstructionSet(_InstructionSet iSetTemplate, Dictionary<string, string> map, string branchIP, string initiationSource, bool cloneMap = true)
         {
             System.Collections.Generic.Dictionary<string, string> kvp = map;
@@ -204,11 +206,13 @@ namespace STEM.Surge.BasicControllers
             {
                 kvp["[DestinationPath]"] = dest;
                 kvp["[DestinationAddress]"] = STEM.Sys.IO.Path.IPFromPath(dest);
+                LastDestinationSelected = dest;
             }
             else
             {
                 kvp["[DestinationPath]"] = "";
                 kvp["[DestinationAddress]"] = "";
+                LastDestinationSelected = "";
             }
 
             base.CustomizeInstructionSet(iSetTemplate, kvp, branchIP, initiationSource, false);
