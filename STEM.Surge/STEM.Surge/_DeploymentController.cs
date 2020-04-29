@@ -60,6 +60,7 @@ namespace STEM.Surge
             TemplateKVP["[NewGuid]"] = "Reserved";
             TemplateKVP["[DeploymentControllerName]"] = "Reserved";
             TemplateKVP["[DeploymentControllerID]"] = "Reserved";
+            TemplateKVP["[SwitchboardRowID]"] = "Reserved";
             TemplateKVP["[DeploymentManagerIP]"] = "Reserved";
             TemplateKVP["[InitiationSource]"] = "Reserved";
             TemplateKVP["[InstructionSetProcessName]"] = "Reserved";
@@ -71,11 +72,20 @@ namespace STEM.Surge
 
         /// <summary>
         /// An internal ID unique to this instance of a DeploymentController
-        /// generated using source, file filter, directory filter, and controller name
-        /// so that it's repeatable
+        /// generated using source, file filter, directory filter
+        /// such that it's repeatable
         /// </summary>
         [Browsable(false)]
         public string DeploymentControllerID { get; set; }
+
+        /// <summary>
+        /// An internal ID unique to all instances of DeploymentControllers
+        /// created for the pool results from an expandable switchboard row,
+        /// generated using expandable-source, file filter, directory filter
+        /// such that it's repeatable
+        /// </summary>
+        [Browsable(false)]
+        public string SwitchboardRowID { get; set; }
 
         /// <summary>
         /// The name of this Deployment Controller
@@ -244,6 +254,8 @@ namespace STEM.Surge
             kvp["[DeploymentControllerName]"] = DeploymentControllerName;
 
             kvp["[DeploymentControllerID]"] = DeploymentControllerID;
+
+            kvp["[SwitchboardRowID]"] = SwitchboardRowID;
 
             kvp["[DeploymentManagerIP]"] = STEM.Sys.IO.Net.MachineIP();
 
