@@ -71,6 +71,8 @@ namespace STEM.Sys.IO.TCP
         public string Username { get; private set; }
         public string UserDescription { get; private set; }
 
+        X509Certificate2 _ClientCertificate = null;
+
         public Connection(string ipAddress, int port, bool sslConnection, bool autoReconnect = false)
         {
             ConnectionRole = TCP.Role.Client;
@@ -83,6 +85,22 @@ namespace STEM.Sys.IO.TCP
 
             AutoReconnect = autoReconnect;
 
+            _SslConnection = sslConnection;
+        }
+
+        public Connection(string ipAddress, int port, bool sslConnection, X509Certificate2 certificate, bool autoReconnect = false)
+        {
+            ConnectionRole = TCP.Role.Client;
+
+            if (ipAddress == STEM.Sys.IO.Net.EmptyAddress)
+                throw new Exception("Attempt to connect to the EmptyAddress");
+
+            RemoteAddress = ipAddress;
+            RemotePort = port;
+
+            AutoReconnect = autoReconnect;
+
+            _ClientCertificate = certificate;
             _SslConnection = sslConnection;
         }
 
@@ -105,14 +123,59 @@ namespace STEM.Sys.IO.TCP
 
             if (certificate != null)
             {
-                _SslStream = new SslStream(_TcpClient.GetStream(), true);
-                _SslStream.AuthenticateAsServer(certificate, false, System.Security.Authentication.SslProtocols.None, false);
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateCertificate), null, EncryptionPolicy.RequireEncryption);
+                _SslStream.AuthenticateAsServer(certificate, false, System.Security.Authentication.SslProtocols.Tls12, false);
             }
         }
 
-        static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        bool ValidateCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            return true;
+            bool valid = true;
+
+            if (sslPolicyErrors != SslPolicyErrors.None)
+                STEM.Sys.EventLog.WriteEntry("ValidateCertificate", sslPolicyErrors.ToString(), EventLog.EventLogEntryType.Warning);
+
+            //if (certificate != null)
+            //    lock (_AccessMutex)
+            //    {
+            //        try
+            //        {
+            //            valid = false;
+
+            //            if (sslPolicyErrors == SslPolicyErrors.None ||
+            //                sslPolicyErrors == SslPolicyErrors.RemoteCertificateNameMismatch)
+            //                valid = true;
+            //        }
+            //        finally
+            //        {
+            //            if (!valid)
+            //            {
+            //                try
+            //                {
+            //                    _TcpClient.Client.Shutdown(SocketShutdown.Both);
+            //                }
+            //                catch { }
+
+            //                try
+            //                {
+            //                    _TcpClient.Close();
+            //                }
+            //                catch { }
+
+            //                try
+            //                {
+            //                    _TcpClient.Dispose();
+            //                }
+            //                catch { }
+
+            //                _TcpClient = null;
+            //                _SslStream = null;
+            //            }
+            //        }
+            //    }
+
+            return valid;
         }
 
         void Bind(ConnectionOpened callback = null)
@@ -152,14 +215,24 @@ namespace STEM.Sys.IO.TCP
                             
                             if (_SslConnection)
                             {
-                                _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-                                _SslStream.AuthenticateAsClient(Dns.GetHostEntry(RemoteAddress).HostName);
+                                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                                _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateCertificate), null, EncryptionPolicy.RequireEncryption);
+                                if (_ClientCertificate != null)
+                                {
+                                    X509CertificateCollection certCollection = new X509CertificateCollection();
+                                    certCollection.Add(_ClientCertificate);
+                                    _SslStream.AuthenticateAsClient("STEM.Surge", certCollection, System.Security.Authentication.SslProtocols.Tls12, false);
+                                }
+                                else
+                                {
+                                    _SslStream.AuthenticateAsClient("STEM.Surge");
+                                }
                             }
 
                             if (!IsConnected())
                                 throw new IOException();
                         }
-                        catch
+                        catch 
                         {
                             if (_TcpClient != null)
                             {
@@ -397,9 +470,8 @@ namespace STEM.Sys.IO.TCP
                             return true;
                         }
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        string s = ex.ToString();
                     }
                 }
 

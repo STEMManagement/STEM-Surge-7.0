@@ -26,7 +26,8 @@ namespace STEM.Sys.IO.TCP
     {
         internal StringConnection(System.Net.Sockets.TcpClient client, X509Certificate2 certificate) : base(client, certificate) { }
         internal StringConnection(string address, int port, bool sslConnection, bool autoReconnect = false) : base(address, port, sslConnection, autoReconnect) { }
-                
+        internal StringConnection(string address, int port, bool sslConnection, X509Certificate2 certificate, bool autoReconnect = false) : base(address, port, sslConnection, certificate, autoReconnect) { }
+
         List<byte> _Tailing = null;
         public override void Receive(byte[] message, int length, DateTime received)
         {

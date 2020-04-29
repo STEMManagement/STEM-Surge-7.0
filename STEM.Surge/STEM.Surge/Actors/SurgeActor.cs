@@ -22,6 +22,7 @@ using System.Text;
 using STEM.Sys.Messaging;
 using STEM.Sys.IO.TCP;
 using STEM.Surge.Messages;
+using System.Security.Cryptography.X509Certificates;
 
 namespace STEM.Surge
 {
@@ -144,7 +145,7 @@ namespace STEM.Surge
         public bool ConnectToDeploymentManager(string address, int port, bool sslConnection, bool autoReconnect)
         {
             string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
-            
+
             lock (ConnectionLock)
             {
                 MessageConnection c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
@@ -152,6 +153,36 @@ namespace STEM.Surge
                 if (c == null)
                 {
                     c = new MessageConnection(ipAddress, port, sslConnection, true, autoReconnect);
+                    c.onClosed += onClosed;
+                    c.onReceived += onReceived;
+                    c.onOpened += onOpened;
+                    _MessageConnections.Add(c);
+                }
+
+                return c.IsConnected();
+            }
+        }
+
+        /// <summary>
+        /// Called to establish a connection to a DeploymentManager
+        /// Redundant calls are harmless
+        /// </summary>
+        /// <param name="address">The DeploymentManager ip</param>
+        /// <param name="port">The communication port</param>
+        /// <param name="certificate">Client certificate</param>
+        /// <param name="autoReconnect">True if reconnects should be attempted when the connection is lost</param>
+        /// <returns>True if the connection is active, else False</returns>
+        public bool ConnectToDeploymentManager(string address, int port, bool sslConnection, X509Certificate2 certificate, bool autoReconnect)
+        {
+            string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
+
+            lock (ConnectionLock)
+            {
+                MessageConnection c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
+
+                if (c == null)
+                {
+                    c = new MessageConnection(ipAddress, port, sslConnection, true, certificate, autoReconnect);
                     c.onClosed += onClosed;
                     c.onReceived += onReceived;
                     c.onOpened += onOpened;

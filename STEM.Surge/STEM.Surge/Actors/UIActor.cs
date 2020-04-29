@@ -22,6 +22,7 @@ using System.Linq;
 using STEM.Sys.IO.TCP;
 using STEM.Sys.Messaging;
 using STEM.Surge.Messages;
+using System.Security.Cryptography.X509Certificates;
 
 namespace STEM.Surge
 {
@@ -70,10 +71,11 @@ namespace STEM.Surge
         public event StatusMessage onUpdateStatusMessage;
 
         bool _SslConnection = false;
+        X509Certificate2 _ClientCertificate = null;
 
         bool _Connected = false;
         public bool AssemblyInitializationComplete { get; private set; }
-        
+
         public bool InitializeConnection(string deploymentManagerIP, int port, bool sslConnection)
         {
             if (deploymentManagerIP != PrimaryDeploymentManagerIP)
@@ -112,13 +114,62 @@ namespace STEM.Surge
 
                 _SslConnection = sslConnection;
 
-                return ConnectToDeploymentManager(deploymentManagerIP, _SslConnection ? port+1 : port, sslConnection, true);           
+                return ConnectToDeploymentManager(deploymentManagerIP, _SslConnection ? port + 1 : port, sslConnection, true);
             }
             else
             {
                 _SslConnection = sslConnection;
 
                 return ConnectToDeploymentManager(deploymentManagerIP, _SslConnection ? port + 1 : port, sslConnection, true);
+            }
+        }
+
+        public bool InitializeConnection(string deploymentManagerIP, int port, bool sslConnection, X509Certificate2 certificate)
+        {
+            if (deploymentManagerIP != PrimaryDeploymentManagerIP)
+            {
+                lock (_DeploymentManagerConfigurationMutex)
+                {
+                    _DeploymentManagerConfiguration = new DeploymentManagerConfiguration();
+                    _Connected = false;
+                    AssemblyInitializationComplete = false;
+                    PrimaryDeploymentManagerIP = deploymentManagerIP;
+                }
+
+                lock (_ActiveDeploymentsMessages)
+                    _ActiveDeploymentsMessages.Clear();
+
+                lock (_BacklogsLock)
+                    _Backlogs.Clear();
+
+                lock (_BacklogsMessages)
+                    _BacklogsMessages.Clear();
+
+                lock (_BranchEntries)
+                    _BranchEntries.Clear();
+
+                lock (_BranchesMessages)
+                    _BranchesMessages.Clear();
+
+                lock (_DeploymentsLock)
+                    _Deployments.Clear();
+
+                lock (_ActiveDeploymentsMessages)
+                    _ActiveDeploymentsMessages.Clear();
+
+                lock (_ManagerReportTimes)
+                    _ManagerReportTimes.Clear();
+
+                _SslConnection = sslConnection;
+                _ClientCertificate = certificate;
+
+                return ConnectToDeploymentManager(deploymentManagerIP, _SslConnection ? port + 1 : port, sslConnection, certificate, true);
+            }
+            else
+            {
+                _SslConnection = sslConnection;
+
+                return ConnectToDeploymentManager(deploymentManagerIP, _SslConnection ? port + 1 : port, sslConnection, certificate, true);
             }
         }
 
@@ -267,7 +318,7 @@ namespace STEM.Surge
 
                 if (_ActiveDeploymentManagers != null)
                     foreach (string i in _ActiveDeploymentManagers.DeploymentManagers)
-                        ConnectToDeploymentManager(i, _SslConnection ? CommunicationPort + 1 : CommunicationPort, _SslConnection, true);
+                        ConnectToDeploymentManager(i, _SslConnection ? CommunicationPort + 1 : CommunicationPort, _SslConnection, _ClientCertificate, true);
             }
             else if (!AssemblyInitializationComplete)
             {

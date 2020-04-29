@@ -49,6 +49,21 @@ namespace STEM.Sys.IO.TCP
             _ResponseReceivedQueue.receiveNext += ProcessResponse;
         }
 
+        public MessageConnection(string address, int port, bool sslConnection, bool queueReceivedData, X509Certificate2 certificate, bool autoReconnect = false)
+            : base(address, port, sslConnection, certificate, autoReconnect)
+        {
+            _QueueReceivedData = queueReceivedData;
+
+            if (queueReceivedData)
+            {
+                _MessageReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
+                _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
+            }
+
+            _ResponseReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
+            _ResponseReceivedQueue.receiveNext += ProcessResponse;
+        }
+
         public MessageConnection(System.Net.Sockets.TcpClient client, X509Certificate2 certificate, bool queueReceivedData)
             : base(client, certificate)
         {

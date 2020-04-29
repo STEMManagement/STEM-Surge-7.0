@@ -24,6 +24,7 @@ using STEM.Sys.Messaging;
 using STEM.Surge.Messages;
 using STEM.Sys.IO.TCP;
 using STEM.Sys.Threading;
+using System.Security.Cryptography.X509Certificates;
 
 namespace STEM.Surge
 {
@@ -74,7 +75,7 @@ namespace STEM.Surge
             _BranchHealthThreads.Clear();
         }
 
-        public SurgeBranchManager(int communicationPort, string postMortemCache, bool useSSL, bool ses)
+        public SurgeBranchManager(int communicationPort, string postMortemCache, bool useSSL, X509Certificate2 certificate, bool ses)
             : base(communicationPort)
         {
             PostMortemCache = postMortemCache;
@@ -113,7 +114,7 @@ namespace STEM.Surge
 
             if (_SES)
             {
-                ConnectToDeploymentManager(STEM.Sys.IO.Net.MachineIP(), _UseSSL ? CommunicationPort+1 : CommunicationPort, _UseSSL, true);
+                ConnectToDeploymentManager(STEM.Sys.IO.Net.MachineIP(), _UseSSL ? CommunicationPort+1 : CommunicationPort, _UseSSL, certificate, true);
             }
         }
 
@@ -1279,6 +1280,7 @@ namespace STEM.Surge
                             newConfig.Settings[0].PostMortemDirectory = m.PostMortemDirectory;
                             newConfig.Settings[0].RemoteConfigurationDirectory = m.RemoteConfigurationDirectory;
                             newConfig.Settings[0].UseSSL = m.UseSSL;
+                            newConfig.Settings[0].CertificateFriendlyName = m.CertificateFriendlyName;
                             newConfig.WriteXml(Path.Combine(Environment.CurrentDirectory, "SurgeService.cfg"));
 
                             _ConfigurationDS = newConfig;
@@ -1316,6 +1318,7 @@ namespace STEM.Surge
                     m.PostMortemDirectory = newConfig.Settings[0].PostMortemDirectory;
                     m.RemoteConfigurationDirectory = newConfig.Settings[0].RemoteConfigurationDirectory;
                     m.UseSSL = newConfig.Settings[0].UseSSL;
+                    m.CertificateFriendlyName = newConfig.Settings[0].CertificateFriendlyName;
 
                     message.Respond(m);
                 }
