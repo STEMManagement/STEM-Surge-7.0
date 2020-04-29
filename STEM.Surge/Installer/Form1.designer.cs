@@ -36,9 +36,9 @@
             // 
             this.panel2.BackColor = System.Drawing.Color.Transparent;
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 186);
+            this.panel2.Location = new System.Drawing.Point(0, 198);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(684, 481);
+            this.panel2.Size = new System.Drawing.Size(684, 525);
             this.panel2.TabIndex = 1;
             // 
             // Form1
@@ -48,7 +48,7 @@
             this.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
             this.BackgroundImage = global::Installer.Properties.Resources.surgeBackground;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(684, 667);
+            this.ClientSize = new System.Drawing.Size(684, 723);
             this.Controls.Add(this.panel2);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
