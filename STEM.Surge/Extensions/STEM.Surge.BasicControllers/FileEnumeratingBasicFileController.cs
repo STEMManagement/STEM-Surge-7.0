@@ -241,11 +241,9 @@ namespace STEM.Surge.BasicControllers
                                 if (any.CoordinatedKeyManager.Locked(f.FileName))
                                     continue;
 
-                                if (any.CoordinatedKeyManager.CoordinatedMachineHasLock(f.FileName, any.CoordinateWith))
-                                    continue;
-
-                                lock (_ObjectLock)
-                                    Files[f.FileName] = f.FileSize;
+                                if (any.CoordinatedKeyManager.CoordinatedMachineHasLock(f.FileName, any.CoordinateWith) == Sys.State.CoordinatedKeyManager.RemoteLockExists.False)
+                                    lock (_ObjectLock)
+                                        Files[f.FileName] = f.FileSize;
                             }
                     }
                 }

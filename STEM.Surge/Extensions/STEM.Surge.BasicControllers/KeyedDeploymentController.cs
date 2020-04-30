@@ -352,7 +352,7 @@ namespace STEM.Surge.BasicControllers
                                     return null;
                             }
 
-                            if (CoordinatedKeyManager.CoordinatedMachineHasLock(key, CoordinateWith))
+                            if (CoordinatedKeyManager.CoordinatedMachineHasLock(key, CoordinateWith) == CoordinatedKeyManager.RemoteLockExists.True)
                             {
                                 CoordinatedKeyManager.Unlock(key, binding);
                                 STEM.Sys.EventLog.WriteEntry("KeyedDeploymentController.LockSerializationKey", "A previously bound key has been found to be owned by a different DeploymentService.", STEM.Sys.EventLog.EventLogEntryType.Error);
