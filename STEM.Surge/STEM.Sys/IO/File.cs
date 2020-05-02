@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -174,6 +175,72 @@ namespace STEM.Sys.IO
             _Act(source, destination, ifExists, out destinationFilename, retryCount, retryDelaySeconds, useTempHop, false);
         }
 
+        class TempCleaner : STEM.Sys.Threading.IThreadable
+        {
+            static Hashtable _WatchedDirectories = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+
+            static STEM.Sys.Threading.ThreadPool _CleanerPool = new Threading.ThreadPool(TimeSpan.FromMinutes(15), 4, true); 
+
+            string _Directory;
+
+            public static void Register(string dir)
+            {
+                try
+                {
+                    if (!_WatchedDirectories.ContainsKey(dir))
+                        lock (_WatchedDirectories)
+                            if (!_WatchedDirectories.ContainsKey(dir))
+                            {
+                                TempCleaner c = new TempCleaner(dir);
+                                _CleanerPool.BeginAsync(c);
+                                _WatchedDirectories[dir] = dir;
+                            }
+                }
+                catch { }
+            }
+
+            TempCleaner(string dir)
+            {
+                _Directory = dir;
+            }
+
+            Dictionary<string, DateTime> _Discovered = new Dictionary<string, DateTime>();
+
+            protected override void Execute(Threading.ThreadPool owner)
+            {
+                try
+                {
+                    foreach (string file in System.IO.Directory.GetFiles(_Directory, "*", System.IO.SearchOption.TopDirectoryOnly))
+                    {
+                        try
+                        {
+                            if (!_Discovered.ContainsKey(file))
+                                _Discovered[file] = DateTime.UtcNow;
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    foreach (string file in _Discovered.Keys.ToList())
+                    {
+                        if (!System.IO.File.Exists(file))
+                        {
+                            _Discovered.Remove(file);
+                        }
+                        else if ((DateTime.UtcNow - _Discovered[file]).TotalMinutes > 120)
+                        {
+                            System.IO.File.Delete(file);
+                            _Discovered.Remove(file);
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+
         static void _Act(string source, string destination, FileExistsAction ifExists, out string destinationFilename, int retryCount, int retryDelaySeconds, bool useTempHop, bool isMove)
         {
             if (String.IsNullOrEmpty(source))
@@ -206,6 +273,8 @@ namespace STEM.Sys.IO
 
                     if (!System.IO.Directory.Exists(dTemp))
                         System.IO.Directory.CreateDirectory(dTemp);
+
+                    TempCleaner.Register(dTemp);
                 }
                 else
                 {
