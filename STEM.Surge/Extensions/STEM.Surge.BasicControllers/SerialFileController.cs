@@ -234,28 +234,38 @@ namespace STEM.Surge.BasicControllers
             try
             {
                 string key = GenerateKey(initiationSource);
+                BoundKey binding = null;
+
+                while (true)
+                {
+                    try
+                    {
+                        binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
+                        if (binding != null)
+                            lock (binding)
+                            {
+                                if (key != null)
+                                {
+                                    if (!binding.Key.Equals(key, StringComparison.InvariantCultureIgnoreCase))
+                                        CoordinatedKeyManager.Unlock(binding.Key, binding);
+                                }
+                                else if (!CoordinatedKeyManager.Locked(binding.InitiationSource))
+                                {
+                                    CoordinatedKeyManager.Unlock(binding.Key, binding);
+                                    return false;
+                                }
+                            }
+
+                        break;
+                    }
+                    catch { }
+                }
+
+                if (key == null)
+                    return true;
 
                 lock (_Keys)
                 {
-                    BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
-                    if (binding != null)
-                        lock (binding)
-                        {
-                            if (key != null)
-                            {
-                                if (!binding.Key.Equals(key, StringComparison.InvariantCultureIgnoreCase))
-                                    CoordinatedKeyManager.Unlock(binding.Key, binding);
-                            }
-                            else if (!CoordinatedKeyManager.Locked(binding.InitiationSource))
-                            {
-                                CoordinatedKeyManager.Unlock(binding.Key, binding);
-                                return false;
-                            }
-                        }
-
-                    if (key == null)
-                        return true;
-
                     key = key.ToUpper();
 
                     binding = null;
@@ -326,17 +336,22 @@ namespace STEM.Surge.BasicControllers
                 if (initiationSource == null)
                     return;
 
-                lock (_Keys)
-                    foreach (string k in _Keys.Keys.ToList())
+                while (true)
+                {
+                    try
                     {
-                        if (_Keys[k].InitiationSource != null)
-                            if (_Keys[k].InitiationSource.ToUpper() == initiationSource.ToUpper())
+                        BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
+                        if (binding != null)
+                            lock (binding)
                             {
-                                _Keys[k].InitiationSource = null;
-                                _Keys[k].Assigned = false;
-                                return;
+                                binding.InitiationSource = null;
+                                binding.Assigned = false;
                             }
+
+                        break;
                     }
+                    catch { }
+                }
             }
             catch (Exception ex)
             {

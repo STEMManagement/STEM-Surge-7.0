@@ -430,17 +430,22 @@ namespace STEM.Surge.BasicControllers
 
                 if (key == null)
                 {
-                    lock (_Keys)
-                        foreach (string k in _Keys.Keys.ToList())
+                    while (true)
+                    {
+                        try
                         {
-                            if (_Keys[k].InitiationSource != null)
-                                if (_Keys[k].InitiationSource.ToUpper() == initiationSource.ToUpper())
+                            BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
+                            if (binding != null)
+                                lock (binding)
                                 {
-                                    _Keys[k].InitiationSource = null;
-                                    _Keys[k].Assigned = false;
-                                    return;
+                                    binding.InitiationSource = null;
+                                    binding.Assigned = false;
                                 }
+
+                            break;
                         }
+                        catch { }
+                    }
 
                     return;
                 }
@@ -460,22 +465,19 @@ namespace STEM.Surge.BasicControllers
                     }
                     else
                     {
-                        foreach (string k in _Keys.Keys.ToList())
-                        {
-                            if (_Keys[k].InitiationSource != null)
-                                if (_Keys[k].InitiationSource.ToUpper() == initiationSource.ToUpper())
-                                {
-                                    _Keys[key] = _Keys[k];
-                                    _Keys[key].Key = key;
-                                    _Keys[key].InitiationSource = null;
-                                    _Keys[key].Assigned = false;
+                        BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
+                        if (binding != null)
+                            lock (binding)
+                            {
+                                string k = binding.Key;
+                                _Keys[key] = binding;
+                                _Keys[key].Key = key;
+                                _Keys[key].InitiationSource = null;
+                                _Keys[key].Assigned = false;
 
-                                    if (k != key)
-                                        _Keys.Remove(k);
-
-                                    return;
-                                }
-                        }
+                                if (k != key)
+                                    _Keys.Remove(k);
+                            }
                     }
                 }
             }
