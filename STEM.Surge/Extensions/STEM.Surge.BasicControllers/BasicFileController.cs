@@ -65,6 +65,10 @@ namespace STEM.Surge.BasicControllers
         [DisplayName("Check for directory existence"), DescriptionAttribute("Should the Controller verify the existence of the destination path before assigning?")]
         public bool CheckDirectoryExists { get; set; }
 
+        [Category("Destination Path")]
+        [DisplayName("Ping for destination existence"), DescriptionAttribute("Should the Controller verify the existence of the destination machine by pinging it?")]
+        public bool DestinationPingable { get; set; }
+
         [DisplayName("Randomize List"), DescriptionAttribute("Should the Controller randomize the listing in ListPreprocess?")]
         public bool RandomizeList { get; set; }
                
@@ -74,6 +78,7 @@ namespace STEM.Surge.BasicControllers
             TemplateKVP["[DestinationAddress]"] = "Reserved";
 
             CheckDirectoryExists = false;
+            DestinationPingable = true;
             RandomizeList = false;
         }
 
@@ -263,7 +268,7 @@ namespace STEM.Surge.BasicControllers
                     if ((DateTime.UtcNow - _LastTouched[dir].LastAttempt).TotalSeconds > 180 || _LastTouched[dir].Exists)
                     {
                         if (!_LastTouched[dir].Exists)
-                            if (!STEM.Sys.IO.Net.PingHost(STEM.Sys.IO.Path.IPFromPath(dir)))
+                            if (DestinationPingable && !STEM.Sys.IO.Net.PingHost(STEM.Sys.IO.Path.IPFromPath(dir)))
                             {
                                 _LastTouched[dir].LastAttempt = DateTime.UtcNow;
                                 return false;
