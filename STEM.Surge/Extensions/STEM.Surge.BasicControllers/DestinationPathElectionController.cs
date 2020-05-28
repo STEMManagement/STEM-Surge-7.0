@@ -272,6 +272,8 @@ namespace STEM.Surge.BasicControllers
                 {
                     TemplateKVP["[DestinationPath]"] = TemplateKVP[dp] = orig;
                 }
+
+                _DestinationPath = null;
             }
 
             return null;
