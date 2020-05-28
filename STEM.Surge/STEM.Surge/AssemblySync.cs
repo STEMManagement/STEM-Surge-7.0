@@ -91,7 +91,10 @@ namespace STEM.Surge
 
             foreach (string name in localContent.ToList())
             {
-                STEM.Sys.IO.FileDescription f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                STEM.Sys.IO.FileDescription f = null;
+                
+                lock (AssemblyList)
+                    f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
 
                 string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
 
