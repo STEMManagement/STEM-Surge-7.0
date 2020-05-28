@@ -114,17 +114,18 @@ namespace STEM.Surge
                 kvp = new System.Collections.Generic.Dictionary<string, string>(map);
 
             kvp["[TargetPath]"] = STEM.Sys.IO.Path.GetDirectoryName(initiationSource);
-            
-            kvp["[TargetDirectoryName]"] = STEM.Sys.IO.Path.GetFileName(kvp["[TargetPath]"]);
-            
+
             if (!String.IsNullOrEmpty(kvp["[TargetPath]"]))
             {
+                kvp["[TargetDirectoryName]"] = STEM.Sys.IO.Path.GetFileName(kvp["[TargetPath]"]);
                 kvp["[TargetName]"] = STEM.Sys.IO.Path.GetFileName(initiationSource);
                 kvp["[TargetNameWithoutExt]"] = STEM.Sys.IO.Path.GetFileNameWithoutExtension(initiationSource);
                 kvp["[TargetExt]"] = STEM.Sys.IO.Path.GetExtension(initiationSource);
             }
             else
             {
+                kvp["[TargetPath]"] = "";
+                kvp["[TargetDirectoryName]"] = "";
                 kvp["[TargetName]"] = "";
                 kvp["[TargeteNameWithoutExt]"] = "";
                 kvp["[TargetExt]"] = "";
