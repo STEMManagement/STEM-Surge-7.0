@@ -32,6 +32,11 @@ namespace STEM.Surge.SSH
 
     public class Authentication : IAuthentication
     {
+
+        [Category("SSH")]
+        [DisplayName("Connection Timeout (Seconds)"), DescriptionAttribute("How long should we wait to connect?")]
+        public int TimeoutSeconds { get; set; }
+
         [Category("SSH")]
         [DisplayName("User"), DescriptionAttribute("What is the SSH user?")]
         public string User { get; set; }
@@ -62,6 +67,11 @@ namespace STEM.Surge.SSH
         static Dictionary<string, Queue<SftpClient>> _SftpClients = new Dictionary<string, Queue<SftpClient>>();
 
         static Dictionary<string, STEM.Sys.State.GrabBag<string>> _ServerAddresses = new Dictionary<string, Sys.State.GrabBag<string>>(StringComparer.InvariantCultureIgnoreCase);
+
+        public Authentication()
+        {
+            TimeoutSeconds = 5;
+        }
 
         public static string NextAddress(string rangedAddress)
         {
@@ -147,7 +157,7 @@ namespace STEM.Surge.SSH
 
             conn = new SftpClient(new ConnectionInfo(server, port, User, new AuthenticationMethod[] { authenticationMethod }));
 
-            conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(5);
+            conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
 
             conn.Connect();
 
@@ -240,7 +250,7 @@ namespace STEM.Surge.SSH
                 conn = new SshClient(new ConnectionInfo(server, port, User, new AuthenticationMethod[] { authenticationMethod }));
 
                 conn.KeepAliveInterval = TimeSpan.FromSeconds(10);
-                conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(10); 
+                conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutSeconds); 
                 conn.Connect();
 
                 return conn;
