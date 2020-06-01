@@ -83,18 +83,15 @@ namespace STEM.Surge.BasicControllers
         public override List<string> ListPreprocess(IReadOnlyList<string> list)
         {
             List<string> newList = base.ListPreprocess(list);
-
-            string key = PollerSourceString + ":" + PollerDirectoryFilter + ":" + PollerFileFilter + ":" + PollerRecurseSetting;
-            key = key.ToUpper();
-
+            
             Dictionary<string, long> col;
 
             lock (_KnownSizes)
             {
-                if (!_KnownSizes.ContainsKey(key))
-                    _KnownSizes[key] = new Dictionary<string, long>();
+                if (!_KnownSizes.ContainsKey(DeploymentControllerID))
+                    _KnownSizes[DeploymentControllerID] = new Dictionary<string, long>();
 
-                col = _KnownSizes[key];
+                col = _KnownSizes[DeploymentControllerID];
             }
 
             lock (col)
@@ -103,7 +100,7 @@ namespace STEM.Surge.BasicControllers
                 foreach (string s in newList.Except(col.Keys))
                     try
                     {
-                        col[s] = GetFileInfo(s).Size;
+                        col[s] = GetFileInfo(s).Size / 1048576;
                         got++;
                         if (got > 1000)
                             break;
@@ -113,13 +110,24 @@ namespace STEM.Surge.BasicControllers
                 foreach (string s in col.Keys.ToList().Except(newList))
                     col.Remove(s);
 
+                List<string> files = new List<string>();
                 if (RandomizeList)
                 {
                     Random rnd = new Random();
-                    return col.OrderBy(i => rnd.Next()).Select(i => i.Key).ToList();
+                    files = col.OrderBy(i => rnd.Next()).Select(i => i.Key).ToList();
+                }
+                else
+                {
+                    files = col.OrderBy(i => i.Value).Select(i => i.Key).ToList();
                 }
 
-                return col.OrderBy(i => i.Value).Select(i => i.Key).ToList();
+                foreach (string f in files.ToList())
+                {
+                    if (!MaxLoadByFileSize.Exists(i => i.MaxMB >= col[f] && i.MinMB <= col[f]))
+                        files.Remove(f);
+                }
+
+                return files;
             }
         }
 
@@ -127,33 +135,28 @@ namespace STEM.Surge.BasicControllers
         {
             try
             {
-                string key = PollerSourceString + ":" + PollerDirectoryFilter + ":" + PollerFileFilter + ":" + PollerRecurseSetting;
-                key = key.ToUpper();
-
                 Dictionary<string, long> col;
 
                 lock (_KnownSizes)
                 {
-                    if (!_KnownSizes.ContainsKey(key))
-                        _KnownSizes[key] = new Dictionary<string, long>();
+                    if (!_KnownSizes.ContainsKey(DeploymentControllerID))
+                        _KnownSizes[DeploymentControllerID] = new Dictionary<string, long>();
 
-                    col = _KnownSizes[key];
+                    col = _KnownSizes[DeploymentControllerID];
                 }
 
                 long sz = 0;
                 lock (col)
                     sz = col[initiationSource];
-
-                sz = sz / 1048576;
-                
-                if (!_Ranges.ContainsKey(key))
+                                
+                if (!_Ranges.ContainsKey(DeploymentControllerID))
                     lock (_Ranges)
-                        if (!_Ranges.ContainsKey(key))
-                            _Ranges[key] = new List<SizeRange>();
+                        if (!_Ranges.ContainsKey(DeploymentControllerID))
+                            _Ranges[DeploymentControllerID] = new List<SizeRange>();
 
                 SizeRange range = null;
-                lock (_Ranges[key])    
-                    range = _Ranges[key].FirstOrDefault(i => i.MinMB <= sz && i.MaxMB >= sz);
+                lock (_Ranges[DeploymentControllerID])    
+                    range = _Ranges[DeploymentControllerID].FirstOrDefault(i => i.MinMB <= sz && i.MaxMB >= sz);
 
                 if (range == null)
                     return null;
@@ -191,18 +194,15 @@ namespace STEM.Surge.BasicControllers
                 base.ExecutionComplete(details, exceptions);
             }
             catch { }
-
-            string key = PollerSourceString + ":" + PollerDirectoryFilter + ":" + PollerFileFilter + ":" + PollerRecurseSetting;
-            key = key.ToUpper();
-            
-            if (!_Ranges.ContainsKey(key))
+                        
+            if (!_Ranges.ContainsKey(DeploymentControllerID))
                 lock (_Ranges)
-                    if (!_Ranges.ContainsKey(key))
-                        _Ranges[key] = new List<SizeRange>();
+                    if (!_Ranges.ContainsKey(DeploymentControllerID))
+                        _Ranges[DeploymentControllerID] = new List<SizeRange>();
 
-            lock (_Ranges[key])
+            lock (_Ranges[DeploymentControllerID])
             {                
-                SizeRange range = _Ranges[key].FirstOrDefault(i => i.ActiveLoads.Exists(x => x.Loaded.Contains(details.InitiationSource)));
+                SizeRange range = _Ranges[DeploymentControllerID].FirstOrDefault(i => i.ActiveLoads.Exists(x => x.Loaded.Contains(details.InitiationSource)));
                 if (range != null)
                     lock (range)
                     {
@@ -221,27 +221,24 @@ namespace STEM.Surge.BasicControllers
             }
             catch { }
 
-            string key = PollerSourceString + ":" + PollerDirectoryFilter + ":" + PollerFileFilter + ":" + PollerRecurseSetting;
-            key = key.ToUpper();
-
-            if (!_Ranges.ContainsKey(key))
+            if (!_Ranges.ContainsKey(DeploymentControllerID))
                 lock (_Ranges)
-                    if (!_Ranges.ContainsKey(key))
-                        _Ranges[key] = new List<SizeRange>();
+                    if (!_Ranges.ContainsKey(DeploymentControllerID))
+                        _Ranges[DeploymentControllerID] = new List<SizeRange>();
 
-            lock (_Ranges[key])
+            lock (_Ranges[DeploymentControllerID])
             {
-                if (_Ranges[key].Count != MaxLoadByFileSize.Count)
+                if (_Ranges[DeploymentControllerID].Count != MaxLoadByFileSize.Count)
                 {
-                    _Ranges[key].Clear();
+                    _Ranges[DeploymentControllerID].Clear();
 
                     foreach (SizeRange range in MaxLoadByFileSize)
                     {
-                        _Ranges[key].Add(range.Clone());
+                        _Ranges[DeploymentControllerID].Add(range.Clone());
                     }
                 }
 
-                foreach (SizeRange range in _Ranges[key])
+                foreach (SizeRange range in _Ranges[DeploymentControllerID])
                 {
                     lock (range)
                     {
