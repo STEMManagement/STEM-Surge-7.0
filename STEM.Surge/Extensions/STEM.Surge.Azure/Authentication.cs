@@ -388,11 +388,6 @@ namespace STEM.Surge.Azure
 
                 string containerName = ContainerFromPath(directory);
                 
-                CloudBlobContainer container = Client.GetContainerReference(containerName);
-
-                if (!container.Exists())
-                    return false;
-
                 string dir = PrefixFromPath(directory);
 
                 if (dir == "")
@@ -453,11 +448,15 @@ namespace STEM.Surge.Azure
 
             // Verify that the Container exists
 
-            string containerName = ContainerFromPath(directory);
+            try
+            {
+                string containerName = ContainerFromPath(directory);
 
-            CloudBlobContainer container = Client.GetContainerReference(containerName);
+                CloudBlobContainer container = Client.GetContainerReference(containerName);
 
-            container.CreateIfNotExists();
+                container.CreateIfNotExists();
+            }
+            catch { }
         }
 
         public void DeleteDirectory(string directory)
