@@ -27,7 +27,7 @@ namespace STEM.Sys.IO.TCP
 {
     public class TcpConnectionListener : IDisposable
     {
-        Socket _Socket;
+        Socket _Socket = null;
 
         Thread _ListenThread = null;
         Thread _ConnectCaller = null;
@@ -44,44 +44,69 @@ namespace STEM.Sys.IO.TCP
 
         public int Port { get; private set; }
 
+        bool _RandomPort = false;
+
         public TcpConnectionListener(int port)
         {
             Port = port;
+
+            if (Port == 0)
+                _RandomPort = true;
         }
 
         public TcpConnectionListener(int port, bool suspendDosLikeBehavior)
         {
             Port = port;
             _SuspendDosLikeBehavior = suspendDosLikeBehavior;
+
+            if (Port == 0)
+                _RandomPort = true;
         }
 
+        Guid _Session = Guid.Empty;
         public event ConnectionOpened onConnect
         {
             add
             {
-                lock (_ObjectLock)
+                if (_Session == Guid.Empty)
                 {
-                    if (_ConnectionOpened == null)
+                    lock (_ObjectLock)
                     {
-                        _ConnectionOpened = value;
+                        if (_ConnectionOpened == null)
+                        {
+                            _Session = Guid.NewGuid();
 
-                        _Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                        _Socket.Bind(new IPEndPoint(System.Net.IPAddress.Any, Port));
-                        _Socket.Listen(100);
+                            _ConnectionOpened = value;
 
-                        Port = ((System.Net.IPEndPoint)_Socket.LocalEndPoint).Port;
+                            _Socket = null;
 
-                        _ListenThread = new Thread(new ParameterizedThreadStart(_Accept));
-                        _ListenThread.Priority = ThreadPriority.AboveNormal;
-                        _ListenThread.IsBackground = true;
-                        _ListenThread.Start(_Socket);
+                            if (_RandomPort)
+                            {
+                                _Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                                _Socket.Bind(new IPEndPoint(System.Net.IPAddress.Any, Port));
+                                _Socket.Listen(100);
 
-                        _ConnectCaller = new Thread(new ThreadStart(CallConnectionOpened));
-                        _ConnectCaller.IsBackground = true;
-                        _ConnectCaller.Start();
+                                Port = ((System.Net.IPEndPoint)_Socket.LocalEndPoint).Port;
+                            }
+
+                            _ListenThread = new Thread(new ParameterizedThreadStart(_Accept));
+                            _ListenThread.Priority = ThreadPriority.AboveNormal;
+                            _ListenThread.IsBackground = true;
+                            _ListenThread.Start(_Session.ToString());
+
+                            _ConnectCaller = new Thread(new ThreadStart(CallConnectionOpened));
+                            _ConnectCaller.IsBackground = true;
+                            _ConnectCaller.Start();
+                        }
+                        else
+                        {
+                            throw new Exception("onConnect has already been bound for this listner.");
+                        }
                     }
-                    else
-                        throw new Exception("onConnect has already been bound for this listner.");
+                }
+                else
+                {
+                    throw new Exception("onConnect has already been bound for this listner.");
                 }
             }
             remove
@@ -120,35 +145,41 @@ namespace STEM.Sys.IO.TCP
 
         public void Close()
         {
-            lock (_ObjectLock)
-                try
-                {
-                    _ConnectCaller = null;
-
-                    if (_Socket != null)
+            if (_Session != Guid.Empty)
+                lock (_ObjectLock)
+                    try
                     {
-                        Socket s = _Socket;
-                        _Socket = null;
-
-                        try
+                        if (_Session != Guid.Empty)
                         {
-                            s.Close();
-                        }
-                        catch { }
+                            _ConnectCaller = null;
 
-                        try
-                        {
-                            s.Dispose();
+                            _Session = Guid.Empty;
+
+                            try
+                            {
+                                if (_Socket != null)
+                                    _Socket.Close();
+                            }
+                            catch { }
+
+                            try
+                            {
+                                if (_Socket != null)
+                                    _Socket.Dispose();
+                            }
+                            catch { }
+
+                            _ConnectionOpened = null;
+
+                            _Socket = null;
+
+                            _SocketQueue.Clear();
+
+                            if (_ServerClosed != null)
+                                _ServerClosed(this);
                         }
-                        catch { }
                     }
-
-                    _SocketQueue.Clear();
-
-                    if (_ServerClosed != null)
-                        _ServerClosed(this);
-                }
-                catch { }
+                    catch { }
         }
                 
         class Accepted
@@ -166,29 +197,93 @@ namespace STEM.Sys.IO.TCP
         List<Accepted> _Accepted = new List<Accepted>();
         List<Accepted> _Suspended = new List<Accepted>();
 
-        void _Accept(object context)
+        void _Accept(object o)
         {
-            Socket contextSocket = context as Socket;
+            string sessionGuid = o as string;
 
-            while (contextSocket == _Socket)
+            Socket listener = null;
+
+            if (_RandomPort)
+                listener = _Socket;
+
+            try
+            {
+                while (sessionGuid == _Session.ToString())
+                    try
+                    {
+                        if (listener == null)
+                        {
+                            lock (_ObjectLock)
+                            {
+                                if (sessionGuid == _Session.ToString())
+                                {
+                                    listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                                    listener.Bind(new IPEndPoint(System.Net.IPAddress.Any, Port));
+                                    listener.Listen(100);
+
+                                    _Socket = listener;
+                                }
+                                else
+                                {
+                                    return;
+                                }
+                            }
+                        }
+
+                        Socket s = listener.Accept();
+
+                        if (s == null)
+                            continue;
+
+                        if (sessionGuid == _Session.ToString())
+                            lock (_SocketQueue)
+                            {
+                                _SocketQueue.Enqueue(s);
+                                System.Threading.Monitor.Pulse(_SocketQueue);
+                            }
+                    }
+                    catch
+                    {
+                        if (!_RandomPort)
+                        {
+                            try
+                            {
+                                if (listener != null)
+                                    listener.Close();
+                            }
+                            catch { }
+
+                            try
+                            {
+                                if (listener != null)
+                                    listener.Dispose();
+                            }
+                            catch { }
+
+                            listener = null;
+                        }
+
+                        System.Threading.Thread.Sleep(100);
+                    }
+            }
+            finally
+            {
                 try
                 {
-                    Socket s = contextSocket.Accept();
+                    if (listener != null)
+                        listener.Close();
+                }
+                catch { }
 
-                    if (s == null)
-                        continue;
-                    
-                    if (contextSocket == _Socket)
-                        lock (_SocketQueue)
-                        {
-                            _SocketQueue.Enqueue(s);
-                            System.Threading.Monitor.Pulse(_SocketQueue);
-                        }
-                }
-                catch //(Exception ex)
+                try
                 {
-                    //STEM.Sys.EventLog.WriteEntry("TcpConnectionListener.Accept", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                    if (listener != null)
+                        listener.Dispose();
                 }
+                catch { }
+
+                listener = null;
+            }
         }
 
         Queue<Socket> _SocketQueue = new Queue<Socket>();
@@ -316,16 +411,7 @@ namespace STEM.Sys.IO.TCP
 
         protected virtual void Dispose(bool dispose)
         {
-            try
-            {
-                if (_Socket != null)
-                    _Socket.Dispose();
-            }
-            catch { }
-
-            _ConnectCaller = null;
-
-            _Socket = null;
+            Close();
         }
     }
 }
