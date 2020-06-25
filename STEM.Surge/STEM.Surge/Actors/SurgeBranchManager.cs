@@ -944,6 +944,14 @@ namespace STEM.Surge
 
                         try
                         {
+                            if (AssignInstructionSet.IsStatic)
+                                if (_MessageConnection != null)
+                                    _BranchManager.Send(new RequestStatic(AssignInstructionSet.InitiationSource), _MessageConnection, false, true);
+                        }
+                        catch { }
+
+                        try
+                        {
                             ExecutionCompleted ec = new ExecutionCompleted { DeploymentControllerID = AssignInstructionSet.DeploymentControllerID, InstructionSetID = AssignInstructionSet.InstructionSetID, InitiationSource = AssignInstructionSet.InitiationSource, Exceptions = new List<Exception>() };
 
                             ec.Exceptions.Add(ex);
@@ -989,6 +997,13 @@ namespace STEM.Surge
                             lock (_BranchManager._Assigned)
                                 if (_BranchManager._Statics.Contains(this))
                                     _BranchManager._Statics.Remove(this);
+                            
+                            try
+                            {
+                                if (_MessageConnection != null)
+                                    _BranchManager.Send(new RequestStatic(AssignInstructionSet.InitiationSource), _MessageConnection, false, true);
+                            }
+                            catch { }
 
                             STEM.Sys.EventLog.WriteEntry("Runner.Execute", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
 
@@ -996,6 +1011,25 @@ namespace STEM.Surge
                         }
 
                         throw ex;
+                    }
+
+                    if (AssignInstructionSet.IsStatic && runnable.Instructions.Count == 0)
+                    {
+                        if (AssignInstructionSet.ContinuousExecution)
+                            owner.EndAsync(this);
+
+                        lock (_BranchManager._Assigned)
+                            if (_BranchManager._Statics.Contains(this))
+                                _BranchManager._Statics.Remove(this);
+
+                        try
+                        {
+                            if (_MessageConnection != null)
+                                _BranchManager.Send(new RequestStatic(AssignInstructionSet.InitiationSource), _MessageConnection, false, true);
+                        }
+                        catch { }
+
+                        return;
                     }
 
                     runnable.DeploymentManagerIP = AssignInstructionSet.DeploymentManagerIP;
@@ -1907,7 +1941,7 @@ namespace STEM.Surge
 
             try
             {
-                if (PostMortemCache != null && iSet.CachePostMortem)
+                if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
                     System.IO.File.WriteAllText(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), iSet.Serialize());
             }
             catch { }
