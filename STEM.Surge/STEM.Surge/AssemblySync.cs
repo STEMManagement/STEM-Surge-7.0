@@ -238,10 +238,7 @@ namespace STEM.Surge
                 {
                     AssemblyList o = _AssemblyLists.FirstOrDefault(i => i.MessageConnection == connection);
                     if (o != null)
-                    {
-                        lock (o)
-                            _AssemblyLists.Remove(o);
-                    }
+                        _AssemblyLists.Remove(o);
 
                     _Pool.EndAsync(new System.Threading.ParameterizedThreadStart(DeliverDelta), connection);
                 }
