@@ -1643,6 +1643,9 @@ namespace STEM.Surge
                         }
                     }
 
+                    if (aList.Descriptions.Count > 0)
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.Receive", "Getting assemblies from " + connection.RemoteAddress, Sys.EventLog.EventLogEntryType.Information);
+
                     foreach (STEM.Sys.IO.FileDescription m in aList.Descriptions)
                     {
                         if (m.Filepath == ".")
