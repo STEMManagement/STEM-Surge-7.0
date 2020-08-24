@@ -116,6 +116,9 @@ namespace STEM.Sys.IO.TCP
             _TcpClient.LingerState = new LingerOption(true, 0);
             _TcpClient.NoDelay = true;
 
+            _TcpClient.ReceiveTimeout = 5000;
+            _TcpClient.SendTimeout = 5000;
+
             RemoteAddress = ((System.Net.IPEndPoint)_TcpClient.Client.RemoteEndPoint).Address.ToString();
             RemotePort = ((System.Net.IPEndPoint)_TcpClient.Client.RemoteEndPoint).Port;
             LocalAddress = ((System.Net.IPEndPoint)_TcpClient.Client.LocalEndPoint).Address.ToString();
@@ -125,6 +128,10 @@ namespace STEM.Sys.IO.TCP
             {
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateCertificate), null, EncryptionPolicy.RequireEncryption);
+
+                _SslStream.ReadTimeout = 5000;
+                _SslStream.WriteTimeout = 5000;
+
                 _SslStream.AuthenticateAsServer(certificate, false, System.Security.Authentication.SslProtocols.Tls12, false);
             }
         }
@@ -217,6 +224,10 @@ namespace STEM.Sys.IO.TCP
                             {
                                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                                 _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateCertificate), null, EncryptionPolicy.RequireEncryption);
+
+                                _SslStream.ReadTimeout = 5000;
+                                _SslStream.WriteTimeout = 5000;
+
                                 if (_ClientCertificate != null)
                                 {
                                     X509CertificateCollection certCollection = new X509CertificateCollection();
@@ -278,6 +289,9 @@ namespace STEM.Sys.IO.TCP
 
                     _TcpClient.LingerState = new LingerOption(true, 0);
                     _TcpClient.NoDelay = true;
+
+                    _TcpClient.ReceiveTimeout = 5000;
+                    _TcpClient.SendTimeout = 5000;
 
                     RemoteAddress = ((System.Net.IPEndPoint)_TcpClient.Client.RemoteEndPoint).Address.ToString();
 
