@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 
 namespace STEM.Surge.S3
 {
@@ -177,8 +178,18 @@ namespace STEM.Surge.S3
                                     string bucket = Authentication.BucketFromPath(d);
                                     string prefix = Authentication.PrefixFromPath(d);
 
-                                    PutObjectRequest req = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, InputStream = sStream };
-                                    Authentication.Client.PutObjectAsync(req).Wait();
+                                    TransferUtility ftu = new TransferUtility(Authentication.Client);
+
+                                    TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
+                                    {
+                                        BucketName = bucket,
+                                        Key = prefix,
+                                        InputStream = sStream,
+                                        AutoCloseStream = false,
+                                        PartSize = 10485760
+                                    };
+
+                                    ftu.UploadAsync(request).Wait();
                                 }
                             }
                         }
@@ -337,9 +348,19 @@ namespace STEM.Surge.S3
                                         {
                                             string bucket = Authentication.BucketFromPath(dFile);
                                             string prefix = Authentication.PrefixFromPath(dFile);
+                                            
+                                            TransferUtility ftu = new TransferUtility(Authentication.Client);
 
-                                            PutObjectRequest req = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, InputStream = sStream };
-                                            Authentication.Client.PutObjectAsync(req).Wait();
+                                            TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
+                                            {
+                                                BucketName = bucket,
+                                                Key = prefix,
+                                                InputStream = sStream,
+                                                AutoCloseStream = false,
+                                                PartSize = 10485760
+                                            };
+
+                                            ftu.UploadAsync(request).Wait();
                                         }
                                     }
                                     else

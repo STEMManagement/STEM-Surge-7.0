@@ -111,7 +111,7 @@ namespace STEM.Surge.S3
                         {
                             AmazonS3Config cfg = new AmazonS3Config
                             {
-                                RegionEndpoint = Amazon.RegionEndpoint.USEast1,
+                                RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(Region),
                                 ServiceURL = this.ServiceURL,
                                 ForcePathStyle = true
                             };
