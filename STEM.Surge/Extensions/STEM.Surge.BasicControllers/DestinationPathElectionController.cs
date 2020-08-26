@@ -251,6 +251,8 @@ namespace STEM.Surge.BasicControllers
                     orig = TemplateKVP["[DestinationPath]"] = TemplateKVP[dp];
 
                     _DestinationPath = TemplateKVP["[DestinationPath]"];
+
+                    _DestinationPath = ApplyKVP(_DestinationPath, TemplateKVP, true);
                 }
 
                 string destinationPath = FindBestDestination(initiationSource, recommendedBranchIP);
