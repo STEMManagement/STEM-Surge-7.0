@@ -563,14 +563,24 @@ namespace STEM.Surge.SSH
         {
             directory = AdjustPath(server, directory);
 
-            SftpClient client = OpenSftpClient(server, port);
-            try
+            string d = "/" + server;
+            foreach (string i in directory.Split('/'))
             {
-                client.CreateDirectory(directory);
-            }
-            finally
-            {
-                RecycleClient(client);
+                d = d + "/" + i;
+
+                if (!DirectoryExists(server, port, d))
+                {
+                    SftpClient client = OpenSftpClient(server, port);
+                    try
+                    { 
+                        string dir = AdjustPath(server, d);
+                        client.CreateDirectory(dir);
+                    }
+                    finally
+                    {
+                        RecycleClient(client);
+                    }
+                }
             }
         }
 
