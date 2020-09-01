@@ -101,6 +101,14 @@ namespace STEM.Surge.Compression
                             File.Delete(OutputFile);
                             break;
 
+                        case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                            if (File.GetLastWriteTimeUtc(OutputFile) >= Directory.GetLastWriteTimeUtc(SourcePath))
+                                return true;
+
+                            File.Delete(OutputFile);
+                            break;
+
                         case Sys.IO.FileExistsAction.Skip:
                             return true;
 

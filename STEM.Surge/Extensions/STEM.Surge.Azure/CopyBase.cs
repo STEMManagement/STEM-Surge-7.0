@@ -313,6 +313,15 @@ namespace STEM.Surge.Azure
                                                     dFile = dPath;
                                                     break;
 
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (Authentication.GetFileInfo(dPath).LastWriteTimeUtc >= File.GetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(s)))
+                                                        continue;
+
+                                                    Authentication.DeleteFile(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
                                                 case Sys.IO.FileExistsAction.Skip:
                                                     continue;
 
@@ -349,6 +358,15 @@ namespace STEM.Surge.Azure
                                             switch (ExistsAction)
                                             {
                                                 case Sys.IO.FileExistsAction.Overwrite:
+                                                    File.Delete(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (File.GetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(dPath)) >= Authentication.GetFileInfo(s).LastWriteTimeUtc)
+                                                        continue;
+
                                                     File.Delete(dPath);
                                                     dFile = dPath;
                                                     break;

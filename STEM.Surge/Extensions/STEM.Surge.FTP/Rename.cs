@@ -118,6 +118,7 @@ namespace STEM.Surge.FTP
                                     throw new System.IO.IOException("Destination file exists. (" + dst + ")");
 
                                 case STEM.Sys.IO.FileExistsAction.Overwrite:
+                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
                                     conn.DeleteFile(dst);
                                     break;
 

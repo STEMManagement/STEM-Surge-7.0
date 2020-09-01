@@ -134,6 +134,11 @@ namespace STEM.Surge.Azure
                             Authentication.DeleteFile(file);
                             break;
 
+                        case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
+                            // Assume newer
+                            Authentication.DeleteFile(file);
+                            break;
+
                         case STEM.Sys.IO.FileExistsAction.MakeUnique:
                             file = Authentication.UniqueFilename(file);
                             break;

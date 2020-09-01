@@ -133,6 +133,7 @@ namespace STEM.Surge.S3
                             throw new System.IO.IOException("File already exists.");
 
                         case STEM.Sys.IO.FileExistsAction.Overwrite:
+                        case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
                             Authentication.DeleteFile(file);
                             break;
 

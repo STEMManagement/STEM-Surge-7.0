@@ -328,6 +328,15 @@ namespace STEM.Surge.S3
                                                     dFile = dPath;
                                                     break;
 
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (Authentication.GetFileInfo(dPath).LastWriteTimeUtc >= File.GetLastWriteTimeUtc(s))
+                                                        continue;
+
+                                                    Authentication.DeleteFile(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
                                                 case Sys.IO.FileExistsAction.Skip:
                                                     continue;
 
@@ -384,6 +393,14 @@ namespace STEM.Surge.S3
                                             switch (ExistsAction)
                                             {
                                                 case Sys.IO.FileExistsAction.Overwrite:
+                                                    File.Delete(dPath);
+                                                    dFile = dPath;
+                                                    break;
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (File.GetLastWriteTimeUtc(dPath) >= Authentication.GetFileInfo(s).LastWriteTimeUtc)
+                                                        continue;
+
                                                     File.Delete(dPath);
                                                     dFile = dPath;
                                                     break;

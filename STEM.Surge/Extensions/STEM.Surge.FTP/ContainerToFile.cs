@@ -200,6 +200,11 @@ namespace STEM.Surge.FTP
                                     conn.DeleteFile(file);
                                     break;
 
+                                case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
+                                    // Assume newer
+                                    conn.DeleteFile(file);
+                                    break;
+
                                 case STEM.Sys.IO.FileExistsAction.MakeUnique:
                                     file = Authentication.UniqueFilename(_Address, Int32.Parse(Port), file);
                                     break;

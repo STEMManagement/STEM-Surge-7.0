@@ -366,6 +366,15 @@ namespace STEM.Surge.SSH
                                                     dFile = dPath;
                                                     break;
 
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (Authentication.GetFileInfo(_Address, Int32.Parse(Port), dPath).LastWriteTimeUtc >= File.GetLastWriteTimeUtc(s))
+                                                        continue;
+
+                                                    Authentication.DeleteFile(_Address, Int32.Parse(Port), dPath);
+                                                    dFile = dPath;
+                                                    break;
+
                                                 case Sys.IO.FileExistsAction.Skip:
                                                     continue;
 
@@ -412,6 +421,15 @@ namespace STEM.Surge.SSH
                                             switch (ExistsAction)
                                             {
                                                 case Sys.IO.FileExistsAction.Overwrite:
+                                                    File.Delete(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (File.GetLastWriteTimeUtc(dPath) >= Authentication.GetFileInfo(_Address, Int32.Parse(Port), s).LastWriteTimeUtc)
+                                                        continue;
+
                                                     File.Delete(dPath);
                                                     dFile = dPath;
                                                     break;

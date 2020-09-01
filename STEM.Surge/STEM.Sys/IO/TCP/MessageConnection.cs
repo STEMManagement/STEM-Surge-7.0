@@ -241,13 +241,15 @@ namespace STEM.Sys.IO.TCP
 
                     Message orig = null;
                     if (_AwaitResponse.Count > 0)
-                        lock (_AwaitResponse)
+                        while(true)
                             try
                             {
                                 if (_AwaitResponse.ContainsKey(response.RespondingTo))
                                     orig = _AwaitResponse[response.RespondingTo];
+
+                                break;
                             }
-                            catch { }
+                            catch { System.Threading.Thread.Sleep(10); }
 
                     if (orig != null)
                     {
@@ -267,8 +269,10 @@ namespace STEM.Sys.IO.TCP
                         {
                             List<Message> waiting = new List<Message>();
                             lock (_Waiting)
-                                while (_Waiting.Count > 0)
-                                    waiting.Add(_Waiting.Dequeue());
+                            {
+                                waiting = _Waiting.ToList();
+                                _Waiting.Clear();
+                            }
 
                             foreach (Message w in waiting)
                                 try

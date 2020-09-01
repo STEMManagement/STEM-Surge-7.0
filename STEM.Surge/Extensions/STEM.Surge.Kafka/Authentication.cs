@@ -17,6 +17,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.ComponentModel;
 using System.Xml.Serialization;
@@ -74,6 +75,39 @@ namespace STEM.Surge.Kafka
             }
         }
 
+
+        static Dictionary<string, STEM.Sys.State.GrabBag<string>> _ServerAddresses = new Dictionary<string, Sys.State.GrabBag<string>>(StringComparer.InvariantCultureIgnoreCase);
+
+        public static string NextAddress(string rangedAddress)
+        {
+            if (!_ServerAddresses.ContainsKey(rangedAddress))
+                lock (_ServerAddresses)
+                    if (!_ServerAddresses.ContainsKey(rangedAddress))
+                        _ServerAddresses[rangedAddress] = new Sys.State.GrabBag<string>(STEM.Sys.IO.Path.ExpandRangedIP(rangedAddress), rangedAddress);
+
+            return _ServerAddresses[rangedAddress].Next();
+        }
+
+        public static void SuspendAddress(string rangedAddress, string suspendAddress)
+        {
+            if (!_ServerAddresses.ContainsKey(rangedAddress))
+                lock (_ServerAddresses)
+                    if (!_ServerAddresses.ContainsKey(rangedAddress))
+                        _ServerAddresses[rangedAddress] = new Sys.State.GrabBag<string>(STEM.Sys.IO.Path.ExpandRangedIP(rangedAddress), rangedAddress);
+
+            _ServerAddresses[rangedAddress].Suspend(suspendAddress);
+        }
+
+        public static void ResumeAddress(string rangedAddress, string resumeAddress)
+        {
+            if (!_ServerAddresses.ContainsKey(rangedAddress))
+                lock (_ServerAddresses)
+                    if (!_ServerAddresses.ContainsKey(rangedAddress))
+                        _ServerAddresses[rangedAddress] = new Sys.State.GrabBag<string>(STEM.Sys.IO.Path.ExpandRangedIP(rangedAddress), rangedAddress);
+
+            _ServerAddresses[rangedAddress].Resume(resumeAddress);
+        }
+
         public Authentication()
         {            
             string platform = "";
@@ -124,7 +158,7 @@ namespace STEM.Surge.Kafka
                     case SecurityProtocol.Ssl:
                         return new ProducerConfig
                         {
-                            BootstrapServers = ServerAddress + ":" + Port,
+                            BootstrapServers = NextAddress(ServerAddress) + ":" + Port,
                             SslCaLocation = this.SslCaLocation,
                             SecurityProtocol = this.SecurityProtocol
                         };
@@ -133,7 +167,7 @@ namespace STEM.Surge.Kafka
                     case SecurityProtocol.SaslPlaintext:
                         return new ProducerConfig
                         {
-                            BootstrapServers = ServerAddress + ":" + Port,
+                            BootstrapServers = NextAddress(ServerAddress) + ":" + Port,
                             SecurityProtocol = this.SecurityProtocol,
                             SaslMechanism = this.SaslMechanism,
                             SaslUsername = this.SaslUsername,
@@ -143,7 +177,7 @@ namespace STEM.Surge.Kafka
                     default:
                         return new ProducerConfig
                         {
-                            BootstrapServers = ServerAddress + ":" + Port,
+                            BootstrapServers = NextAddress(ServerAddress) + ":" + Port,
                             SecurityProtocol = this.SecurityProtocol
                         };
                 }
@@ -158,7 +192,7 @@ namespace STEM.Surge.Kafka
                     return new ConsumerConfig
                     {
                         GroupId = groupID,
-                        BootstrapServers = ServerAddress + ":" + Port,
+                        BootstrapServers = NextAddress(ServerAddress) + ":" + Port,
                         SslCaLocation = this.SslCaLocation,
                         SecurityProtocol = this.SecurityProtocol,
                         AutoOffsetReset = autoOffsetReset
@@ -169,7 +203,7 @@ namespace STEM.Surge.Kafka
                     return new ConsumerConfig
                     {
                         GroupId = groupID,
-                        BootstrapServers = ServerAddress + ":" + Port,
+                        BootstrapServers = NextAddress(ServerAddress) + ":" + Port,
                         SecurityProtocol = this.SecurityProtocol,
                         SaslMechanism = this.SaslMechanism,
                         SaslUsername = this.SaslUsername,
@@ -181,7 +215,7 @@ namespace STEM.Surge.Kafka
                     return new ConsumerConfig
                     {
                         GroupId = groupID,
-                        BootstrapServers = ServerAddress + ":" + Port,
+                        BootstrapServers = NextAddress(ServerAddress) + ":" + Port,
                         SecurityProtocol = this.SecurityProtocol,
                         AutoOffsetReset = autoOffsetReset
                     };

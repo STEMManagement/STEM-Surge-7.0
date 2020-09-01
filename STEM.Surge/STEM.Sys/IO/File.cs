@@ -22,7 +22,7 @@ using System.Linq;
 
 namespace STEM.Sys.IO
 {
-    public enum FileExistsAction { Skip, Throw, Overwrite, MakeUnique }
+    public enum FileExistsAction { Skip, Throw, Overwrite, OverwriteIfNewer, MakeUnique }
 
     public static class File
     {
@@ -321,6 +321,25 @@ namespace STEM.Sys.IO
 
                                         break;
 
+                                    case FileExistsAction.OverwriteIfNewer:
+
+                                        if (System.IO.File.GetLastWriteTimeUtc(d) >= System.IO.File.GetLastWriteTimeUtc(source))
+                                            return;
+
+                                        System.IO.File.Copy(source, dTemp, true);
+
+                                        try
+                                        {
+                                            System.IO.File.SetAttributes(d, System.IO.FileAttributes.Normal);
+                                            System.IO.File.Copy(dTemp, d, true);
+                                        }
+                                        catch
+                                        {
+                                            throw new System.IO.IOException("Destination file could not be overwritten: " + d);
+                                        }
+
+                                        break;
+
                                     case FileExistsAction.MakeUnique:
                                         d = File.UniqueFilename(destination);
 
@@ -395,6 +414,41 @@ namespace STEM.Sys.IO
 
                                     System.IO.File.Copy(source, d, true);
                                     
+                                    if (isMove)
+                                    {
+                                        while (retryCount >= 0)
+                                        {
+                                            try
+                                            {
+                                                System.IO.File.Delete(source);
+                                                break;
+                                            }
+                                            catch
+                                            {
+                                                if (retryCount <= 0)
+                                                    throw;
+                                            }
+
+                                            if (retryCount > 0)
+                                                System.Threading.Thread.Sleep(retryDelaySeconds * 1000);
+
+                                            retryCount--;
+                                        }
+                                    }
+
+                                    break;
+
+
+
+                                case FileExistsAction.OverwriteIfNewer:
+
+                                    if (System.IO.File.GetLastWriteTimeUtc(d) >= System.IO.File.GetLastWriteTimeUtc(source))
+                                        return;
+
+                                    System.IO.File.SetAttributes(d, System.IO.FileAttributes.Normal);
+
+                                    System.IO.File.Copy(source, d, true);
+
                                     if (isMove)
                                     {
                                         while (retryCount >= 0)

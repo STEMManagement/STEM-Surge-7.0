@@ -188,6 +188,7 @@ namespace STEM.Surge.RabbitMQ
                                 throw new System.IO.IOException("File already exists.");
 
                             case STEM.Sys.IO.FileExistsAction.Overwrite:
+                            case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
                                 System.IO.File.Delete(file);
                                 break;
 

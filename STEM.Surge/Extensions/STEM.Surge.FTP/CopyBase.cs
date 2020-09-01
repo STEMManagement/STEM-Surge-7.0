@@ -422,6 +422,14 @@ namespace STEM.Surge.FTP
                                                         dFile = dPath;
                                                         break;
 
+                                                    case Sys.IO.FileExistsAction.OverwriteIfNewer:
+                                                        if (conn.GetModifiedTime(dPath, FtpDate.UTC) >= File.GetLastWriteTimeUtc(s))
+                                                            continue;
+
+                                                        conn.DeleteFile(dPath);
+                                                        dFile = dPath;
+                                                        break;
+
                                                     case Sys.IO.FileExistsAction.Skip:
                                                         continue;
 
@@ -466,6 +474,14 @@ namespace STEM.Surge.FTP
                                                 switch (ExistsAction)
                                                 {
                                                     case Sys.IO.FileExistsAction.Overwrite:
+                                                        File.Delete(dPath);
+                                                        dFile = dPath;
+                                                        break;
+
+                                                    case Sys.IO.FileExistsAction.OverwriteIfNewer:
+                                                        if (File.GetLastWriteTimeUtc(dPath) >= conn.GetModifiedTime(s, FtpDate.UTC))
+                                                            continue;
+
                                                         File.Delete(dPath);
                                                         dFile = dPath;
                                                         break;

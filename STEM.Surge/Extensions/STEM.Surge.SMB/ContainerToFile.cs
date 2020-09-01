@@ -127,6 +127,7 @@ namespace STEM.Surge.SMB
                             throw new IOException("File already exists.");
 
                         case STEM.Sys.IO.FileExistsAction.Overwrite:
+                        case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
                             break;
 
                         case STEM.Sys.IO.FileExistsAction.MakeUnique:

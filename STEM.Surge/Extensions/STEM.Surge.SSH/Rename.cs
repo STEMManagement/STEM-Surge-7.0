@@ -118,6 +118,7 @@ namespace STEM.Surge.SSH
                                 throw new System.IO.IOException("Destination file exists. (" + dst + ")");
 
                             case STEM.Sys.IO.FileExistsAction.Overwrite:
+                            case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
                                 Authentication.DeleteFile(address, Int32.Parse(Port), dst);
                                 break;
 
