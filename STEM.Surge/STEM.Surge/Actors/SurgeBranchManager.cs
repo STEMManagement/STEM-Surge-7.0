@@ -60,6 +60,8 @@ namespace STEM.Surge
 
         TcpConnectionListener _TcpConnectionListener = null;
 
+        STEM.Sys.Control _Owner = null;
+
         bool _SES = false;
         bool _UseSSL = false;
         
@@ -75,9 +77,11 @@ namespace STEM.Surge
             _BranchHealthThreads.Clear();
         }
 
-        public SurgeBranchManager(int communicationPort, string postMortemCache, bool useSSL, X509Certificate2 certificate, bool ses)
+        public SurgeBranchManager(STEM.Sys.Control owner, int communicationPort, string postMortemCache, bool useSSL, X509Certificate2 certificate, bool ses)
             : base(communicationPort)
         {
+            _Owner = owner;
+
             PostMortemCache = postMortemCache;
 
             _SES = ses;
@@ -1287,6 +1291,13 @@ namespace STEM.Surge
                         _BranchHealthThreads[connection.ToString()] = connection;
                         t.Start(connection.ToString());
                     }
+                }
+                else if (message is RestartBranch)
+                {
+                    if (_Owner != null)
+                        STEM.Sys.Control.Restart(_Owner);
+
+                    return;
                 }
                 else if (message is BringOnline)
                 {

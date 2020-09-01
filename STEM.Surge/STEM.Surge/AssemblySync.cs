@@ -25,7 +25,7 @@ namespace STEM.Surge
 {
     public class AssemblySync : STEM.Sys.Threading.IThreadable
     {
-        static STEM.Sys.Threading.ThreadPool _Pool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
+        static STEM.Sys.Threading.ThreadPool _Pool = new Sys.Threading.ThreadPool(Environment.ProcessorCount, true);
 
         AssemblyList AssemblyList = new Messages.AssemblyList();
 
@@ -64,57 +64,7 @@ namespace STEM.Surge
                         return;
                     }
                 }
-            }
 
-            bool initComplete = true;
-
-            List<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
-            List<string> localContent;
-
-            lock (AssemblyList)
-                localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
-
-            string platform = "";
-
-            if (list.IsWindows)
-            {
-                platform = "win-x86";
-                if (list.IsX64)
-                    platform = "win-x64";
-            }
-            else
-            {
-                platform = "linux-x86";
-                if (list.IsX64)
-                    platform = "linux-x64";
-            }
-
-            foreach (string name in localContent.ToList())
-            {
-                STEM.Sys.IO.FileDescription f = null;
-                
-                lock (AssemblyList)
-                    f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-
-                string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
-
-                if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
-                    localContent.Remove(name);
-                if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
-                    localContent.Remove(name);
-                if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
-                    localContent.Remove(name);
-                if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
-                    localContent.Remove(name);
-            }
-
-            initComplete = localContent.Except(listContent).Count() == 0;
-            
-            if (initComplete)
-                list.MessageConnection.Send(new AssemblyInitializationComplete());
-
-            lock (_AssemblyLists)
-            {
                 _AssemblyLists.Add(list);
                 _Pool.BeginAsync(new System.Threading.ParameterizedThreadStart(DeliverDelta), list.MessageConnection, TimeSpan.FromSeconds(3));
             }
@@ -143,8 +93,18 @@ namespace STEM.Surge
             {
                 lock (list)
                 {
-                    AssemblyList send = new AssemblyList();
-                    send.Path = list.Path;
+                    bool initComplete = true;
+
+                    List<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+                    List<string> localContent;
+
+                    while (true)
+                        try
+                        {
+                            localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+                            break;
+                        }
+                        catch { }
 
                     string platform = "";
 
@@ -160,25 +120,44 @@ namespace STEM.Surge
                         if (list.IsX64)
                             platform = "linux-x64";
                     }
-                    
-                    IEnumerable<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
-                    IEnumerable<string> localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+
+                    foreach (string name in localContent.ToList())
+                    {
+                        STEM.Sys.IO.FileDescription f = null;
+
+                        while (true)
+                            try
+                            {
+                                f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                                break;
+                            }
+                            catch { }
+
+                        string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
+
+                        if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
+                            localContent.Remove(name);
+                        if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
+                            localContent.Remove(name);
+                        if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
+                            localContent.Remove(name);
+                        if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
+                            localContent.Remove(name);
+                    }
+
+                    initComplete = localContent.Except(listContent).Count() == 0;
+
+                    if (initComplete)
+                        list.MessageConnection.Send(new AssemblyInitializationComplete());
+
+                    AssemblyList send = new AssemblyList();
+                    send.Path = list.Path;
                     
                     foreach (string name in localContent.Except(listContent).ToList())
                     {
                         STEM.Sys.IO.FileDescription f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
 
                         string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
-
-                        if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
-                            continue;
-                        if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
-                            continue;
-                        if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
-                            continue;
-                        if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
-                            continue;
-
                         send.Descriptions.Add(f);
                         list.Descriptions.Add(new STEM.Sys.IO.FileDescription(f.Filepath, f.Filename, false));
 

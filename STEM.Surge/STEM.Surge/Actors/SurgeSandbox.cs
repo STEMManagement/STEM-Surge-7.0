@@ -27,7 +27,7 @@ namespace STEM.Surge
     public class SurgeSandbox : SurgeBranchManager
     {
         public SurgeSandbox(int communicationPort, string postMortemCache)
-            : base(communicationPort, postMortemCache, false, null, true)
+            : base(null, communicationPort, postMortemCache, false, null, true)
         {
         }
 

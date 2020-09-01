@@ -44,9 +44,16 @@ namespace STEM.Surge.Messages
         {
             MessageConnection connection = o as MessageConnection;
 
+            STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Performing handshake with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
+
             Message response = connection.Send(this, TimeSpan.FromSeconds(3));
             while (response is Timeout)
+            {
+                STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake timeout with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
                 response = connection.Send(this, TimeSpan.FromSeconds(3));
+            }
+
+            STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake completed with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
         }
     }
 }
