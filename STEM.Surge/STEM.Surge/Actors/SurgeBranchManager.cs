@@ -1001,7 +1001,7 @@ namespace STEM.Surge
                             lock (_BranchManager._Assigned)
                                 if (_BranchManager._Statics.Contains(this))
                                     _BranchManager._Statics.Remove(this);
-                            
+
                             try
                             {
                                 if (_MessageConnection != null)
@@ -1043,6 +1043,7 @@ namespace STEM.Surge
                     if (!AssignInstructionSet.IsStatic)
                     {
                         File.WriteAllText(Path.Combine(_BranchManager.InstructionCache, runnable.ID.ToString() + ".is"), runnable.Serialize());
+
                         runnable.Run(_BranchManager, _MessageConnection, _BranchManager.InstructionCache, _BranchManager._LocalKeyManager, AssignInstructionSet.BranchIP);
                     }
                     else
@@ -1050,7 +1051,28 @@ namespace STEM.Surge
                         if (AssignInstructionSet.ContinuousExecution)
                             ExecutionInterval = TimeSpan.FromSeconds(runnable.ContinuousExecutionInterval);
 
-                        runnable.Run(_BranchManager, _MessageConnection, null, _BranchManager._LocalKeyManager, AssignInstructionSet.BranchIP);
+                        try
+                        {
+                            runnable.Run(_BranchManager, _MessageConnection, null, _BranchManager._LocalKeyManager, AssignInstructionSet.BranchIP);
+                        }
+                        catch (InvalidSignature ex)
+                        {
+                            if (AssignInstructionSet.ContinuousExecution)
+                                owner.EndAsync(this);
+
+                            lock (_BranchManager._Assigned)
+                                if (_BranchManager._Statics.Contains(this))
+                                    _BranchManager._Statics.Remove(this);
+
+                            try
+                            {
+                                if (_MessageConnection != null)
+                                    _BranchManager.Send(new RequestStatic(AssignInstructionSet.InitiationSource), _MessageConnection, false, true);
+                            }
+                            catch { }
+
+                            throw ex;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -1173,6 +1195,8 @@ namespace STEM.Surge
             }
             catch { }
         }
+
+        MessageConnection _AssemblySource = null;
 
         protected override void onReceived(MessageConnection connection, Message message)
         {
@@ -1654,8 +1678,11 @@ namespace STEM.Surge
                         }
                     }
 
-                    if (aList.Descriptions.Count > 0)
+                    if (_AssemblySource != aList.MessageConnection && aList.Descriptions.Count > 0)
+                    {
+                        _AssemblySource = aList.MessageConnection;
                         STEM.Sys.EventLog.WriteEntry("BranchManager.Receive", "Getting assemblies from " + connection.RemoteAddress, Sys.EventLog.EventLogEntryType.Information);
+                    }
 
                     foreach (STEM.Sys.IO.FileDescription m in aList.Descriptions)
                     {
