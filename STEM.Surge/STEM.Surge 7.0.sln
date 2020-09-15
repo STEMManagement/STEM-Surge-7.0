@@ -130,7 +130,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "STEM.Surge.S3", "Extensions
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "STEM.Surge.ContainerUtils", "Extensions\STEM.Surge.ContainerUtils\STEM.Surge.ContainerUtils.csproj", "{288F5713-8043-49C3-9EB2-77215E459866}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "STEM.Surge.GCS", "STEM.Surge.GCS\STEM.Surge.GCS.csproj", "{5410D6E9-C7E7-4579-9040-721CF1142476}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "STEM.Surge.GCS", "Extensions\STEM.Surge.GCS\STEM.Surge.GCS.csproj", "{5410D6E9-C7E7-4579-9040-721CF1142476}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
