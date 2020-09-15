@@ -165,6 +165,7 @@ namespace STEM.Surge.Azure
                             else
                             {
                                 CloudBlockBlob blob = Authentication.GetCloudBlockBlob(d, true);
+                                blob.StreamWriteSizeInBytes = 16384;
 
                                 System.Threading.Tasks.Task<CloudBlobStream> streamResult = blob.OpenWriteAsync();
                                 streamResult.Wait();
@@ -339,6 +340,7 @@ namespace STEM.Surge.Azure
                                         }
 
                                         CloudBlockBlob blob = Authentication.GetCloudBlockBlob(dPath, true);
+                                        blob.StreamWriteSizeInBytes = 16384;
 
                                         System.Threading.Tasks.Task<CloudBlobStream> streamResult = blob.OpenWriteAsync();
                                         streamResult.Wait();
