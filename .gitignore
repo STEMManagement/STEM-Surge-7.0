@@ -129,3 +129,12 @@ STEM.Surge/RequiredDlls/STEM.Auth.dll
 /STEM.Surge/Extensions/STEM.Surge.Compatibility/bin/Debug/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.ContainerUtils/bin
 /STEM.Surge/Extensions/STEM.Surge.ContainerUtils/obj
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/project.assets.json
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/project.nuget.cache
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/Release/netstandard2.0/.NETStandard,Version=v2.0.AssemblyAttributes.cs
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/Release/netstandard2.0/STEM.Surge.GCS.AssemblyInfo.cs
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/Release/netstandard2.0/STEM.Surge.GCS.AssemblyInfoInputs.cache
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/Release/netstandard2.0/STEM.Surge.GCS.assets.cache
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/STEM.Surge.GCS.csproj.nuget.dgspec.json
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/STEM.Surge.GCS.csproj.nuget.g.props
+STEM.Surge/Extensions/STEM.Surge.GCS/obj/STEM.Surge.GCS.csproj.nuget.g.targets

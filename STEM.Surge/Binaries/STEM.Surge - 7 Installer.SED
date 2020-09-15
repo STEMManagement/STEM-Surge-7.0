@@ -24,7 +24,7 @@ SourceFiles=SourceFiles
 InstallPrompt=
 DisplayLicense=
 FinishMessage=
-TargetName=D:\GitHub\STEM-Surge-7.0\STEM.Surge\Binaries\Surge-7.0-Installer.EXE
+TargetName=E:\STEM\GitHub\STEM-Surge-7.0\STEM.Surge\Binaries\Surge-7.0-Installer.EXE
 FriendlyName=STEM.Surge
 AppLaunched=Installer.exe
 PostInstallCmd=<None>
@@ -33,7 +33,7 @@ UserQuietInstCmd=
 FILE0="Installer.exe"
 FILE1="pkg.zip"
 [SourceFiles]
-SourceFiles0=D:\GitHub\STEM-Surge-7.0\STEM.Surge\Binaries\
+SourceFiles0=E:\STEM\GitHub\STEM-Surge-7.0\STEM.Surge\Binaries\
 [SourceFiles0]
 %FILE0%=
 %FILE1%=
