@@ -20,6 +20,8 @@
 
 -- Suggested Database Schema
 
+CREATE SCHEMA event_log
+    AUTHORIZATION postgres;
 
 CREATE TABLE event_log.objects
 (
