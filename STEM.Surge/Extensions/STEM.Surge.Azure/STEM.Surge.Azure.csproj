@@ -7,7 +7,7 @@
     <Copyright>Copyright © STEM Management 2019</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Company>STEM Management</Company>
-    <Version>7.0.8</Version>    
+    <Version>7.0.9</Version>    
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
