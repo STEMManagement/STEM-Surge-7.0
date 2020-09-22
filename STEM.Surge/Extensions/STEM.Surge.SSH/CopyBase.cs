@@ -457,17 +457,29 @@ namespace STEM.Surge.SSH
 
                                         SftpClient client = Authentication.OpenSftpClient(_Address, Int32.Parse(Port));
 
+                                        string tmp = "";
                                         try
                                         {
                                             PostMortemMetaData["LastOperation"] = "DownloadFile";
 
-                                            using (System.IO.Stream dStream = System.IO.File.Open(dFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                            tmp = Path.Combine(Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP"), STEM.Sys.IO.Path.GetFileName(dFile));
+
+                                            using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                                             {
                                                 client.DownloadFile(Authentication.AdjustPath(_Address, s), dStream);
                                             }
+
+                                            File.Move(tmp, dFile);
                                         }
                                         finally
                                         {
+                                            try
+                                            {
+                                                if (File.Exists(tmp))
+                                                    File.Delete(tmp);
+                                            }
+                                            catch { }
+
                                             PostMortemMetaData["LastOperation"] = "RecycleClient";
                                             Authentication.RecycleClient(client);
                                         }
