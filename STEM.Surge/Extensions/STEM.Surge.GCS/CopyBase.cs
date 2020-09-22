@@ -152,9 +152,32 @@ namespace STEM.Surge.GCS
                                 o.Bucket = container;
                                 o.Name = prefix;
 
-                                using (System.IO.Stream dStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(d), System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                string tmp = "";
+
+                                try
                                 {
-                                    Authentication.Client.DownloadObject(o, dStream);
+                                    tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(d), "TEMP");
+
+                                    if (!Directory.Exists(tmp))
+                                        Directory.CreateDirectory(tmp);
+
+                                    tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
+
+                                    using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                    {
+                                        Authentication.Client.DownloadObject(o, dStream);
+                                    }
+
+                                    File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(d));
+                                }
+                                finally
+                                {
+                                    try
+                                    {
+                                        if (File.Exists(tmp))
+                                            File.Delete(tmp);
+                                    }
+                                    catch { }
                                 }
                             }
                             else
@@ -394,12 +417,39 @@ namespace STEM.Surge.GCS
                                         o.Bucket = container;
                                         o.Name = prefix;
 
-                                        using (System.IO.Stream dStream = System.IO.File.Open(dFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                        {
-                                            Authentication.Client.DownloadObject(o, dStream);
-                                        }
+                                        string tmp = "";
 
-                                        File.SetLastWriteTimeUtc(dFile, Authentication.GetFileInfo(s).LastWriteTimeUtc);
+                                        try
+                                        {
+                                            tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
+
+                                            if (!Directory.Exists(tmp))
+                                                Directory.CreateDirectory(tmp);
+
+                                            tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
+
+                                            using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                            {
+                                                Authentication.Client.DownloadObject(o, dStream);
+                                            }
+
+                                            try
+                                            {
+                                                File.SetLastWriteTimeUtc(tmp, Authentication.GetFileInfo(s).LastWriteTimeUtc);
+                                            }
+                                            catch { }
+
+                                            File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
+                                        }
+                                        finally
+                                        {
+                                            try
+                                            {
+                                                if (File.Exists(tmp))
+                                                    File.Delete(tmp);
+                                            }
+                                            catch { }
+                                        }
                                     }
 
                                     if (!String.IsNullOrEmpty(dFile))

@@ -175,10 +175,32 @@ namespace STEM.Surge.Kafka
                                 break;
                         }
 
-                    using (System.IO.FileStream s = System.IO.File.Open(file, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                    string tmp = "";
+                    try
                     {
-                        s.Write(_Data, 0, _Data.Length);
-                        _File = file;
+                        tmp = System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(file), "TEMP");
+
+                        if (!System.IO.Directory.Exists(tmp))
+                            System.IO.Directory.CreateDirectory(tmp);
+
+                        tmp = System.IO.Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(file));
+
+                        using (System.IO.FileStream s = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                        {
+                            s.Write(_Data, 0, _Data.Length);
+                            _File = file;
+                        }
+
+                        System.IO.File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(file));
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            if (System.IO.File.Exists(tmp))
+                                System.IO.File.Delete(tmp);
+                        }
+                        catch { }
                     }
 
                     break;

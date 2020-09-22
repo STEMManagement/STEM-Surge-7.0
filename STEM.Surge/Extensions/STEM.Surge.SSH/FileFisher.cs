@@ -161,9 +161,25 @@ namespace STEM.Surge.SSH
                                     if (client != null)
                                         try
                                         {
-                                            using (System.IO.Stream dStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(Path.Combine(errDir, Path.GetFileName(file))), System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                            string errFile = STEM.Sys.IO.Path.AdjustPath(Path.Combine(errDir, Path.GetFileName(file)));
+
+                                            try
                                             {
-                                                client.DownloadFile(Authentication.AdjustPath(ServerAddress, file), dStream);
+                                                using (System.IO.Stream dStream = System.IO.File.Open(errFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                                {
+                                                    client.DownloadFile(Authentication.AdjustPath(ServerAddress, file), dStream);
+                                                }
+                                            }
+                                            catch
+                                            {
+                                                try
+                                                {
+                                                    if (File.Exists(errFile))
+                                                        File.Delete(errFile);
+                                                }
+                                                catch { }
+
+                                                throw;
                                             }
 
                                             Authentication.DeleteFile(ServerAddress, Int32.Parse(Port), Authentication.AdjustPath(ServerAddress, file));

@@ -157,11 +157,20 @@ namespace STEM.Surge.FTP
                             {
                                 FtpClient conn = Authentication.OpenClient(_Address, Int32.Parse(Port));
 
+                                string tmp = "";
+
                                 try
                                 {
+                                    tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(d), "TEMP");
+
+                                    if (!Directory.Exists(tmp))
+                                        Directory.CreateDirectory(tmp);
+
+                                    tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
+
                                     using (System.IO.Stream sStream = conn.OpenRead(s, FtpDataType.Binary))
                                     {
-                                        using (System.IO.Stream dStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(d), System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                        using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                                         {
                                             sStream.CopyTo(dStream);
                                         }
@@ -174,12 +183,21 @@ namespace STEM.Surge.FTP
 
                                     try
                                     {
-                                        File.SetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(d), conn.GetModifiedTime(s, FtpDate.UTC));
+                                        File.SetLastWriteTimeUtc(tmp, conn.GetModifiedTime(s, FtpDate.UTC));
                                     }
                                     catch { }
+
+                                    File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(d));
                                 }
                                 finally
                                 {
+                                    try
+                                    {
+                                        if (File.Exists(tmp))
+                                            File.Delete(tmp);
+                                    }
+                                    catch { }
+
                                     Authentication.RecycleClient(conn);
                                 }
                             }
@@ -505,19 +523,42 @@ namespace STEM.Surge.FTP
                                             if (!Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(dFile)))
                                                 Directory.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(dFile));
 
-                                            using (System.IO.Stream sStream = conn.OpenRead(s, FtpDataType.Binary))
-                                            {
-                                                using (System.IO.Stream dStream = System.IO.File.Open(dFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                                {
-                                                    sStream.CopyTo(dStream);
-                                                }
-                                            }
+                                            string tmp = "";
 
                                             try
                                             {
-                                                File.SetLastWriteTimeUtc(dFile, conn.GetModifiedTime(s, FtpDate.UTC));
+                                                tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
+
+                                                if (!Directory.Exists(tmp))
+                                                    Directory.CreateDirectory(tmp);
+
+                                                tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
+
+                                                using (System.IO.Stream sStream = conn.OpenRead(s, FtpDataType.Binary))
+                                                {
+                                                    using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                                    {
+                                                        sStream.CopyTo(dStream);
+                                                    }
+                                                }
+
+                                                try
+                                                {
+                                                    File.SetLastWriteTimeUtc(tmp, conn.GetModifiedTime(s, FtpDate.UTC));
+                                                }
+                                                catch { }
+
+                                                File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
                                             }
-                                            catch { }
+                                            finally
+                                            {
+                                                try
+                                                {
+                                                    if (File.Exists(tmp))
+                                                        File.Delete(tmp);
+                                                }
+                                                catch { }
+                                            }
                                         }
 
                                         if (!String.IsNullOrEmpty(dFile))

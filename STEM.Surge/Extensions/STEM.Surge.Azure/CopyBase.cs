@@ -152,12 +152,35 @@ namespace STEM.Surge.Azure
                                 System.Threading.Tasks.Task<System.IO.Stream> streamResult = blob.OpenReadAsync();
                                 streamResult.Wait();
 
-                                using (System.IO.Stream sStream = streamResult.Result)
+                                string tmp = "";
+
+                                try
                                 {
-                                    using (System.IO.Stream dStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(d), System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                    tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(d), "TEMP");
+
+                                    if (!Directory.Exists(tmp))
+                                        Directory.CreateDirectory(tmp);
+                                    
+                                    tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
+
+                                    using (System.IO.Stream sStream = streamResult.Result)
                                     {
-                                        sStream.CopyTo(dStream);
+                                        using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                        {
+                                            sStream.CopyTo(dStream);
+                                        }
                                     }
+
+                                    File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(d));
+                                }
+                                finally
+                                {
+                                    try
+                                    {
+                                        if (File.Exists(tmp))
+                                            File.Delete(tmp);
+                                    }
+                                    catch { }
                                 }
 
                                 File.SetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(d), blob.Properties.LastModified.Value.UtcDateTime);
@@ -400,15 +423,41 @@ namespace STEM.Surge.Azure
                                         System.Threading.Tasks.Task<System.IO.Stream> streamResult = blob.OpenReadAsync();
                                         streamResult.Wait();
 
-                                        using (System.IO.Stream sStream = streamResult.Result)
+                                        string tmp = "";
+                                        try
                                         {
-                                            using (System.IO.Stream dStream = System.IO.File.Open(dFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                            {
-                                                sStream.CopyTo(dStream);
-                                            }
-                                        }
+                                            tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
 
-                                        File.SetLastWriteTimeUtc(dFile, blob.Properties.LastModified.Value.UtcDateTime);
+                                            if (!Directory.Exists(tmp))
+                                                Directory.CreateDirectory(tmp);
+
+                                            tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
+
+                                            using (System.IO.Stream sStream = streamResult.Result)
+                                            {
+                                                using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                                {
+                                                    sStream.CopyTo(dStream);
+                                                }
+                                            }
+
+                                            try
+                                            {
+                                                File.SetLastWriteTimeUtc(tmp, blob.Properties.LastModified.Value.UtcDateTime);
+                                            }
+                                            catch { }
+
+                                            File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
+                                        }
+                                        finally
+                                        {
+                                            try
+                                            {
+                                                if (File.Exists(tmp))
+                                                    File.Delete(tmp);
+                                            }
+                                            catch { }
+                                        }
                                     }
 
                                     if (!String.IsNullOrEmpty(dFile))

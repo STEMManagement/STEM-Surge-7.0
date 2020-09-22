@@ -160,9 +160,32 @@ namespace STEM.Surge.SSH
                             {
                                 if (Direction == SshDirection.ToSshServer)
                                 {
-                                    using (System.IO.Stream dStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(d), System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                    string tmp = "";
+
+                                    try
                                     {
-                                        client.DownloadFile(Authentication.AdjustPath(_Address, d), dStream);
+                                        tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(d), "TEMP");
+
+                                        if (!Directory.Exists(tmp))
+                                            Directory.CreateDirectory(tmp);
+
+                                        tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
+
+                                        using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                        {
+                                            client.DownloadFile(Authentication.AdjustPath(_Address, d), dStream);
+                                        }
+
+                                        File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(d));
+                                    }
+                                    finally
+                                    {
+                                        try
+                                        {
+                                            if (File.Exists(tmp))
+                                                File.Delete(tmp);
+                                        }
+                                        catch { }
                                     }
                                 }
                                 else
@@ -462,14 +485,19 @@ namespace STEM.Surge.SSH
                                         {
                                             PostMortemMetaData["LastOperation"] = "DownloadFile";
 
-                                            tmp = Path.Combine(Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP"), STEM.Sys.IO.Path.GetFileName(dFile));
+                                            tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
+
+                                            if (!Directory.Exists(tmp))
+                                                Directory.CreateDirectory(tmp);
+
+                                            tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
 
                                             using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                                             {
                                                 client.DownloadFile(Authentication.AdjustPath(_Address, s), dStream);
                                             }
 
-                                            File.Move(tmp, dFile);
+                                            File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
                                         }
                                         finally
                                         {

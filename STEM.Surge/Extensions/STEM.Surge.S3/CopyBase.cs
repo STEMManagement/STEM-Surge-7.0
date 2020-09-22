@@ -156,15 +156,42 @@ namespace STEM.Surge.S3
                                     System.Threading.Tasks.Task<System.IO.Stream> streamResult = Authentication.Client.GetObjectStreamAsync(bucket, prefix, null);
                                     streamResult.Wait();
 
-                                    using (System.IO.Stream sStream = streamResult.Result)
-                                    {
-                                        using (System.IO.Stream dStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(d), System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                        {
-                                            sStream.CopyTo(dStream);
-                                        }
-                                    }
+                                    string tmp = "";
 
-                                    File.SetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(d), fi.LastWriteTimeUtc);
+                                    try
+                                    {
+                                        tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(d), "TEMP");
+
+                                        if (!Directory.Exists(tmp))
+                                            Directory.CreateDirectory(tmp);
+
+                                        tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
+
+                                        using (System.IO.Stream sStream = streamResult.Result)
+                                        {
+                                            using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                            {
+                                                sStream.CopyTo(dStream);
+                                            }
+                                        }
+
+                                        try
+                                        {
+                                            File.SetLastWriteTimeUtc(tmp, fi.LastWriteTimeUtc);
+                                        }
+                                        catch { }
+
+                                        File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(d));
+                                    }
+                                    finally
+                                    {
+                                        try
+                                        {
+                                            if (File.Exists(tmp))
+                                                File.Delete(tmp);
+                                        }
+                                        catch { }
+                                    }
                                 }
                                 else
                                 {
@@ -434,15 +461,41 @@ namespace STEM.Surge.S3
                                             System.Threading.Tasks.Task<System.IO.Stream> streamResult = Authentication.Client.GetObjectStreamAsync(bucket, prefix, null);
                                             streamResult.Wait();
 
-                                            using (System.IO.Stream sStream = streamResult.Result)
+                                            string tmp = "";
+                                            try
                                             {
-                                                using (System.IO.Stream dStream = System.IO.File.Open(dFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                                {
-                                                    sStream.CopyTo(dStream);
-                                                }
-                                            }
+                                                tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
 
-                                            File.SetLastWriteTimeUtc(dFile, fi.LastWriteTimeUtc);
+                                                if (!Directory.Exists(tmp))
+                                                    Directory.CreateDirectory(tmp);
+
+                                                tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
+
+                                                using (System.IO.Stream sStream = streamResult.Result)
+                                                {
+                                                    using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                                    {
+                                                        sStream.CopyTo(dStream);
+                                                    }
+                                                }
+
+                                                try
+                                                {
+                                                    File.SetLastWriteTimeUtc(tmp, fi.LastWriteTimeUtc);
+                                                }
+                                                catch { }
+
+                                                File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
+                                            }
+                                            finally
+                                            {
+                                                try
+                                                {
+                                                    if (File.Exists(tmp))
+                                                        File.Delete(tmp);
+                                                }
+                                                catch { }
+                                            }
                                         }
                                         else
                                         {
