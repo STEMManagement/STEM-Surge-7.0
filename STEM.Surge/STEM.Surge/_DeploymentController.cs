@@ -54,6 +54,7 @@ namespace STEM.Surge
             TemplateKVP["[BRANCHES]"] = "Reserved";
             TemplateKVP["[NOSOURCE]"] = "Reserved";
 
+            TemplateKVP["[ControllerVersionNumber]"] = "Reserved";
             TemplateKVP["[BranchIP]"] = "Reserved";
             TemplateKVP["[BranchName]"] = "Reserved";
             TemplateKVP["[ISetID]"] = "Reserved";
@@ -254,6 +255,8 @@ namespace STEM.Surge
             kvp["[DeploymentControllerName]"] = DeploymentControllerName;
 
             kvp["[DeploymentControllerID]"] = DeploymentControllerID;
+
+            kvp["[ControllerVersionNumber]"] = VersionNumber;
 
             kvp["[SwitchboardRowID]"] = SwitchboardRowID;
 
