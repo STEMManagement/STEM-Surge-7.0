@@ -181,7 +181,19 @@ namespace STEM.Surge.GCS
                 }
                 else if (!isDir && (listType == GcsListType.File || listType == GcsListType.All))
                 {
-                    ret.Add(blob);
+                    if (directory == "" && !blob.Name.Contains("/"))
+                    {
+                        ret.Add(blob);
+                    }
+                    else if (directory != "")
+                    {
+                        string prefix = directory.Trim('/').Trim('\\');
+                        prefix = prefix.Replace('\\', '/');
+                        prefix = prefix.Trim('/') + '/';
+
+                        if (!blob.Name.Replace(prefix, "").Contains("/"))
+                            ret.Add(blob);
+                    }
                 }
             }
 
@@ -209,7 +221,7 @@ namespace STEM.Surge.GCS
 
             string prefix = directory.Trim('/').Trim('\\');
             prefix = prefix.Replace('\\', '/');
-            prefix = prefix + '/';
+            prefix = prefix.Trim('/');
 
             foreach (Google.Apis.Storage.v1.Data.Object o in Client.ListObjects(containerName, prefix))
                 blobs.Add(o);
