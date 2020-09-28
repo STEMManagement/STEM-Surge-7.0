@@ -623,11 +623,12 @@ namespace STEM.Surge.SSH
 
             string machine = STEM.Sys.IO.Path.FirstTokenOfPath(path);
 
-            if (server.Equals(STEM.Sys.IO.Net.MachineName(machine), StringComparison.InvariantCultureIgnoreCase) ||
-                server.Equals(STEM.Sys.IO.Net.MachineAddress(machine), StringComparison.InvariantCultureIgnoreCase))
-            {
-                path = path.Substring(("/" + machine).Length);
-            }
+            if (!String.IsNullOrEmpty(machine))
+                if (server.Equals(STEM.Sys.IO.Net.MachineName(machine), StringComparison.InvariantCultureIgnoreCase) ||
+                    server.Equals(STEM.Sys.IO.Net.MachineAddress(machine), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    path = path.Substring(("/" + machine).Length);
+                }
 
             return path;
         }
