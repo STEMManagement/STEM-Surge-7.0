@@ -178,9 +178,32 @@ namespace STEM.Sys.IO
                                     break;
                             }
 
-                        System.IO.File.WriteAllBytes(file, _Content);
-                        System.IO.File.SetCreationTimeUtc(file, CreationTimeUtc);
-                        System.IO.File.SetLastWriteTimeUtc(file, LastWriteTimeUtc);
+                        while (true)
+                        {
+                            try
+                            {
+                                if (!System.IO.Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(file)))
+                                    System.IO.Directory.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(file));
+                            }
+                            catch { }
+
+                            try
+                            {
+                                if (System.IO.Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(file)))
+                                {
+                                    System.IO.File.WriteAllBytes(file, _Content);
+                                    System.IO.File.SetCreationTimeUtc(file, CreationTimeUtc);
+                                    System.IO.File.SetLastWriteTimeUtc(file, LastWriteTimeUtc);
+                                }
+                                else
+                                {
+                                    return null;
+                                }
+
+                                break;
+                            }
+                            catch { }
+                        }
 
                         return file;
                     }
@@ -201,10 +224,24 @@ namespace STEM.Sys.IO
                 Filename = STEM.Sys.IO.Path.AdjustPath(fileName);
                 Filepath = STEM.Sys.IO.Path.AdjustPath(filePath);
 
-                FileInfo fi = new FileInfo(System.IO.Path.Combine(Filepath, Filename));
-                LastWriteTimeUtc = fi.LastWriteTimeUtc;
-                CreationTimeUtc = fi.CreationTimeUtc;
-                Content = System.IO.File.ReadAllBytes(System.IO.Path.Combine(Filepath, Filename));
+                while (true)
+                    try
+                    {
+                        if (System.IO.File.Exists(System.IO.Path.Combine(Filepath, Filename)))
+                        {
+                            FileInfo fi = new FileInfo(System.IO.Path.Combine(Filepath, Filename));
+                            LastWriteTimeUtc = fi.LastWriteTimeUtc;
+                            CreationTimeUtc = fi.CreationTimeUtc;
+                            Content = System.IO.File.ReadAllBytes(System.IO.Path.Combine(Filepath, Filename));
+                        }
+                        else
+                        {
+                            Content = null;
+                        }
+
+                        break;
+                    }
+                    catch { }
             }
         }
     }

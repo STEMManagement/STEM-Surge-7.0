@@ -602,38 +602,81 @@ namespace STEM.Surge
             }
         }
 
+        System.Threading.Thread _LockOwner = null;
+        public void BeginDeploymentManagerConfigurationEdit()
+        {
+            if (_LockOwner == System.Threading.Thread.CurrentThread)
+                return;
+
+            while (true)
+            {
+                lock (_DeploymentManagerConfigurationMutex)
+                {
+                    if (_LockOwner == null)
+                    {
+                        _LockOwner = System.Threading.Thread.CurrentThread;
+                        return;
+                    }
+                }
+
+                System.Threading.Thread.Sleep(10);
+            }
+        }
+
+        public void EndDeploymentManagerConfigurationEdit()
+        {
+            if (_LockOwner == System.Threading.Thread.CurrentThread)
+                _LockOwner = null;
+        }
+
         /// <summary>
         /// Submit an update to the SwitchboardConfig
         /// </summary>
         /// <param name="switchboardConfiguration">The updated configuration</param>
         public bool SubmitSwitchboardConfigurationUpdate(SwitchboardConfig switchboardConfiguration, bool invokeConfigUpdated)
         {
-            lock (_DeploymentManagerConfigurationMutex)
+            bool lockOwner = false;
+
+            if (_LockOwner != System.Threading.Thread.CurrentThread)
             {
-                if (_DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent != switchboardConfiguration.GetXml())
+                BeginDeploymentManagerConfigurationEdit();
+                lockOwner = true;
+            }
+
+            try
+            {
+                lock (_DeploymentManagerConfigurationMutex)
                 {
-                    _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent = switchboardConfiguration.GetXml();
-                    _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc = DateTime.UtcNow;
-                    if (!Send(_DeploymentManagerConfiguration))
-                        return false;
-
-                    try
+                    if (_DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent != switchboardConfiguration.GetXml())
                     {
-                        if (onUpdateStatusMessage != null)
-                            onUpdateStatusMessage(this, "Configuration Update Received: " + _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc.ToString("G"));
-                    }
-                    catch { }
+                        _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent = switchboardConfiguration.GetXml();
+                        _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc = DateTime.UtcNow;
+                        if (!Send(_DeploymentManagerConfiguration))
+                            return false;
 
-                    if (invokeConfigUpdated)
                         try
                         {
-                            foreach (EventHandler h in onSwitchboardConfigUpdated.GetInvocationList())
-                                h(this, ResolveEventArgs.Empty);
+                            if (onUpdateStatusMessage != null)
+                                onUpdateStatusMessage(this, "Configuration Update Received: " + _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc.ToString("G"));
                         }
                         catch { }
-                }
 
-                return true;
+                        if (invokeConfigUpdated)
+                            try
+                            {
+                                foreach (EventHandler h in onSwitchboardConfigUpdated.GetInvocationList())
+                                    h(this, ResolveEventArgs.Empty);
+                            }
+                            catch { }
+                    }
+
+                    return true;
+                }
+            }
+            finally
+            {
+                if (lockOwner)
+                    EndDeploymentManagerConfigurationEdit();
             }
         }
 
@@ -642,9 +685,26 @@ namespace STEM.Surge
         /// </summary>
         public bool SubmitConfigurationUpdate()
         {
-            lock (_DeploymentManagerConfigurationMutex)
+            bool lockOwner = false;
+
+            if (_LockOwner != System.Threading.Thread.CurrentThread)
             {
-                return Send(_DeploymentManagerConfiguration);
+                BeginDeploymentManagerConfigurationEdit();
+                lockOwner = true;
+            }
+
+            try
+            {
+                lock (_DeploymentManagerConfigurationMutex)
+                {
+                    _DeploymentManagerConfiguration.LastUpdate = DateTime.UtcNow;
+                    return Send(_DeploymentManagerConfiguration);
+                }
+            }
+            finally
+            {
+                if (lockOwner)
+                    EndDeploymentManagerConfigurationEdit();
             }
         }
 
