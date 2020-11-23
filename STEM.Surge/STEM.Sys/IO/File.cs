@@ -314,9 +314,9 @@ namespace STEM.Sys.IO
                                             System.IO.File.SetAttributes(d, System.IO.FileAttributes.Normal);
                                             System.IO.File.Copy(dTemp, d, true);
                                         }
-                                        catch
+                                        catch (Exception ex)
                                         {
-                                            throw new System.IO.IOException("Destination file could not be overwritten: " + d);
+                                            throw new System.IO.IOException("Destination file could not be overwritten: " + d, ex);
                                         }
 
                                         break;
@@ -333,9 +333,9 @@ namespace STEM.Sys.IO
                                             System.IO.File.SetAttributes(d, System.IO.FileAttributes.Normal);
                                             System.IO.File.Copy(dTemp, d, true);
                                         }
-                                        catch
+                                        catch (Exception ex)
                                         {
-                                            throw new System.IO.IOException("Destination file could not be overwritten: " + d);
+                                            throw new System.IO.IOException("Destination file could not be overwritten: " + d, ex);
                                         }
 
                                         break;
