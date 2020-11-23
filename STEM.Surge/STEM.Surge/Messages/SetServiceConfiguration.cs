@@ -31,6 +31,7 @@ namespace STEM.Surge.Messages
         public string RemoteConfigurationDirectory { get; set; }
         public bool UseSSL { get; set; }
         public string CertificateFriendlyName { get; set; }
+        public string EventLogName { get; set; }
 
         public SetServiceConfiguration()
         {

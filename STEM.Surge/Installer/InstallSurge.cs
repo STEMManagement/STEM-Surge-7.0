@@ -179,6 +179,7 @@ namespace Installer
     <AlternateAssemblyStore />
     <UseSSL>[USESSL]</UseSSL>
     <CertificateFriendlyName>[CFN]</CertificateFriendlyName>
+    <EventLogName>[ELN]</EventLogName>
   </Settings>
 </ConfigurationDS>";
 
@@ -189,6 +190,7 @@ namespace Installer
             cfg = cfg.Replace("[REMOTECFG]", remoteConfigurationDir.Text.Trim());
             cfg = cfg.Replace("[USESSL]", useSSL.Checked.ToString().ToLower());
             cfg = cfg.Replace("[CFN]", certificateFriendlyName.Text.Trim());
+            cfg = cfg.Replace("[ELN]", eventLogName.Text.Trim());
 
             File.WriteAllText(Path.Combine(installPath, "SurgeService.cfg"), cfg);
         }

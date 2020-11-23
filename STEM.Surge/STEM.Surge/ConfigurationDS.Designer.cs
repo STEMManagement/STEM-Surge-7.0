@@ -295,6 +295,8 @@ namespace STEM.Surge {
             
             private global::System.Data.DataColumn columnCertificateFriendlyName;
             
+            private global::System.Data.DataColumn columnEventLogName;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             public SettingsDataTable() {
@@ -394,6 +396,14 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public global::System.Data.DataColumn EventLogNameColumn {
+                get {
+                    return this.columnEventLogName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -429,7 +439,7 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
-            public SettingsRow AddSettingsRow(int SurgeCommunicationPort, string SurgeDeploymentManagerAddress, double ProcessorOverload, string PostMortemDirectory, string RemoteConfigurationDirectory, string AlternateAssemblyStore, bool UseSSL, string CertificateFriendlyName) {
+            public SettingsRow AddSettingsRow(int SurgeCommunicationPort, string SurgeDeploymentManagerAddress, double ProcessorOverload, string PostMortemDirectory, string RemoteConfigurationDirectory, string AlternateAssemblyStore, bool UseSSL, string CertificateFriendlyName, string EventLogName) {
                 SettingsRow rowSettingsRow = ((SettingsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         SurgeCommunicationPort,
@@ -439,7 +449,8 @@ namespace STEM.Surge {
                         RemoteConfigurationDirectory,
                         AlternateAssemblyStore,
                         UseSSL,
-                        CertificateFriendlyName};
+                        CertificateFriendlyName,
+                        EventLogName};
                 rowSettingsRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowSettingsRow);
                 return rowSettingsRow;
@@ -470,6 +481,7 @@ namespace STEM.Surge {
                 this.columnAlternateAssemblyStore = base.Columns["AlternateAssemblyStore"];
                 this.columnUseSSL = base.Columns["UseSSL"];
                 this.columnCertificateFriendlyName = base.Columns["CertificateFriendlyName"];
+                this.columnEventLogName = base.Columns["EventLogName"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -491,6 +503,8 @@ namespace STEM.Surge {
                 base.Columns.Add(this.columnUseSSL);
                 this.columnCertificateFriendlyName = new global::System.Data.DataColumn("CertificateFriendlyName", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnCertificateFriendlyName);
+                this.columnEventLogName = new global::System.Data.DataColumn("EventLogName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnEventLogName);
                 this.columnSurgeCommunicationPort.DefaultValue = ((int)(0));
                 this.columnSurgeDeploymentManagerAddress.DefaultValue = ((string)(""));
                 this.columnProcessorOverload.DefaultValue = ((double)(0D));
@@ -499,6 +513,7 @@ namespace STEM.Surge {
                 this.columnUseSSL.AllowDBNull = false;
                 this.columnUseSSL.DefaultValue = ((bool)(false));
                 this.columnCertificateFriendlyName.DefaultValue = ((string)("STEM.Surge"));
+                this.columnEventLogName.DefaultValue = ((string)("STEM.Surge"));
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -766,6 +781,22 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public string EventLogName {
+                get {
+                    if (this.IsEventLogNameNull()) {
+                        return "STEM.Surge";
+                    }
+                    else {
+                        return ((string)(this[this.tableSettings.EventLogNameColumn]));
+                    }
+                }
+                set {
+                    this[this.tableSettings.EventLogNameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             public bool IsSurgeCommunicationPortNull() {
                 return this.IsNull(this.tableSettings.SurgeCommunicationPortColumn);
             }
@@ -846,6 +877,18 @@ namespace STEM.Surge {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
             public void SetCertificateFriendlyNameNull() {
                 this[this.tableSettings.CertificateFriendlyNameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public bool IsEventLogNameNull() {
+                return this.IsNull(this.tableSettings.EventLogNameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")]
+            public void SetEventLogNameNull() {
+                this[this.tableSettings.EventLogNameColumn] = global::System.Convert.DBNull;
             }
         }
         

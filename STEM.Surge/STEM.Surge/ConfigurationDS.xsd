@@ -22,8 +22,9 @@
               <xs:element name="RemoteConfigurationDirectory" msprop:Generator_ColumnVarNameInTable="columnRemoteConfigurationDirectory" msprop:Generator_ColumnPropNameInRow="RemoteConfigurationDirectory" msprop:Generator_ColumnPropNameInTable="RemoteConfigurationDirectoryColumn" msprop:Generator_UserColumnName="RemoteConfigurationDirectory" type="xs:string" default="" minOccurs="0" />
               <xs:element name="AlternateAssemblyStore" msprop:nullValue="" msprop:Generator_ColumnPropNameInRow="AlternateAssemblyStore" msprop:Generator_ColumnVarNameInTable="columnAlternateAssemblyStore" msprop:Generator_ColumnPropNameInTable="AlternateAssemblyStoreColumn" msprop:Generator_UserColumnName="AlternateAssemblyStore" type="xs:string" default="" minOccurs="0" />
               <xs:element name="UseSSL" msprop:nullValue="false" msprop:Generator_ColumnPropNameInRow="UseSSL" msprop:Generator_ColumnVarNameInTable="columnUseSSL" msprop:Generator_ColumnPropNameInTable="UseSSLColumn" msprop:Generator_UserColumnName="UseSSL" type="xs:boolean" default="false" />
-              <xs:element name="CertificateFriendlyName" msprop:nullValue="STEM.Surge" msprop:Generator_ColumnPropNameInRow="CertificateFriendlyName" msprop:Generator_ColumnVarNameInTable="columnCertificateFriendlyName" msprop:Generator_ColumnPropNameInTable="CertificateFriendlyNameColumn" msprop:Generator_UserColumnName="CertificateFriendlyName" type="xs:string" default="STEM.Surge" minOccurs="0" />
-            </xs:sequence>
+			  <xs:element name="CertificateFriendlyName" msprop:nullValue="STEM.Surge" msprop:Generator_ColumnPropNameInRow="CertificateFriendlyName" msprop:Generator_ColumnVarNameInTable="columnCertificateFriendlyName" msprop:Generator_ColumnPropNameInTable="CertificateFriendlyNameColumn" msprop:Generator_UserColumnName="CertificateFriendlyName" type="xs:string" default="STEM.Surge" minOccurs="0" />
+			  <xs:element name="EventLogName" msprop:nullValue="STEM.Surge" msprop:Generator_ColumnPropNameInRow="EventLogName" msprop:Generator_ColumnVarNameInTable="columnEventLogName" msprop:Generator_ColumnPropNameInTable="EventLogNameColumn" msprop:Generator_UserColumnName="EventLogName" type="xs:string" default="STEM.Surge" minOccurs="0" />
+			</xs:sequence>
           </xs:complexType>
         </xs:element>
       </xs:choice>

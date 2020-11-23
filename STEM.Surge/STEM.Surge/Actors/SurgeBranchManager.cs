@@ -1350,6 +1350,7 @@ namespace STEM.Surge
                             newConfig.Settings[0].RemoteConfigurationDirectory = m.RemoteConfigurationDirectory;
                             newConfig.Settings[0].UseSSL = m.UseSSL;
                             newConfig.Settings[0].CertificateFriendlyName = m.CertificateFriendlyName;
+                            newConfig.Settings[0].EventLogName = m.EventLogName;
                             newConfig.WriteXml(Path.Combine(Environment.CurrentDirectory, "SurgeService.cfg"));
 
                             _ConfigurationDS = newConfig;
@@ -1388,6 +1389,7 @@ namespace STEM.Surge
                     m.RemoteConfigurationDirectory = newConfig.Settings[0].RemoteConfigurationDirectory;
                     m.UseSSL = newConfig.Settings[0].UseSSL;
                     m.CertificateFriendlyName = newConfig.Settings[0].CertificateFriendlyName;
+                    m.EventLogName = newConfig.Settings[0].EventLogName;
 
                     message.Respond(m);
                 }
