@@ -124,28 +124,49 @@ namespace STEM.Surge.SSH
                     string sFile = Authentication.AdjustPath(address, SourceFile);
 
                     PostMortemMetaData["LastOperation"] = "OpenSftpClient";
-                    SftpClient client = Authentication.OpenSftpClient(address, Int32.Parse(Port));
+                    SftpClient client = null;
 
                     try
                     {
-                        PostMortemMetaData["LastOperation"] = "DownloadFile";
-                        using (System.IO.MemoryStream s = new System.IO.MemoryStream())
+                        client = Authentication.OpenSftpClient(address, Int32.Parse(Port));
+
+                        try
                         {
-                            client.DownloadFile(sFile, s);
-
-                            bData = s.ToArray();
-
-                            if (FileType == DataType.String)
+                            PostMortemMetaData["LastOperation"] = "DownloadFile";
+                            using (System.IO.MemoryStream s = new System.IO.MemoryStream())
                             {
-                                sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
-                                bData = null;
+                                client.DownloadFile(sFile, s);
+
+                                bData = s.ToArray();
+
+                                if (FileType == DataType.String)
+                                {
+                                    sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
+                                    bData = null;
+                                }
                             }
                         }
+                        finally
+                        {
+                            PostMortemMetaData["LastOperation"] = "RecycleClient";
+                            Authentication.RecycleClient(client);
+                            client = null;
+                        }
                     }
-                    finally
+                    catch
                     {
-                        PostMortemMetaData["LastOperation"] = "RecycleClient";
-                        Authentication.RecycleClient(client);
+                        try
+                        {
+                            client.Disconnect();
+                        }
+                        catch { }
+                        try
+                        {
+                            client.Dispose();
+                        }
+                        catch { }
+
+                        throw;
                     }
 
                     switch (TargetContainer)

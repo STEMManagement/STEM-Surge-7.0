@@ -293,23 +293,42 @@ namespace STEM.Surge.SSH
         public List<SftpFile> ListDirectory(string server, int port,
             string directory, SSHListType listType, bool recurse, string directoryFilter, string fileFilter)
         {
-            SftpClient client = OpenSftpClient(server, port);
-
-            directory = AdjustPath(server, directory);
-
+            SftpClient client = null;
             List<SftpFile> ret = new List<SftpFile>();
-            List<string> directoriesListed = new List<string>();
 
-            Regex exclusiveFileFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(fileFilter);
-            Regex inclusiveFileFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(fileFilter);
-            Regex exclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
-            Regex inclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
+            try
+            {
+                client = OpenSftpClient(server, port);
 
-            ListDirectory(client,
-                ret, directoriesListed,
-                directory, listType, recurse,
-                exclusiveDirectoryFilters, inclusiveDirectoryFilters,
-                exclusiveFileFilters, inclusiveFileFilters);
+                directory = AdjustPath(server, directory);
+                List<string> directoriesListed = new List<string>();
+
+                Regex exclusiveFileFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(fileFilter);
+                Regex inclusiveFileFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(fileFilter);
+                Regex exclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
+                Regex inclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
+
+                ListDirectory(client,
+                    ret, directoriesListed,
+                    directory, listType, recurse,
+                    exclusiveDirectoryFilters, inclusiveDirectoryFilters,
+                    exclusiveFileFilters, inclusiveFileFilters);
+            }
+            catch
+            {
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
+                throw;
+            }
 
             return ret;
         }
@@ -367,6 +386,7 @@ namespace STEM.Surge.SSH
                 finally
                 {
                     RecycleClient(client);
+                    client = null;
                 }
 
                 if (list == null)
@@ -374,6 +394,17 @@ namespace STEM.Surge.SSH
             }
             catch (Exception ex)
             {
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
                 STEM.Sys.EventLog.WriteEntry("Authentication.ListDirectory", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
         }
@@ -391,22 +422,13 @@ namespace STEM.Surge.SSH
 
                 int cnt = 1;
 
-                SftpClient client = OpenSftpClient(server, port);
-
-                try
+                while (FileExists(server, port, unique))
                 {
-                    while (FileExists(server, port, unique))
-                    {
-                        unique = string.Format("{0}/{1}_{2}{3}",
-                            STEM.Sys.IO.Path.GetDirectoryName(file),
-                            STEM.Sys.IO.Path.GetFileNameWithoutExtension(file),
-                            (cnt++).ToString("0000"),
-                            STEM.Sys.IO.Path.GetExtension(file));
-                    }
-                }
-                finally
-                {
-                    RecycleClient(client);
+                    unique = string.Format("{0}/{1}_{2}{3}",
+                        STEM.Sys.IO.Path.GetDirectoryName(file),
+                        STEM.Sys.IO.Path.GetFileNameWithoutExtension(file),
+                        (cnt++).ToString("0000"),
+                        STEM.Sys.IO.Path.GetExtension(file));
                 }
             }
             catch (Exception ex)
@@ -420,10 +442,11 @@ namespace STEM.Surge.SSH
         public bool FileExists(string server, int port, string file)
         {
             file = AdjustPath(server, file);
+            SftpClient client = null;
 
             try
             {
-                SftpClient client = OpenSftpClient(server, port);
+                client = OpenSftpClient(server, port);
 
                 try
                 {
@@ -438,10 +461,22 @@ namespace STEM.Surge.SSH
                 finally
                 {
                     RecycleClient(client);
+                    client = null;
                 }
             }
             catch (Exception ex)
             {
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
                 STEM.Sys.EventLog.WriteEntry("Authentication.FileExists", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
@@ -451,10 +486,10 @@ namespace STEM.Surge.SSH
         public FDCFileInfo GetFileInfo(string server, int port, string file)
         {
             file = AdjustPath(server, file);
-
+            SftpClient client = null;
             try
             {
-                SftpClient client = OpenSftpClient(server, port);
+                client = OpenSftpClient(server, port);
 
                 try
                 {
@@ -469,10 +504,22 @@ namespace STEM.Surge.SSH
                 finally
                 {
                     RecycleClient(client);
+                    client = null;
                 }
             }
             catch (Exception ex)
             {
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
                 STEM.Sys.EventLog.WriteEntry("Authentication.GetFileInfo", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
@@ -482,10 +529,11 @@ namespace STEM.Surge.SSH
         public bool DirectoryExists(string server, int port, string directory)
         {
             directory = AdjustPath(server, directory);
+            SftpClient client = null;
 
             try
             {
-                SftpClient client = OpenSftpClient(server, port);
+                client = OpenSftpClient(server, port);
 
                 try
                 {
@@ -500,10 +548,22 @@ namespace STEM.Surge.SSH
                 finally
                 {
                     RecycleClient(client);
+                    client = null;
                 }
             }
             catch (Exception ex)
             {
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
                 STEM.Sys.EventLog.WriteEntry("Authentication.DirectoryExists", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
@@ -514,10 +574,11 @@ namespace STEM.Surge.SSH
         public FDCDirectoryInfo GetDirectoryInfo(string server, int port, string directory)
         {
             directory = AdjustPath(server, directory);
+            SftpClient client = null;
 
             try
             {
-                SftpClient client = OpenSftpClient(server, port);
+                client = OpenSftpClient(server, port);
 
                 try
                 {
@@ -532,10 +593,22 @@ namespace STEM.Surge.SSH
                 finally
                 {
                     RecycleClient(client);
+                    client = null;
                 }
             }
             catch (Exception ex)
             {
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
                 STEM.Sys.EventLog.WriteEntry("Authentication.GetDirectoryInfo", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
@@ -548,14 +621,34 @@ namespace STEM.Surge.SSH
 
             newPath = AdjustPath(server, newPath);
 
-            SftpClient client = OpenSftpClient(server, port);
+            SftpClient client = null;
             try
             {
-                client.RenameFile(oldPath, newPath);
+                client = OpenSftpClient(server, port);
+                try
+                {
+                    client.RenameFile(oldPath, newPath);
+                }
+                finally
+                {
+                    RecycleClient(client);
+                    client = null;
+                }
             }
-            finally
+            catch
             {
-                RecycleClient(client);
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
+                throw;
             }
         }
 
@@ -570,15 +663,35 @@ namespace STEM.Surge.SSH
 
                 if (!DirectoryExists(server, port, d))
                 {
-                    SftpClient client = OpenSftpClient(server, port);
+                    SftpClient client = null;
                     try
-                    { 
-                        string dir = AdjustPath(server, d);
-                        client.CreateDirectory(dir);
-                    }
-                    finally
                     {
-                        RecycleClient(client);
+                        client = OpenSftpClient(server, port);
+                        try
+                        {
+                            string dir = AdjustPath(server, d);
+                            client.CreateDirectory(dir);
+                        }
+                        finally
+                        {
+                            RecycleClient(client);
+                            client = null;
+                        }
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            client.Disconnect();
+                        }
+                        catch { }
+                        try
+                        {
+                            client.Dispose();
+                        }
+                        catch { }
+
+                        throw;
                     }
                 }
             }
@@ -588,29 +701,70 @@ namespace STEM.Surge.SSH
         {
             directory = AdjustPath(server, directory);
 
-            SftpClient client = OpenSftpClient(server, port);
+            SftpClient client = null;
             try
             {
-                client.DeleteDirectory(directory);
+                client = OpenSftpClient(server, port);
+                try
+                {
+                    client.DeleteDirectory(directory);
+                }
+                finally
+                {
+                    RecycleClient(client);
+                    client = null;
+                }
             }
-            finally
+            catch
             {
-                RecycleClient(client);
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
+                throw;
             }
         }
 
         public void DeleteFile(string server, int port, string file)
         {
             file = AdjustPath(server, file);
-            
-            SftpClient client = OpenSftpClient(server, port);
+
+            SftpClient client = null;
+
             try
             {
-                client.DeleteFile(file);
+                client = OpenSftpClient(server, port);
+                try
+                {
+                    client.DeleteFile(file);
+                }
+                finally
+                {
+                    RecycleClient(client);
+                    client = null;
+                }
             }
-            finally
+            catch
             {
-                RecycleClient(client);
+                try
+                {
+                    client.Disconnect();
+                }
+                catch { }
+                try
+                {
+                    client.Dispose();
+                }
+                catch { }
+
+                throw;
             }
         }
 

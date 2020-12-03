@@ -156,38 +156,59 @@ namespace STEM.Surge.SSH
                                 }
                                 else
                                 {
-                                    SftpClient client = Authentication.OpenSftpClient(ServerAddress, Int32.Parse(Port));
+                                    SftpClient client = null;
 
-                                    if (client != null)
-                                        try
-                                        {
-                                            string errFile = STEM.Sys.IO.Path.AdjustPath(Path.Combine(errDir, Path.GetFileName(file)));
+                                    try
+                                    {
+                                        client = Authentication.OpenSftpClient(ServerAddress, Int32.Parse(Port));
 
+                                        if (client != null)
                                             try
                                             {
-                                                using (System.IO.Stream dStream = System.IO.File.Open(errFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                                {
-                                                    client.DownloadFile(Authentication.AdjustPath(ServerAddress, file), dStream);
-                                                }
-                                            }
-                                            catch
-                                            {
+                                                string errFile = STEM.Sys.IO.Path.AdjustPath(Path.Combine(errDir, Path.GetFileName(file)));
+
                                                 try
                                                 {
-                                                    if (File.Exists(errFile))
-                                                        File.Delete(errFile);
+                                                    using (System.IO.Stream dStream = System.IO.File.Open(errFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                                    {
+                                                        client.DownloadFile(Authentication.AdjustPath(ServerAddress, file), dStream);
+                                                    }
                                                 }
-                                                catch { }
+                                                catch
+                                                {
+                                                    try
+                                                    {
+                                                        if (File.Exists(errFile))
+                                                            File.Delete(errFile);
+                                                    }
+                                                    catch { }
 
-                                                throw;
+                                                    throw;
+                                                }
+
+                                                Authentication.DeleteFile(ServerAddress, Int32.Parse(Port), Authentication.AdjustPath(ServerAddress, file));
                                             }
-
-                                            Authentication.DeleteFile(ServerAddress, Int32.Parse(Port), Authentication.AdjustPath(ServerAddress, file));
-                                        }
-                                        finally
+                                            finally
+                                            {
+                                                Authentication.RecycleClient(client);
+                                                client = null;
+                                            }
+                                    }
+                                    catch
+                                    {
+                                        try
                                         {
-                                            Authentication.RecycleClient(client);
+                                            client.Disconnect();
                                         }
+                                        catch { }
+                                        try
+                                        {
+                                            client.Dispose();
+                                        }
+                                        catch { }
+
+                                        throw;
+                                    }
                                 }
                              
                                 dict.Remove(file);

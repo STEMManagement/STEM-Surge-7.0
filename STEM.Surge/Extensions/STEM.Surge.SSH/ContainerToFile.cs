@@ -219,22 +219,43 @@ namespace STEM.Surge.SSH
                     if (data != null)
                     {
                         PostMortemMetaData["LastOperation"] = "OpenSftpClient";
-                        SftpClient client = Authentication.OpenSftpClient(_Address, Int32.Parse(Port));
+                        SftpClient client = null;
 
                         try
                         {
-                            PostMortemMetaData["LastOperation"] = "UploadFile";
-                            using (System.IO.MemoryStream s = new System.IO.MemoryStream(data))
-                            {
-                                client.UploadFile(s, dFile);
+                            client = Authentication.OpenSftpClient(_Address, Int32.Parse(Port));
 
-                                _SavedFile = dFile;
+                            try
+                            {
+                                PostMortemMetaData["LastOperation"] = "UploadFile";
+                                using (System.IO.MemoryStream s = new System.IO.MemoryStream(data))
+                                {
+                                    client.UploadFile(s, dFile);
+
+                                    _SavedFile = dFile;
+                                }
+                            }
+                            finally
+                            {
+                                PostMortemMetaData["LastOperation"] = "RecycleClient";
+                                Authentication.RecycleClient(client);
+                                client = null;
                             }
                         }
-                        finally
+                        catch
                         {
-                            PostMortemMetaData["LastOperation"] = "RecycleClient";
-                            Authentication.RecycleClient(client);
+                            try
+                            {
+                                client.Disconnect();
+                            }
+                            catch { }
+                            try
+                            {
+                                client.Dispose();
+                            }
+                            catch { }
+
+                            throw;
                         }
                     }
 
