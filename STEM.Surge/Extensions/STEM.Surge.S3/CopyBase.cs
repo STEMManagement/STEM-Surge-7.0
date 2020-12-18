@@ -153,9 +153,6 @@ namespace STEM.Surge.S3
 
                                 if (fi != null)
                                 {
-                                    System.Threading.Tasks.Task<System.IO.Stream> streamResult = Authentication.Client.GetObjectStreamAsync(bucket, prefix, null);
-                                    streamResult.Wait();
-
                                     string tmp = "";
 
                                     try
@@ -167,13 +164,16 @@ namespace STEM.Surge.S3
 
                                         tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
 
-                                        using (System.IO.Stream sStream = streamResult.Result)
+                                        TransferUtility ftu = new TransferUtility(Authentication.Client);
+                                                                                
+                                        TransferUtilityDownloadRequest request = new TransferUtilityDownloadRequest
                                         {
-                                            using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                            {
-                                                sStream.CopyTo(dStream);
-                                            }
-                                        }
+                                            BucketName = bucket,
+                                            Key = prefix,
+                                            FilePath = tmp
+                                        };
+
+                                        ftu.DownloadAsync(request).Wait();
 
                                         try
                                         {
@@ -200,24 +200,20 @@ namespace STEM.Surge.S3
                             }
                             else
                             {
-                                using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
+                                string bucket = Authentication.BucketFromPath(d);
+                                string prefix = Authentication.PrefixFromPath(d);
+
+                                TransferUtility ftu = new TransferUtility(Authentication.Client);
+
+                                TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
                                 {
-                                    string bucket = Authentication.BucketFromPath(d);
-                                    string prefix = Authentication.PrefixFromPath(d);
+                                    BucketName = bucket,
+                                    Key = prefix,
+                                    FilePath = STEM.Sys.IO.Path.AdjustPath(s),
+                                    PartSize = 10485760
+                                };
 
-                                    TransferUtility ftu = new TransferUtility(Authentication.Client);
-
-                                    TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
-                                    {
-                                        BucketName = bucket,
-                                        Key = prefix,
-                                        InputStream = sStream,
-                                        AutoCloseStream = false,
-                                        PartSize = 10485760
-                                    };
-
-                                    ftu.UploadAsync(request).Wait();
-                                }
+                                ftu.UploadAsync(request).Wait();
                             }
                         }
 
@@ -380,24 +376,20 @@ namespace STEM.Surge.S3
                                             dFile = dPath;
                                         }
 
-                                        using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
+                                        string bucket = Authentication.BucketFromPath(dFile);
+                                        string prefix = Authentication.PrefixFromPath(dFile);
+
+                                        TransferUtility ftu = new TransferUtility(Authentication.Client);
+
+                                        TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
                                         {
-                                            string bucket = Authentication.BucketFromPath(dFile);
-                                            string prefix = Authentication.PrefixFromPath(dFile);
-                                            
-                                            TransferUtility ftu = new TransferUtility(Authentication.Client);
+                                            BucketName = bucket,
+                                            Key = prefix,
+                                            FilePath = STEM.Sys.IO.Path.AdjustPath(s),
+                                            PartSize = 10485760
+                                        };
 
-                                            TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
-                                            {
-                                                BucketName = bucket,
-                                                Key = prefix,
-                                                InputStream = sStream,
-                                                AutoCloseStream = false,
-                                                PartSize = 10485760
-                                            };
-
-                                            ftu.UploadAsync(request).Wait();
-                                        }
+                                        ftu.UploadAsync(request).Wait();
                                     }
                                     else
                                     {
@@ -458,9 +450,6 @@ namespace STEM.Surge.S3
 
                                         if (fi != null)
                                         {
-                                            System.Threading.Tasks.Task<System.IO.Stream> streamResult = Authentication.Client.GetObjectStreamAsync(bucket, prefix, null);
-                                            streamResult.Wait();
-
                                             string tmp = "";
                                             try
                                             {
@@ -471,13 +460,16 @@ namespace STEM.Surge.S3
 
                                                 tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
 
-                                                using (System.IO.Stream sStream = streamResult.Result)
+                                                TransferUtility ftu = new TransferUtility(Authentication.Client);
+
+                                                TransferUtilityDownloadRequest request = new TransferUtilityDownloadRequest
                                                 {
-                                                    using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                                    {
-                                                        sStream.CopyTo(dStream);
-                                                    }
-                                                }
+                                                    BucketName = bucket,
+                                                    Key = prefix,
+                                                    FilePath = tmp
+                                                };
+
+                                                ftu.DownloadAsync(request).Wait();
 
                                                 try
                                                 {
