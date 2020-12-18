@@ -334,73 +334,76 @@ namespace STEM.Surge
 
         public void Verify(string key)
         {
-            if (ExecutionCompleted)
+            lock (this)
             {
-                try
+                if (ExecutionCompleted)
                 {
-                    ControllerManager.KeyManager.Unlock(key, this);
-                }
-                catch (Exception ex)
-                {
-                    STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                }
-                finally
-                {
-                    InitiationSource = null;
-                }
-
-                return;
-            }
-
-            if (InitiationSource == null)
-                InitiationSource = key;
-
-            if (DeploymentDetails != null && DeploymentDetails.Completed != DateTime.MinValue)
-            {
-                Unlock();
-                return;
-            }
-
-            if ((DateTime.UtcNow - LockTime).TotalMinutes > 10)
-            {
-                if (DeploymentDetails == null)
-                {
-                    STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "NULL Unlock 10min - Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
-
-                    Unlock();
-                }
-                else if (DeploymentDetails.Received == DateTime.MinValue || DeploymentDetails.Completed != DateTime.MinValue)
-                {
-                    if (DeploymentDetails.Completed != DateTime.MinValue)
-                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Completed - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
-                    else
-                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Not received - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
-
-                    Unlock();
-                }
-            }
-            else if ((DateTime.UtcNow - LockTime).TotalMinutes > 2)
-            {
-                if (DeploymentDetails == null)
-                {
-                    STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "NULL Unlock 2min - Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
-
-                    Unlock();
-                }
-                else
-                {
-                    if (DeploymentDetails.Completed != DateTime.MinValue)
+                    try
                     {
-                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Completed - 2min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
+                        ControllerManager.KeyManager.Unlock(key, this);
+                    }
+                    catch (Exception ex)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                    }
+                    finally
+                    {
+                        InitiationSource = null;
+                    }
+
+                    return;
+                }
+
+                if (InitiationSource == null)
+                    InitiationSource = key;
+
+                if (DeploymentDetails != null && DeploymentDetails.Completed != DateTime.MinValue)
+                {
+                    Unlock();
+                    return;
+                }
+
+                if ((DateTime.UtcNow - LockTime).TotalMinutes > 10)
+                {
+                    if (DeploymentDetails == null)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "NULL Unlock 10min - Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
+
+                        Unlock();
+                    }
+                    else if (DeploymentDetails.Received == DateTime.MinValue || DeploymentDetails.Completed != DateTime.MinValue)
+                    {
+                        if (DeploymentDetails.Completed != DateTime.MinValue)
+                            STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Completed - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
+                        else
+                            STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Not received - 10min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
 
                         Unlock();
                     }
                 }
-            }
-            else if ((DateTime.UtcNow - LockTime).TotalMinutes > 1)
-            {
-                if (Branch == null)
-                    Unlock();
+                else if ((DateTime.UtcNow - LockTime).TotalMinutes > 2)
+                {
+                    if (DeploymentDetails == null)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "NULL Unlock 2min - Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
+
+                        Unlock();
+                    }
+                    else
+                    {
+                        if (DeploymentDetails.Completed != DateTime.MinValue)
+                        {
+                            STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Verify", "Non NULL Unlock (Completed - 2min) - Branch: " + DeploymentDetails.BranchIP + ", Lock key: " + key + ", InitiationSource: " + InitiationSource, STEM.Sys.EventLog.EventLogEntryType.Information);
+
+                            Unlock();
+                        }
+                    }
+                }
+                else if ((DateTime.UtcNow - LockTime).TotalMinutes > 1)
+                {
+                    if (Branch == null)
+                        Unlock();
+                }
             }
         }
     }
