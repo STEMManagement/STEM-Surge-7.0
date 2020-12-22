@@ -320,7 +320,7 @@ namespace STEM.Surge
 
             protected override void Execute(ThreadPool owner)
             {
-                if ((DateTime.UtcNow - LastHealthDetails).TotalMinutes > 2)
+                if ((DateTime.UtcNow - LastHealthDetails).TotalMinutes > 5)
                 {
                     try
                     {
@@ -334,7 +334,7 @@ namespace STEM.Surge
                     }
                     catch { }
 
-                    STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.RunningSandbox.Silent", "Sandbox torn down due to socket silence.", STEM.Sys.EventLog.EventLogEntryType.Information);
+                    STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.RunningSandbox.Silent", "Sandbox torn down due to socket silence. (" + SandboxID + ")", STEM.Sys.EventLog.EventLogEntryType.Information);
                 }
             }
 
