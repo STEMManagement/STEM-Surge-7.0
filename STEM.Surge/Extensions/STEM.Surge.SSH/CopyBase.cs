@@ -451,8 +451,8 @@ namespace STEM.Surge.SSH
 
                                                 using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
                                                 {
-                                                    client.UploadFile(sStream, Authentication.AdjustPath(_Address, dPath));
-                                                    //client.SetLastWriteTimeUtc(Authentication.AdjustPath(_Address, dPath), mt);
+                                                    client.UploadFile(sStream, Authentication.AdjustPath(_Address, dFile));
+                                                    //client.SetLastWriteTimeUtc(Authentication.AdjustPath(_Address, dFile), mt);
                                                 }
                                             }
                                             finally
