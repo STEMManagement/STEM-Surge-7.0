@@ -661,7 +661,7 @@ namespace STEM.Sys.Serialization
                 return Cache(null, file, renameSourceAssemblies);
         }
 
-        static STEM.Sys.Threading.ThreadPool _CacherPool = new Threading.ThreadPool(Int32.MaxValue, false);
+        static STEM.Sys.Threading.ThreadPool _CacherPool = new Threading.ThreadPool(Int32.MaxValue, true);
 
         class Cacher : STEM.Sys.Threading.IThreadable
         {
