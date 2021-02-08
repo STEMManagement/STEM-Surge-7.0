@@ -7,7 +7,7 @@
     <Copyright>Copyright © STEM Management 2019</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Company>STEM Management</Company>
-    <Version>7.0.15</Version>
+    <Version>7.0.16</Version>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\STEM.Surge.BasicControllers\STEM.Surge.BasicControllers.csproj" />
+    <ProjectReference Include="..\STEM.Surge.SMB\STEM.Surge.SMB.csproj" />
   </ItemGroup>
 
   <ItemGroup>
