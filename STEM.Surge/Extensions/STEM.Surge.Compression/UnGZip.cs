@@ -25,30 +25,30 @@ using ICSharpCode.SharpZipLib.Tar;
 namespace STEM.Surge.Compression
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
-    [DisplayName("GZip")]
-    [Description("GZip a file.")]
-    public class GZip : Instruction
+    [DisplayName("UnGZip")]
+    [Description("UnGZip a file.")]
+    public class UnGZip : Instruction
     {
         [Category("Source")]
-        [DisplayName("Source File"), DescriptionAttribute("The path and filename of the file to be zipped.")]
+        [DisplayName("Source File"), DescriptionAttribute("The path and filename of the file to be unzipped.")]
         public string SourceFile { get; set; }
-        
+
         [Category("Destination")]
-        [DisplayName("Output File"), DescriptionAttribute("The location (path and filename) of the zipped output file.")]
+        [DisplayName("Output File"), DescriptionAttribute("The location (path and filename) of the unzipped output file.")]
         public string OutputFile { get; set; }
 
         [Category("Destination")]
         [DisplayName("Output File Exists Action"), DescriptionAttribute("What action should be taken if the output file already exists?")]
         public STEM.Sys.IO.FileExistsAction OutputFileExists { get; set; }
 
-        public GZip()
+        public UnGZip()
             : base()
         {
             SourceFile = "[TargetPath]\\[TargetName]";
-            OutputFile = @"[DestinationPath]\[TargetNameWithoutExt].gz";
+            OutputFile = @"[DestinationPath]\[TargetNameWithoutExt]";
             OutputFileExists = Sys.IO.FileExistsAction.Throw;
         }
-        
+
         protected override bool _Run()
         {
             SourceFile = STEM.Sys.IO.Path.AdjustPath(SourceFile);
@@ -91,24 +91,18 @@ namespace STEM.Surge.Compression
                     }
                 }
 
-                using (FileStream fs = File.Open(tmpFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+                using (FileStream fs = File.Open(SourceFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
-                    using (GZipOutputStream zStream = new GZipOutputStream(fs))
+                    using (GZipInputStream zStream = new GZipInputStream(fs))
                     {
                         zStream.IsStreamOwner = false;
-                        if (File.Exists(SourceFile))
+
+                        using (FileStream os = File.Open(tmpFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                         {
-                            using (FileStream s = File.Open(SourceFile, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            {
-                                s.CopyTo(zStream);
-                            }
-                        }
-                        else
-                        {
-                            throw new FileNotFoundException(SourceFile + " does not exist.");
+                            zStream.CopyTo(os);
                         }
                     }
-                }    
+                }
 
                 File.Move(tmpFile, OutputFile);
             }
@@ -138,15 +132,21 @@ namespace STEM.Surge.Compression
                 {
                     if (!File.Exists(SourceFile))
                     {
-                        using (FileStream fs = File.Open(OutputFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                        using (FileStream fs = File.Open(SourceFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                         {
-                            using (GZipInputStream zStream = new GZipInputStream(fs))
+                            using (GZipOutputStream zStream = new GZipOutputStream(fs))
                             {
                                 zStream.IsStreamOwner = false;
-
-                                using (FileStream os = File.Open(SourceFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+                                if (File.Exists(OutputFile))
                                 {
-                                    zStream.CopyTo(os);
+                                    using (FileStream s = File.Open(OutputFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                                    {
+                                        s.CopyTo(zStream);
+                                    }
+                                }
+                                else
+                                {
+                                    throw new FileNotFoundException(OutputFile + " does not exist.");
                                 }
                             }
                         }

@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GZip.cs" />
+    <Compile Include="UnGZip.cs" />
     <Compile Include="UnTarGZInContainer.cs" />
     <Compile Include="UnTarInContainer.cs" />
     <Compile Include="TarGzInContainer.cs" />
