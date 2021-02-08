@@ -31,6 +31,11 @@ namespace STEM.Surge.Azure
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public STEM.Surge.Azure.Authentication Authentication { get; set; }
 
+        public SMBControllerWithAzureAuth() : base()
+        {
+            Authentication = new STEM.Surge.Azure.Authentication();
+        }
+
         public override DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)
         {
             DeploymentDetails dd = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);

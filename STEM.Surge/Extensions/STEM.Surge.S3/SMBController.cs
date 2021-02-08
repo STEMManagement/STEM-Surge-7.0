@@ -30,6 +30,11 @@ namespace STEM.Surge.S3
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public STEM.Surge.S3.Authentication Authentication { get; set; }
 
+        public SMBControllerWithS3Auth() : base()
+        {
+            Authentication = new STEM.Surge.S3.Authentication();
+        }
+
         public override DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)
         {
             DeploymentDetails dd = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
