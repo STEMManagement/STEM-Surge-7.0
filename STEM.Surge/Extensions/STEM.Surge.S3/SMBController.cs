@@ -24,11 +24,11 @@ using System.Linq;
 
 namespace STEM.Surge.S3
 {
-    public class SMBController : STEM.Surge.SMB.SMBController
+    public class SMBControllerWithS3Auth : STEM.Surge.SMB.SMBController
     {
         [Category("S3")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
-        public Authentication Authentication { get; set; }
+        public STEM.Surge.S3.Authentication Authentication { get; set; }
 
         public override DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)
         {

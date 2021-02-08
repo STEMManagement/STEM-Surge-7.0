@@ -25,11 +25,11 @@ using Microsoft.Azure.Storage.Blob;
 
 namespace STEM.Surge.Azure
 {
-    public class SMBController : STEM.Surge.SMB.SMBController
+    public class SMBControllerWithAzureAuth : STEM.Surge.SMB.SMBController
     {
         [Category("Azure")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
-        public Authentication Authentication { get; set; }
+        public STEM.Surge.Azure.Authentication Authentication { get; set; }
 
         public override DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)
         {
