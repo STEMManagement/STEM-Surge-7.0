@@ -1054,7 +1054,9 @@ namespace STEM.Surge
             else if (_MessageBacklog)
             {
                 _MessageBacklog = false;
-                onUpdateStatusMessage(this, "Connection (" + connection.RemoteAddress + ") Message Backlog: 0");
+
+                if (onUpdateStatusMessage != null)
+                    onUpdateStatusMessage(this, "Connection (" + connection.RemoteAddress + ") Message Backlog: 0");
             }
 
             if (message is ConnectionType)
