@@ -98,7 +98,7 @@ namespace STEM.Sys.IO
             return false;
         }
 
-        internal static List<string> AllAdaptersByName()
+        public static List<string> AllAdaptersByName()
         {
             List<string> ret = new List<string>();
 
@@ -108,7 +108,7 @@ namespace STEM.Sys.IO
             return ret;
         }
 
-        internal static List<string> EnabledAdaptersByName()
+        public static List<string> EnabledAdaptersByName()
         {
             List<string> ret = new List<string>();
 
@@ -119,7 +119,7 @@ namespace STEM.Sys.IO
             return ret;
         }
 
-        internal static NetworkInterface Interface(System.Net.IPAddress localAddress)
+        public static NetworkInterface Interface(System.Net.IPAddress localAddress)
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
@@ -129,7 +129,7 @@ namespace STEM.Sys.IO
             return null;
         }
 
-        internal static NetworkInterface Interface(string localAdapterName)
+        public static NetworkInterface Interface(string localAdapterName)
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 if (ni.Name.ToUpper(System.Globalization.CultureInfo.CurrentCulture) == localAdapterName.ToUpper(System.Globalization.CultureInfo.CurrentCulture))
@@ -138,16 +138,12 @@ namespace STEM.Sys.IO
             return null;
         }
 
-        internal static NetworkInterface AdapterByIP(string address)
+        public static NetworkInterface AdapterByIP(string address)
         {
-            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
-                if (nic.Name.ToUpper(System.Globalization.CultureInfo.CurrentCulture) == address.ToUpper(System.Globalization.CultureInfo.CurrentCulture))
-                    return nic;
-
-            return null;
+            return Interface(System.Net.IPAddress.Parse(address));
         }
 
-        internal static System.Net.IPAddress LocalAddressFromRemoteAddress(string remoteAddress)
+        public static System.Net.IPAddress LocalAddressFromRemoteAddress(string remoteAddress)
         {
             try
             {
