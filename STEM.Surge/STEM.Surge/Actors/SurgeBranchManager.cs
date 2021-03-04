@@ -1721,8 +1721,8 @@ namespace STEM.Surge
 
                     if (aList.Descriptions.Count == 0)
                     {
-                        while (_AsmPool.LoadLevel > 0)
-                            System.Threading.Thread.Sleep(10);
+                        //while (_AsmPool.LoadLevel > 0)
+                        //    System.Threading.Thread.Sleep(10);
 
                         AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
                         a.Compress = true;
