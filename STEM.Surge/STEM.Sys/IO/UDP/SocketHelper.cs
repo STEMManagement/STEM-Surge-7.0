@@ -35,7 +35,16 @@ namespace STEM.Sys.IO.UDP
         public SocketHelper(int multicastPort, string localNetworkAdapter, string multicastIP)
         {
             MulticastPort = multicastPort;
-            LocalNetworkAdapter = STEM.Sys.IO.Net.MachineAddress(localNetworkAdapter);
+
+            try
+            {
+                LocalNetworkAdapter = System.Net.IPAddress.Parse(localNetworkAdapter).ToString();
+            }
+            catch
+            {
+                LocalNetworkAdapter = STEM.Sys.IO.Net.V4Address(STEM.Sys.IO.Net.Interface(localNetworkAdapter)).ToString();
+            }
+
             MulticastIP = multicastIP;
         }
                 
