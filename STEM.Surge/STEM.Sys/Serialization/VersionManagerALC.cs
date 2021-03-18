@@ -37,12 +37,19 @@ namespace STEM.Sys.Serialization
                         try
                         {
                             Assembly assembly = c.LoadFromAssemblyPath(path);
-                            c._AssemblyMap[xform] = assembly;
-                            _ContextMap[xform] = c;
+
+                            if (assembly != null)
+                            {
+                                c._AssemblyMap[xform] = assembly;
+                                _ContextMap[xform] = c;
+                            }
 
                             return assembly;
                         }
-                        catch { }
+                        catch //(Exception ex)
+                        {
+                            //STEM.Sys.EventLog.WriteEntry("VersionManagerALC:LoadFromFile", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        }
 
                         return null;
                     }
