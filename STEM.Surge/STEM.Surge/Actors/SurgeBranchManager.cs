@@ -1797,7 +1797,7 @@ namespace STEM.Surge
 
                 m.DestinationPath = Path.Combine(STEM.Sys.Serialization.VersionManager.VersionCache, m.DestinationPath);
                 if (!System.IO.File.Exists(System.IO.Path.Combine(m.DestinationPath, m.DestinationFilename)))
-                    STEM.Sys.Serialization.VersionManager.Cache(m.Save(), false);
+                    STEM.Sys.Serialization.VersionManager.Cache(m.Save(), true);
             }
             else if (o is STEM.Sys.IO.FileDescription)
             {
@@ -1805,7 +1805,7 @@ namespace STEM.Surge
 
                 m.Filepath = STEM.Sys.Serialization.VersionManager.VersionCache;
                 if (!System.IO.File.Exists(System.IO.Path.Combine(m.Filepath, m.Filename)))
-                    STEM.Sys.Serialization.VersionManager.Cache(m.Save(Sys.IO.FileExistsAction.MakeUnique), false);
+                    STEM.Sys.Serialization.VersionManager.Cache(m.Save(Sys.IO.FileExistsAction.MakeUnique), true);
             }
         }
 
