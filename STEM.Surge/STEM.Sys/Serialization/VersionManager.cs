@@ -385,11 +385,12 @@ namespace STEM.Sys.Serialization
                             if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
                                 lock (_Cached)
                                     if (!_Evaluated.ContainsKey(file.FullName) || _Evaluated[file.FullName] != file.LastWriteTimeUtc)
-                                        try
-                                        {
-                                            _CacherPool.RunOnce(new Cacher(cache, file.FullName, cache.RenameSourceAssemblies));
-                                        }
-                                        catch { }
+                                        if (!_Attempts.ContainsKey(file.FullName) || _Attempts[file.FullName] < 3)
+                                            try
+                                            {
+                                                _CacherPool.RunOnce(new Cacher(cache, file.FullName, cache.RenameSourceAssemblies));
+                                            }
+                                            catch { }
                     }
                 }
             }
@@ -679,6 +680,11 @@ namespace STEM.Sys.Serialization
             {
                 try
                 {
+                    lock (_Cached)
+                        if (_LastAttempt.ContainsKey(_File))
+                            if ((DateTime.UtcNow - _LastAttempt[_File]).TotalSeconds < 10)
+                                return;
+
                     VersionManager.Cache(_Cache, _File, _RenameSourceAssemblies);
                 }
                 catch (Exception ex)
@@ -687,6 +693,9 @@ namespace STEM.Sys.Serialization
                 }
             }
         }
+
+        static Dictionary<string, int> _Attempts = new Dictionary<string, int>();
+        static Dictionary<string, DateTime> _LastAttempt = new Dictionary<string, DateTime>();
 
         static string Cache(_Cache cache, string file, bool renameSourceAssemblies)
         {
@@ -876,6 +885,12 @@ namespace STEM.Sys.Serialization
                     {
                         lock (_Cached)
                         {
+                            if (!_Attempts.ContainsKey(file))
+                                _Attempts[file] = 0;
+
+                            _Attempts[file] = _Attempts[file] + 1;
+                            _LastAttempt[file] = DateTime.UtcNow;
+
                             try
                             {
                                 Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
@@ -919,6 +934,9 @@ namespace STEM.Sys.Serialization
                                     }
                                     catch { }
                                 }
+
+                                _Attempts.Remove(file);
+                                _LastAttempt.Remove(file);
 
                                 if (onAssemblyLoaded != null)
                                     foreach (AssemblyLoaded d in onAssemblyLoaded.GetInvocationList())
