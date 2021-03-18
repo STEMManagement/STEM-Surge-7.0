@@ -40,15 +40,14 @@ namespace STEM.Sys.Serialization
                 {
                     try
                     {
-                        lock (_Evaluated)
-                            if (!_Evaluated.ContainsKey(asm.Location))
-                            {
-                                _Evaluated[asm.Location] = File.GetLastWriteTimeUtc(asm.Location);
-                            }
-                            else
-                            {
-                                continue;
-                            }
+                        if (!_Evaluated.ContainsKey(asm.Location))
+                        {
+                            _Evaluated[asm.Location] = File.GetLastWriteTimeUtc(asm.Location);
+                        }
+                        else
+                        {
+                            continue;
+                        }
 
                         AssemblyName aName = new AssemblyName(asm.FullName);
 
@@ -76,17 +75,16 @@ namespace STEM.Sys.Serialization
 
                 foreach (FileInfo file in infos.OrderByDescending(i => i.LastWriteTimeUtc))
                 {
-                    lock (_Evaluated)
-                        if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
-                            if (!_Evaluated.ContainsKey(file.FullName.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                    if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
+                        if (!_Evaluated.ContainsKey(file.FullName.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                        {
+                            try
                             {
-                                try
-                                {
-                                    Assembly asm = Assembly.LoadFile(file.FullName);
-                                    _Evaluated[asm.Location] = File.GetLastWriteTimeUtc(asm.Location);
-                                }
-                                catch { }
+                                Assembly asm = Assembly.LoadFile(file.FullName);
+                                _Evaluated[asm.Location] = File.GetLastWriteTimeUtc(asm.Location);
                             }
+                            catch { }
+                        }
                 }
 
                 AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolve);
@@ -385,7 +383,7 @@ namespace STEM.Sys.Serialization
 
                         foreach (FileSystemInfo file in infos.OrderByDescending(i => i.LastWriteTimeUtc))
                             if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
-                                lock (_Evaluated)
+                                lock (_Cached)
                                     if (!_Evaluated.ContainsKey(file.FullName) || _Evaluated[file.FullName] != file.LastWriteTimeUtc)
                                         try
                                         {
@@ -643,6 +641,7 @@ namespace STEM.Sys.Serialization
 
             return found;
         }
+
         static public string Cache(string file, bool renameSourceAssemblies)
         {
             if (String.IsNullOrEmpty(file))
@@ -729,7 +728,7 @@ namespace STEM.Sys.Serialization
                     {
                         try
                         {
-                            lock (_Evaluated)
+                            lock (_Cached)
                                 _Evaluated[file] = File.GetLastWriteTimeUtc(file);
                         }
                         catch { }
@@ -783,7 +782,7 @@ namespace STEM.Sys.Serialization
                         File.Copy(file, vcFile, true);
                     }
 
-                    if (STEM.Sys.IO.Path.GetDirectoryName(file).Equals(VersionCache, StringComparison.CurrentCultureIgnoreCase))
+                    if (STEM.Sys.IO.Path.GetDirectoryName(file).StartsWith(VersionCache, StringComparison.CurrentCultureIgnoreCase))
                         try
                         {
                             File.Delete(file);
@@ -866,23 +865,7 @@ namespace STEM.Sys.Serialization
                                         catch { }
                                 }
                             }
-
-                            try
-                            {
-                                lock (_Evaluated)
-                                    _Evaluated[fileXformed] = File.GetLastWriteTimeUtc(fileXformed);
-                            }
-                            catch { }
                         }
-                    }
-                    catch { }
-                }
-                else
-                {
-                    try
-                    {
-                        lock (_Evaluated)
-                            _Evaluated[file] = File.GetLastWriteTimeUtc(file);
                     }
                     catch { }
                 }
@@ -892,71 +875,71 @@ namespace STEM.Sys.Serialization
                     if (File.Exists(vcFile))
                     {
                         lock (_Cached)
-                            if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                        {
+                            try
                             {
-                                try
-                                {
+                                Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
+
+                                if (asm == null)
+                                    throw new Exception(file + " could not be loaded.");
+
+                                lock (_CachedAssemblies)
+                                    _CachedAssemblies[vcFile] = asm;
+
+                                AssemblyName aName = new AssemblyName(asm.FullName);
+
+                                lock (_AssemblyByName)
+                                    _AssemblyByName[aName] = asm;
+
+                                if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                                     _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
 
-                                    //if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                                if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                                    _Cached.Add(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+
+                                try
+                                {
+                                    _Evaluated[vcFile] = File.GetLastWriteTimeUtc(vcFile);
+                                }
+                                catch { }
+
+                                if (renameSourceAssemblies)
+                                {
+                                    try
                                     {
-                                        Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
+                                        _Evaluated[fileXformed] = File.GetLastWriteTimeUtc(fileXformed);
+                                    }
+                                    catch { }
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        _Evaluated[file] = File.GetLastWriteTimeUtc(file);
+                                    }
+                                    catch { }
+                                }
 
-                                        if (asm == null)
-                                            throw new Exception(file + " could not be loaded.");
-
-                                        lock (_CachedAssemblies)
-                                            _CachedAssemblies[vcFile] = asm;
-
-                                        AssemblyName aName = new AssemblyName(asm.FullName);
-
-                                        lock (_AssemblyByName)
-                                            _AssemblyByName[aName] = asm;
-
-                                        if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                                            _Cached.Add(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-
+                                if (onAssemblyLoaded != null)
+                                    foreach (AssemblyLoaded d in onAssemblyLoaded.GetInvocationList())
                                         try
                                         {
-                                            lock (_Evaluated)
-                                                _Evaluated[vcFile] = File.GetLastWriteTimeUtc(vcFile);
+                                            d(vcFile, asm);
                                         }
-                                        catch { }
-
-                                        if (onAssemblyLoaded != null)
-                                            foreach (AssemblyLoaded d in onAssemblyLoaded.GetInvocationList())
-                                                try
-                                                {
-                                                    d(vcFile, asm);
-                                                }
-                                                catch (Exception ex)
-                                                {
-                                                    STEM.Sys.EventLog.WriteEntry("VersionManager:onAssemblyLoaded", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                                                }
-                                    }
-                                    //else
-                                    //{
-                                    //    try
-                                    //    {
-                                    //        File.Delete(vcFile);
-                                    //    }
-                                    //    catch { }
-                                    //}
-                                }
-                                catch (Exception ex)
+                                        catch (Exception ex)
+                                        {
+                                            STEM.Sys.EventLog.WriteEntry("VersionManager:onAssemblyLoaded", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                                        }
+                            }
+                            catch (Exception ex)
+                            {
+                                if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                                 {
+                                    _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
                                     STEM.Sys.EventLog.WriteEntry("VersionManager.Cache", new Exception("Could not load " + vcFile, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                                 }
                             }
-                            else
-                            {
-                                try
-                                {
-                                    lock (_Evaluated)
-                                        _Evaluated[vcFile] = File.GetLastWriteTimeUtc(vcFile);
-                                }
-                                catch { }
-                            }
+                        }
                     }
                 }
                 catch { }
@@ -967,7 +950,7 @@ namespace STEM.Sys.Serialization
             {
                 try
                 {
-                    lock (_Evaluated)
+                    lock (_Cached)
                         _Evaluated[file] = File.GetLastWriteTimeUtc(file);
                 }
                 catch { }
