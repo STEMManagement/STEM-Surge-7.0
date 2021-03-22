@@ -428,9 +428,21 @@ namespace STEM.Sys.IO.TCP
                         }
                         catch (Exception ex)
                         {
+                            if (ex.ToString().Contains("decryption operation failed"))
+                            {
+                                try
+                                {
+                                    // Force connection reset
+                                    Close();
+                                }
+                                catch
+                                {
+                                }
+                            }
+
                             if (client.Connected)
                             {
-                                STEM.Sys.EventLog.WriteEntry("Connection.Receive", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                                STEM.Sys.EventLog.WriteEntry("Connection.Receive", RemoteAddress + " - " + ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                             }
                             else
                             {
