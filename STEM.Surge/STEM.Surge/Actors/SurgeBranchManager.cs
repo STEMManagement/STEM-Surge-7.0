@@ -477,7 +477,7 @@ namespace STEM.Surge
                         {
                             ProcessStartInfo si = new ProcessStartInfo();
                             si.CreateNoWindow = true;
-                            si.UseShellExecute = false;
+                            si.UseShellExecute = true;
 
                             si.FileName = appPath;
                             si.Arguments = "-sandbox";
@@ -560,7 +560,7 @@ namespace STEM.Surge
                         {
                             ProcessStartInfo si = new ProcessStartInfo();
                             si.CreateNoWindow = true;
-                            si.UseShellExecute = false;
+                            si.UseShellExecute = true;
 
                             si.FileName = appPath;
                             si.Arguments = " -sandbox";

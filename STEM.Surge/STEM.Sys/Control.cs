@@ -245,7 +245,7 @@ namespace STEM.Sys
 
                     ProcessStartInfo si = new ProcessStartInfo();
                     si.CreateNoWindow = true;
-                    si.UseShellExecute = false;
+                    si.UseShellExecute = true;
 
                     string r = Path.Combine(System.Environment.CurrentDirectory, processName);
                     
@@ -284,7 +284,7 @@ namespace STEM.Sys
                     
                     ProcessStartInfo si = new ProcessStartInfo();
                     si.CreateNoWindow = true;
-                    si.UseShellExecute = false;
+                    si.UseShellExecute = true;
 
                     si.FileName = r;
                     si.Arguments = "-r";
