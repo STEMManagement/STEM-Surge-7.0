@@ -68,7 +68,7 @@ namespace STEM.SurgeService
 
                     ProcessStartInfo si = new ProcessStartInfo();
                     si.CreateNoWindow = true;
-                    si.UseShellExecute = false;
+                    si.UseShellExecute = true;
 
                     if (!isWindows)
                     {
