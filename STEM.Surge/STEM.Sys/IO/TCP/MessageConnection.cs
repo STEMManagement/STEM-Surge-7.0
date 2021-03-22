@@ -318,7 +318,7 @@ namespace STEM.Sys.IO.TCP
                 if (message.Contains("STEM.Sys.Messaging.ConnectionTest"))
                     return;
 
-                if (_QueueReceivedData)
+                if (_QueueReceivedData && _MessageReceivedQueue != null)
                     _MessageReceivedQueue.EnqueueObject(new object[] { message, received });
                 else
                     ProcessMessageReceived(message, received);
