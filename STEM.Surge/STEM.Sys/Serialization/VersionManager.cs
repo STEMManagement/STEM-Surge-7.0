@@ -572,6 +572,28 @@ namespace STEM.Sys.Serialization
             return ret;
         }
 
+        static bool IsAssembly(string file)
+        {
+            if (String.IsNullOrEmpty(file))
+                throw new ArgumentNullException(nameof(file));
+
+            file = STEM.Sys.IO.Path.AdjustPath(file);
+
+            try
+            {
+                System.Reflection.AssemblyName asm = System.Reflection.AssemblyName.GetAssemblyName(file);
+            }
+            catch (System.BadImageFormatException)
+            {
+                return false;
+            }
+            catch
+            {
+            }
+
+            return true;
+        }
+
         public static string TransformFilename(string file)
         {
             if (String.IsNullOrEmpty(file))
@@ -883,6 +905,21 @@ namespace STEM.Sys.Serialization
                 {
                     if (File.Exists(vcFile))
                     {
+                        if (!IsAssembly(file))
+                        {
+                            try
+                            {
+                                lock (_Cached)
+                                    _Evaluated[file] = File.GetLastWriteTimeUtc(file);
+                            }
+                            catch { }
+
+                            lock (_Cached)
+                                _Cached.Add(file.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+
+                            return file;
+                        }
+
                         lock (_Cached)
                         {
                             if (!_Attempts.ContainsKey(file))
