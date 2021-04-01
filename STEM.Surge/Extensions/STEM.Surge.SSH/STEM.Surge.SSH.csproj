@@ -7,12 +7,12 @@
     <Copyright>Copyright © STEM Management 2019</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Company>STEM Management</Company>
-    <Version>7.0.16</Version>
+    <Version>7.0.17</Version>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SSH.NET.Fork" Version="2018.8.25.2" />
+    <PackageReference Include="SSH.NET" Version="2020.0.1" />
   </ItemGroup>
 
   <ItemGroup>
