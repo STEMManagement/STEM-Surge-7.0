@@ -697,6 +697,12 @@ namespace STEM.Surge
             {
                 lock (_DeploymentManagerConfigurationMutex)
                 {
+                    if (_DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent != _DeploymentManagerConfiguration.SwitchboardConfiguration.GetXml())
+                    {
+                        _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.StringContent = _DeploymentManagerConfiguration.SwitchboardConfiguration.GetXml();
+                        _DeploymentManagerConfiguration.SwitchboardConfigurationDescription.LastWriteTimeUtc = DateTime.UtcNow;
+                    }
+
                     _DeploymentManagerConfiguration.LastUpdate = DateTime.UtcNow;
                     return Send(_DeploymentManagerConfiguration);
                 }
