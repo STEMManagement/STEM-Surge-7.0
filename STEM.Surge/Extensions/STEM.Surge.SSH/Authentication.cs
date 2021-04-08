@@ -119,10 +119,17 @@ namespace STEM.Surge.SSH
 
             if (conn != null)
             {
-                if (!conn.IsConnected)
-                    conn.Connect();
+                try
+                {
+                    if (!conn.IsConnected)
+                        conn.Connect();
 
-                return conn;
+                    return conn;
+                }
+                catch
+                {
+                    conn = null;
+                }
             }
 
             AuthenticationMethod authenticationMethod = null;
