@@ -175,53 +175,68 @@ namespace STEM.Sys.Serialization
                 _Initialize();
 
                 lock (_Caches)
-                {
-                    foreach (string dir in STEM.Sys.IO.Path.ExpandRangedPath(path))
+                    try
                     {
-                        _Cache c = _Caches.FirstOrDefault(i => i.Path.Equals(dir, StringComparison.InvariantCultureIgnoreCase));
+                        _AwaitingLoad = loadImmediately;
 
-                        if (c == null)
+                        foreach (string dir in STEM.Sys.IO.Path.ExpandRangedPath(path))
                         {
-                            c = new _Cache { Path = dir, Recurse = recurse, RenameSourceAssemblies = renameSourceAssemblies };
+                            _Cache c = _Caches.FirstOrDefault(i => i.Path.Equals(dir, StringComparison.InvariantCultureIgnoreCase));
 
-                            if (dir.TrimEnd(Path.DirectorySeparatorChar).Equals(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), StringComparison.InvariantCultureIgnoreCase))
+                            if (c == null)
                             {
-                                c.Recurse = false;
-                                c.RenameSourceAssemblies = false;
+                                c = new _Cache { Path = dir, Recurse = recurse, RenameSourceAssemblies = renameSourceAssemblies };
+
+                                if (dir.TrimEnd(Path.DirectorySeparatorChar).Equals(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    c.Recurse = false;
+                                    c.RenameSourceAssemblies = false;
+                                }
+                                else
+                                {
+                                    c.Recurse = recurse;
+                                    c.RenameSourceAssemblies = renameSourceAssemblies;
+                                }
+
+                                _Caches.Add(c);
+
+                                if (loadImmediately)
+                                {
+                                    Load(c);
+
+                                    while (_CacherPool.LoadLevel > 0)
+                                        System.Threading.Thread.Sleep(10);
+                                }
                             }
                             else
                             {
-                                c.Recurse = recurse;
-                                c.RenameSourceAssemblies = renameSourceAssemblies;
-                            }
+                                if (dir.TrimEnd(Path.DirectorySeparatorChar).Equals(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    c.Recurse = false;
+                                    c.RenameSourceAssemblies = false;
+                                }
+                                else
+                                {
+                                    c.Recurse = recurse;
+                                    c.RenameSourceAssemblies = renameSourceAssemblies;
+                                }
 
-                            _Caches.Add(c);
+                                if (loadImmediately)
+                                {
+                                    Load(c);
 
-                            Load(c);
-                        }
-                        else
-                        {
-                            if (dir.TrimEnd(Path.DirectorySeparatorChar).Equals(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                c.Recurse = false;
-                                c.RenameSourceAssemblies = false;
+                                    while (_CacherPool.LoadLevel > 0)
+                                        System.Threading.Thread.Sleep(10);
+                                }
                             }
-                            else
-                            {
-                                c.Recurse = recurse;
-                                c.RenameSourceAssemblies = renameSourceAssemblies;
-                            }
-
-                            Load(c);
                         }
                     }
-                }
+                    finally
+                    {
+                        _AwaitingLoad = false;
+                    }
             }
             catch { }
-
-            if (loadImmediately)
-                while (_CacherPool.LoadLevel > 0)
-                    System.Threading.Thread.Sleep(10);
         }
 
         static public void AddCache(string path, bool renameSourceAssemblies, bool recurse)
@@ -321,6 +336,7 @@ namespace STEM.Sys.Serialization
             catch { }
         }
 
+        static bool _AwaitingLoad = false;
         static void CachePoller()
         {
             try
@@ -331,6 +347,9 @@ namespace STEM.Sys.Serialization
 
             while (true)
             {
+                while (_AwaitingLoad)
+                    System.Threading.Thread.Sleep(10);
+
                 while (_CacherPool.LoadLevel > 0)
                     System.Threading.Thread.Sleep(10);
 
@@ -343,6 +362,9 @@ namespace STEM.Sys.Serialization
                     foreach (_Cache c in caches)
                         try
                         {
+                            if (_AwaitingLoad)
+                                break;
+
                             Load(c);
                         }
                         catch { }
@@ -927,18 +949,20 @@ namespace STEM.Sys.Serialization
 
                             _Attempts[file] = _Attempts[file] + 1;
                             _LastAttempt[file] = DateTime.UtcNow;
+                        }
 
-                            try
+                        try
+                        {
+                            Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
+
+                            if (asm == null)
+                                throw new Exception(file + " could not be loaded.");
+
+                            AssemblyName aName = new AssemblyName(asm.FullName);
+
+                            lock (_Cached)
                             {
-                                Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
-
-                                if (asm == null)
-                                    throw new Exception(file + " could not be loaded.");
-
-                                lock (_CachedAssemblies)
-                                    _CachedAssemblies[vcFile] = asm;
-
-                                AssemblyName aName = new AssemblyName(asm.FullName);
+                                _CachedAssemblies[vcFile] = asm;
 
                                 lock (_AssemblyByName)
                                     _AssemblyByName[aName] = asm;
@@ -974,26 +998,27 @@ namespace STEM.Sys.Serialization
 
                                 _Attempts.Remove(file);
                                 _LastAttempt.Remove(file);
-
-                                if (onAssemblyLoaded != null)
-                                    foreach (AssemblyLoaded d in onAssemblyLoaded.GetInvocationList())
-                                        try
-                                        {
-                                            d(vcFile, asm);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            STEM.Sys.EventLog.WriteEntry("VersionManager:onAssemblyLoaded", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                                        }
                             }
-                            catch (Exception ex)
-                            {
+
+                            if (onAssemblyLoaded != null)
+                                foreach (AssemblyLoaded d in onAssemblyLoaded.GetInvocationList())
+                                    try
+                                    {
+                                        d(vcFile, asm);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        STEM.Sys.EventLog.WriteEntry("VersionManager:onAssemblyLoaded", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                                    }
+                        }
+                        catch (Exception ex)
+                        {
+                            lock (_Cached)
                                 if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                                 {
                                     _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
                                     STEM.Sys.EventLog.WriteEntry("VersionManager.Cache", new Exception("Could not load " + vcFile, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                                 }
-                            }
                         }
                     }
                 }
