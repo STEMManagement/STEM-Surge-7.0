@@ -55,7 +55,7 @@ namespace STEM.Surge.Messages
                 retry++;
             }
 
-            if (response is Timeout)
+            if (response is Timeout || response is Undeliverable)
             {
                 connection.Close();
                 return;
