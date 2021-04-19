@@ -363,15 +363,20 @@ namespace STEM.Surge.SSH
                                     {
                                         if (PopulatePostMortemMeta)
                                         {
-                                            PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
-                                            PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
-
                                             PostMortemMetaData["LastOperation"] = "GetFileInfo:SourceFile";
 
                                             if (Direction == SshDirection.ToSshServer)
+                                            {
                                                 PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
+                                                PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
+                                                PostMortemMetaData["DestinationIP"] = _Address;
+                                            }
                                             else
+                                            {
                                                 PostMortemMetaData["FileSize"] = Authentication.GetFileInfo(_Address, Int32.Parse(Port), s).Size.ToString();
+                                                PostMortemMetaData["SourceIP"] = _Address;
+                                                PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
+                                            }
                                         }
                                     }
                                     catch { }
