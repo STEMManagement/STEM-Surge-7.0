@@ -648,7 +648,15 @@ namespace STEM.Surge
                 MessageConnection c = connection as MessageConnection;
                 if (c != null)
                     ManageConnection(c);
-                
+
+                lock (_BranchHealthThreads)
+                {
+                    if (_BranchHealthThreads.ContainsKey(c.ToString()))
+                    {
+                        _BranchHealthThreads.Remove(c.ToString());
+                    }
+                }
+
                 ConnectionType m = new ConnectionType { Type = ConnectionType.Types.SurgeBranchManager };
                 m.PerformHandshake(c);
 
@@ -698,8 +706,14 @@ namespace STEM.Surge
                             }
                     }
 
-                    while (_Owner._AsmPool.LoadLevel > 0)
-                        System.Threading.Thread.Sleep(10);
+                    if (_AssemblyListInitializer == _Connection)
+                        if (_Owner._AsmPool.LoadLevel > 0)
+                        {
+                            ExecutionInterval = TimeSpan.FromMilliseconds(100);
+                            return;
+                        }
+
+                    ExecutionInterval = TimeSpan.FromSeconds(1);
 
                     AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
 
@@ -709,9 +723,11 @@ namespace STEM.Surge
                     {
                         endAsync = true;
 
-                        STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Forced disconnect, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
-
-                        return;
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Forced disconnect, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Error);
+                    }
+                    else
+                    {
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Success, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
                     }
                 }
                 finally
