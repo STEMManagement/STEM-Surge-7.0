@@ -405,7 +405,7 @@ namespace STEM.Sys.IO.TCP
 
                             if (rcvd > 0)
                             {
-                                Receive(buf, rcvd, DateTime.UtcNow); 
+                                Receive(buf, rcvd, DateTime.UtcNow);
                             }
                             else
                             {
@@ -459,6 +459,7 @@ namespace STEM.Sys.IO.TCP
                     }
                 }
             }
+            catch { }
             finally
             {
                 lock (_AccessMutex)
