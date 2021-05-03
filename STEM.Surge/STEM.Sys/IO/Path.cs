@@ -1210,25 +1210,13 @@ namespace STEM.Sys.IO
         /// <returns>The matching subset from listing</returns>
         public static List<string> WhereStringsMatch(List<string> listing, Regex regex)
         {
-            List<string> result = new List<string>();
-
             if (listing == null)
-                return result;
+                return new List<string>();
 
             if (regex == null)
                 return listing.ToList();
 
-            foreach (string i in listing)
-            {
-                try
-                {
-                    if (regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                        result.Add(i);
-                }
-                catch { }
-            }
-
-            return result;
+            return listing.AsParallel().Where(i => regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture))).ToList();
         }
 
         /// <summary>
@@ -1239,25 +1227,13 @@ namespace STEM.Sys.IO
         /// <returns>The non-matching subset from listing</returns>
         public static List<string> WhereStringsNotMatch(List<string> listing, Regex regex)
         {
-            List<string> result = new List<string>();
-
             if (listing == null)
-                return result;
+                return new List<string>();
 
             if (regex == null)
                 return listing.ToList();
 
-            foreach (string i in listing)
-            {
-                try
-                {
-                    if (!regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                        result.Add(i);
-                }
-                catch { }
-            }
-
-            return result;
+            return listing.AsParallel().Where(i => !regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture))).ToList();
         }
 
 
@@ -1269,25 +1245,13 @@ namespace STEM.Sys.IO
         /// <returns>The matching subset from listing</returns>
         public static List<string> WhereFilesMatch(List<string> listing, Regex regex)
         {
-            List<string> result = new List<string>();
-
             if (listing == null)
-                return result;
+                return new List<string>();
 
             if (regex == null)
                 return listing.ToList();
 
-            foreach (string i in listing)
-            {
-                try
-                {
-                    if (regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper()))
-                        result.Add(i);
-                }
-                catch { }
-            }
-
-            return result;
+            return listing.AsParallel().Where(i => regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper())).ToList();
         }
 
 
@@ -1299,25 +1263,13 @@ namespace STEM.Sys.IO
         /// <returns>The non-matching subset from listing</returns>
         public static List<string> WhereFilesNotMatch(List<string> listing, Regex regex)
         {
-            List<string> result = new List<string>();
-
             if (listing == null)
-                return result;
+                return new List<string>();
 
             if (regex == null)
                 return listing.ToList();
 
-            foreach (string i in listing)
-            {
-                try
-                {
-                    if (!regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper()))
-                        result.Add(i);
-                }
-                catch { }
-            }
-
-            return result;
+            return listing.AsParallel().Where(i => !regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper())).ToList();
         }
 
         /// <summary>
