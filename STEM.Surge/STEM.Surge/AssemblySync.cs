@@ -148,7 +148,13 @@ namespace STEM.Surge
                     initComplete = localContent.Except(listContent).Count() == 0;
 
                     if (initComplete)
-                        list.MessageConnection.Send(new AssemblyInitializationComplete());
+                        if (!list.MessageConnection.Send(new AssemblyInitializationComplete()))
+                            if (!list.MessageConnection.Send(new AssemblyInitializationComplete()))
+                            {
+                                list.MessageConnection.Close();
+                                connectionClosed = true;
+                                return;
+                            }
 
                     AssemblyList send = new AssemblyList();
                     send.Path = list.Path;
