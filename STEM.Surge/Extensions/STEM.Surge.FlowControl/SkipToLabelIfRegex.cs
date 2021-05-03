@@ -23,7 +23,7 @@ namespace STEM.Surge.FlowControl
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("SkipToLabelIfRegex")]
-    [Description("Skip the next labeled Instruction in the InstructionSet if the file specified in Filename matches the RegEx filter specified in RegEx Filter.")]
+    [Description("Skip to the next labeled Instruction in the InstructionSet if the file specified in Filename matches the RegEx filter specified in RegEx Filter.")]
     public class SkipToLabelIfRegex : Instruction
     {
         [Category("Flow")]

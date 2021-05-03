@@ -24,7 +24,7 @@ namespace STEM.Surge.FlowControl
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("SkipToLabelIfFileFilter")]
-    [Description("Skip the next labeled Instruction in the InstructionSet if the file specified in Filename matches the file filter specified in FileFilter.")]
+    [Description("Skip to the next labeled Instruction in the InstructionSet if the file specified in Filename matches the file filter specified in FileFilter.")]
     public class SkipToLabelIfFileFilter : Instruction
     {
         [Category("Flow")]
