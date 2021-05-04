@@ -14,6 +14,7 @@
 /STEM.Surge/Extensions/STEM.Surge.FTP/obj
 /STEM.Surge/Extensions/STEM.Surge.Machine/obj
 /STEM.Surge/Extensions/STEM.Surge.MySQL/obj
+/STEM.Surge/Extensions/STEM.Surge.NuGet/obj
 /STEM.Surge/Extensions/STEM.Surge.PostGreSQL/obj
 /STEM.Surge/Extensions/STEM.Surge.S3/obj
 /STEM.Surge/Extensions/STEM.Surge.Security/obj
@@ -44,6 +45,7 @@
 /STEM.Surge/Extensions/STEM.Surge.FTP/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Machine/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.MySQL/bin/Release/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.NuGet/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.PostGreSQL/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.S3/bin/Release/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Security/bin/Release/netstandard2.0
@@ -63,6 +65,7 @@
 /STEM.Surge/Extensions/STEM.Surge.FTP/bin/Debug/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Machine/bin/Debug/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.MySQL/bin/Debug/netstandard2.0
+/STEM.Surge/Extensions/STEM.Surge.NuGet/bin/Debug/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.PostGreSQL/bin/Debug/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.S3/bin/Debug/netstandard2.0
 /STEM.Surge/Extensions/STEM.Surge.Security/bin/Debug/netstandard2.0
