@@ -706,14 +706,14 @@ namespace STEM.Surge
                             }
                     }
 
-                    if (_AssemblyListInitializer == _Connection)
-                        if (_Owner._AsmPool.LoadLevel > 0)
-                        {
-                            ExecutionInterval = TimeSpan.FromMilliseconds(100);
-                            return;
-                        }
+                    //if (_AssemblyListInitializer == _Connection)
+                    //    if (_Owner._AsmPool.LoadLevel > 0)
+                    //    {
+                    //        ExecutionInterval = TimeSpan.FromMilliseconds(100);
+                    //        return;
+                    //    }
 
-                    ExecutionInterval = TimeSpan.FromSeconds(1);
+                    ExecutionInterval = TimeSpan.FromSeconds(5);
 
                     AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
 
@@ -1804,7 +1804,7 @@ namespace STEM.Surge
             }
         }
 
-        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount / 2);
+        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount, true);
         void LoadAsm(object o)
         {
             if (o is FileTransfer)

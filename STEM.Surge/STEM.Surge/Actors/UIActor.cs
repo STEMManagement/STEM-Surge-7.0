@@ -1217,8 +1217,8 @@ namespace STEM.Surge
                 }
             }
         }
-        
-        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Int32.MaxValue);
+
+        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount, true);
         void LoadAsm(object o)
         {
             if (o is FileTransfer)
