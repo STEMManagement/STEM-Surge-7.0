@@ -109,12 +109,12 @@ namespace STEM.Surge.BasicControllers
                             if (key != Key)
                                 return;
 
-                            if (InitiationSource != null)
-                                if (!_Owner.CoordinatedKeyManager.Locked(InitiationSource))
-                                {
-                                    InitiationSource = null;
-                                    Assigned = false;
-                                }
+                            //if (InitiationSource != null)
+                            //    if (!_Owner.CoordinatedKeyManager.Locked(InitiationSource))
+                            //    {
+                            //        InitiationSource = null;
+                            //        Assigned = false;
+                            //    }
 
                             if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
                                 _Owner.CoordinatedKeyManager.Unlock(Key, this);
