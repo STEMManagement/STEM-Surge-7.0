@@ -1216,7 +1216,7 @@ namespace STEM.Sys.IO
             if (regex == null)
                 return listing.ToList();
 
-            return listing.AsParallel().Where(i => regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture))).ToList();
+            return listing.Where(i => regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture))).ToList();
         }
 
         /// <summary>
@@ -1233,7 +1233,7 @@ namespace STEM.Sys.IO
             if (regex == null)
                 return listing.ToList();
 
-            return listing.AsParallel().Where(i => !regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture))).ToList();
+            return listing.Where(i => !regex.IsMatch(i.ToUpper(System.Globalization.CultureInfo.CurrentCulture))).ToList();
         }
 
 
@@ -1251,7 +1251,7 @@ namespace STEM.Sys.IO
             if (regex == null)
                 return listing.ToList();
 
-            return listing.AsParallel().Where(i => regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper())).ToList();
+            return listing.Where(i => regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper())).ToList();
         }
 
 
@@ -1269,7 +1269,7 @@ namespace STEM.Sys.IO
             if (regex == null)
                 return listing.ToList();
 
-            return listing.AsParallel().Where(i => !regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper())).ToList();
+            return listing.Where(i => !regex.IsMatch(STEM.Sys.IO.Path.GetFileName(i).ToUpper())).ToList();
         }
 
         /// <summary>
