@@ -140,13 +140,13 @@ namespace STEM.Surge.BasicControllers
                             if (key != Key)
                                 return;
 
-                            if (InitiationSource != null)
-                                if (!_Owner.CoordinatedKeyManager.Locked(InitiationSource))
-                                {
-                                    InitiationSource = null;
-                                    Assigned = false;
-                                    FileSize = 0;
-                                }
+                            //if (InitiationSource != null)
+                            //    if (!_Owner.CoordinatedKeyManager.Locked(InitiationSource))
+                            //    {
+                            //        InitiationSource = null;
+                            //        Assigned = false;
+                            //        FileSize = 0;
+                            //    }
 
                             if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
                                 _Owner.CoordinatedKeyManager.Unlock(Key, this);
@@ -314,6 +314,11 @@ namespace STEM.Surge.BasicControllers
             {
                 string key = GenerateKey(initiationSource);
 
+                long fileLen = 0;
+
+                if (FileExists(initiationSource))
+                    fileLen = GetFileInfo(initiationSource).Size;
+
                 lock (_Keys)
                 {
                     BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
@@ -376,9 +381,7 @@ namespace STEM.Surge.BasicControllers
                                 return null;
                             }
 
-                            if (FileExists(initiationSource))
-                                _Keys[key].FileSize = new FileInfo(initiationSource).Length;
-
+                            _Keys[key].FileSize = fileLen;
                             _Keys[key].InitiationSource = initiationSource;
                             _Keys[key].Assigned = true;
                             return _Keys[key].BranchIP;
@@ -395,12 +398,7 @@ namespace STEM.Surge.BasicControllers
                         branchIP = BestBranchByWeight(branchIP);
 
                         if (branchIP == null)
-                            return null;
-
-                        long fileLen = 0;
-
-                        if (FileExists(initiationSource))
-                            fileLen = GetFileInfo(initiationSource).Size;                 
+                            return null;               
                         
                         binding = new BoundKey(this, initiationSource, key, branchIP, fileLen, true);
 
@@ -428,55 +426,52 @@ namespace STEM.Surge.BasicControllers
 
                 string key = GenerateKey(initiationSource);
 
-                if (key == null)
-                {
-                    while (true)
-                    {
-                        try
-                        {
-                            BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
-                            if (binding != null)
-                                lock (binding)
-                                {
-                                    binding.InitiationSource = null;
-                                    binding.Assigned = false;
-                                }
-
-                            break;
-                        }
-                        catch { }
-                    }
-
-                    return;
-                }
+                BoundKey keyBinding = null;
+                BoundKey fileBinding = null;
 
                 key = key.ToUpper();
 
                 lock (_Keys)
                 {
-                    if (_Keys.ContainsKey(key))
+                    try
                     {
-                        if (_Keys[key].InitiationSource != null)
-                            if (_Keys[key].InitiationSource.ToUpper() == initiationSource.ToUpper())
-                            {
-                                _Keys[key].InitiationSource = null;
-                                _Keys[key].Assigned = false;
-                            }
-                    }
-                    else
-                    {
-                        BoundKey binding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
-                        if (binding != null)
-                            lock (binding)
-                            {
-                                string k = binding.Key;
-                                _Keys[key] = binding;
-                                _Keys[key].Key = key;
-                                _Keys[key].InitiationSource = null;
-                                _Keys[key].Assigned = false;
+                        if (key != null)
+                            if (_Keys.ContainsKey(key))
+                                keyBinding = _Keys[key];
 
-                                if (k != key)
-                                    _Keys.Remove(k);
+                        fileBinding = _Keys.Values.FirstOrDefault(i => i.InitiationSource != null && i.InitiationSource.ToUpper() == initiationSource.ToUpper());
+                    }
+                    catch { }
+                }
+
+                if (fileBinding != null)
+                {
+                    lock (fileBinding)
+                    {
+                        fileBinding.InitiationSource = null;
+                        fileBinding.Assigned = false;
+
+                        if (key != null)
+                        {
+                            string k = fileBinding.Key;
+                            _Keys[key] = fileBinding;
+                            _Keys[key].Key = key;
+
+                            if (k != key)
+                                _Keys.Remove(k);
+                        }
+                    }
+                }
+
+                if (keyBinding != null && keyBinding != fileBinding)
+                {
+                    lock (keyBinding)
+                    {
+                        if (keyBinding.InitiationSource != null)
+                            if (keyBinding.InitiationSource.ToUpper() == initiationSource.ToUpper())
+                            {
+                                keyBinding.InitiationSource = null;
+                                keyBinding.Assigned = false;
                             }
                     }
                 }
@@ -553,8 +548,8 @@ namespace STEM.Surge.BasicControllers
         /// <param name="key"></param>
         public override sealed void ExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
         {
-            lock (_Keys)
-            {
+            //lock (_Keys)
+            //{
                 try
                 {
                     base.ExecutionComplete(details, exceptions);
@@ -568,7 +563,7 @@ namespace STEM.Surge.BasicControllers
                 catch { }
 
                 SafeExecutionComplete(details, exceptions);
-            }
+            //}
         }
 
         public virtual void SafeExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
