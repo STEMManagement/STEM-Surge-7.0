@@ -706,12 +706,12 @@ namespace STEM.Surge
                             }
                     }
 
-                    //if (_AssemblyListInitializer == _Connection)
-                    //    if (_Owner._AsmPool.LoadLevel > 0)
-                    //    {
-                    //        ExecutionInterval = TimeSpan.FromMilliseconds(100);
-                    //        return;
-                    //    }
+                    if (_AssemblyListInitializer == _Connection)
+                        if (_Owner._AsmPool.LoadLevel > 0)
+                        {
+                            ExecutionInterval = TimeSpan.FromMilliseconds(100);
+                            return;
+                        }
 
                     ExecutionInterval = TimeSpan.FromSeconds(5);
 
@@ -1005,7 +1005,7 @@ namespace STEM.Surge
 
                     try
                     {
-                        runnable = _InstructionSet.Deserialize(AssignInstructionSet.InstructionSet.Serialize()) as _InstructionSet;
+                        runnable = _InstructionSet.Deserialize(AssignInstructionSet.InstructionSet.Serialize(), AssignInstructionSet.InstructionSet.GetType()) as _InstructionSet;
                     }
                     catch (Exception ex)
                     {
@@ -1804,7 +1804,7 @@ namespace STEM.Surge
             }
         }
 
-        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount, true);
+        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
         void LoadAsm(object o)
         {
             if (o is FileTransfer)
