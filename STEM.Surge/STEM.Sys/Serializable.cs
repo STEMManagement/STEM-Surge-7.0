@@ -26,6 +26,7 @@ using System.IO;
 using System.Xml.Linq;
 using System.Linq;
 using System.Xml.Schema;
+using System.Text.RegularExpressions;
 
 namespace STEM.Sys
 {
@@ -262,6 +263,11 @@ namespace STEM.Sys
         {
             _ignoreNamespace = ignoreNamespace;
         }
+        public XmlExtendableReader(Stream input, XmlReaderSettings settings, bool ignoreNamespace = false)
+        : base(XmlReader.Create(input, settings))
+        {
+            _ignoreNamespace = ignoreNamespace;
+        }
 
         public override string NamespaceURI
         {
@@ -317,34 +323,22 @@ namespace STEM.Sys
             return Serialize(this);
         }
 
-        static Dictionary<Type, XmlNameTable> _NameTables = new Dictionary<Type, XmlNameTable>();
+        static Dictionary<Type, XmlReaderSettings> _NameTables = new Dictionary<Type, XmlReaderSettings>();
 
         public static object Deserialize(string xml, Type t)
         {
             if (t == null)
                 return null;
-            
-            XmlNameTable nt = null;
+
+            XmlReaderSettings settings = null;
 
             if (_NameTables.ContainsKey(t))
-                nt = _NameTables[t];
+                settings = _NameTables[t];
 
             using (TextReader textReader = new StringReader(xml))
             {
-                if (nt != null)
-                {
-                    XmlReaderSettings settings = new XmlReaderSettings()
-                    {
-                        CheckCharacters = false,
-                        ConformanceLevel = ConformanceLevel.Document,
-                        DtdProcessing = DtdProcessing.Ignore,
-                        IgnoreComments = true,
-                        IgnoreProcessingInstructions = true,
-                        IgnoreWhitespace = true,
-                        ValidationType = ValidationType.None,
-                        NameTable = nt
-                    };
-                    
+                if (settings != null)
+                {                    
                     using (XmlExtendableReader reader = new XmlExtendableReader(textReader, settings, true))
                     {
                         return XmlSerializerCollection.GetXmlSerializer(t).Deserialize(reader);
@@ -352,7 +346,7 @@ namespace STEM.Sys
                 }
                 else
                 {
-                    XmlReaderSettings settings = new XmlReaderSettings()
+                    settings = new XmlReaderSettings()
                     {
                         CheckCharacters = false,
                         ConformanceLevel = ConformanceLevel.Document,
@@ -361,15 +355,16 @@ namespace STEM.Sys
                         IgnoreProcessingInstructions = true,
                         IgnoreWhitespace = true,
                         ValidationType = ValidationType.None,
-                        NameTable = nt
+                        NameTable = null
                     };
 
                     using (XmlExtendableReader reader = new XmlExtendableReader(textReader, settings, true))
                     {
                         object o = XmlSerializerCollection.GetXmlSerializer(t).Deserialize(reader);
 
+                        settings.NameTable = reader.NameTable;
                         lock (_NameTables)
-                            _NameTables[t] = reader.NameTable;
+                            _NameTables[t] = settings;
 
                         return o;
                     }
@@ -377,24 +372,81 @@ namespace STEM.Sys
             }
         }
 
-        const string _AssemblyNameOpen = "<AssemblyName>";
-        const string _AssemblyNameClose = "</AssemblyName>";
-        const string _TypeNameOpen = "<TypeName>";
-        const string _TypeNameClose = "</TypeName>";
+        public static object Deserialize(Stream xml, Type t)
+        {
+            if (t == null)
+                return null;
+
+            XmlReaderSettings settings = null;
+
+            if (_NameTables.ContainsKey(t))
+                settings = _NameTables[t];
+
+            if (settings != null)
+            {
+                using (XmlExtendableReader reader = new XmlExtendableReader(xml, settings, true))
+                {
+                    return XmlSerializerCollection.GetXmlSerializer(t).Deserialize(reader);
+                }
+            }
+            else
+            {
+                settings = new XmlReaderSettings()
+                {
+                    CheckCharacters = false,
+                    ConformanceLevel = ConformanceLevel.Document,
+                    DtdProcessing = DtdProcessing.Ignore,
+                    IgnoreComments = true,
+                    IgnoreProcessingInstructions = true,
+                    IgnoreWhitespace = true,
+                    ValidationType = ValidationType.None,
+                    NameTable = null
+                };
+
+                using (XmlExtendableReader reader = new XmlExtendableReader(xml, settings, true))
+                {
+                    object o = XmlSerializerCollection.GetXmlSerializer(t).Deserialize(reader);
+
+                    settings.NameTable = reader.NameTable;
+                    lock (_NameTables)
+                        _NameTables[t] = settings;
+
+                    return o;
+                }
+            }
+        }
+
+        //const string _AssemblyNameOpen = "<AssemblyName>";
+        //const string _AssemblyNameClose = "</AssemblyName>";
+        //const string _TypeNameOpen = "<TypeName>";
+        //const string _TypeNameClose = "</TypeName>";
+
+        static Regex _AssemblyNameRegex = new Regex("(?<=<AssemblyName>)(?:(?!</AssemblyName>).)*", System.Text.RegularExpressions.RegexOptions.Compiled);
+        static Regex _TypeNameRegex = new Regex("(?<=<TypeName>)(?:(?!</TypeName>).)*", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         public static object Deserialize(string xml)
         {
             if (String.IsNullOrEmpty(xml))
                 return null;
 
-            int index = xml.IndexOf(_AssemblyNameOpen, StringComparison.Ordinal);
+            string aName = null;
+            Match m = _AssemblyNameRegex.Match(xml);
+            if (m.Success)
+                aName = m.Value;
 
-            string aName = xml.Substring(index + _AssemblyNameOpen.Length, xml.IndexOf(_AssemblyNameClose, StringComparison.Ordinal) - (index + _AssemblyNameOpen.Length));
+            string tName = null;
+            m = _TypeNameRegex.Match(xml);
+            if (m.Success)
+                tName = m.Value;
 
-            index = xml.IndexOf(_TypeNameOpen, StringComparison.Ordinal);
+            //int index = xml.IndexOf(_AssemblyNameOpen, StringComparison.Ordinal);
 
-            string tName = xml.Substring(index + _TypeNameOpen.Length, xml.IndexOf(_TypeNameClose, StringComparison.Ordinal) - (index + _TypeNameOpen.Length));
-            
+            //string aName = xml.Substring(index + _AssemblyNameOpen.Length, xml.IndexOf(_AssemblyNameClose, StringComparison.Ordinal) - (index + _AssemblyNameOpen.Length));
+
+            //index = xml.IndexOf(_TypeNameOpen, StringComparison.Ordinal);
+
+            //string tName = xml.Substring(index + _TypeNameOpen.Length, xml.IndexOf(_TypeNameClose, StringComparison.Ordinal) - (index + _TypeNameOpen.Length));
+
             if (aName == null || tName == null)
                 throw new Exception("The VersionDescriptor tag is missing or malformed.");
 
