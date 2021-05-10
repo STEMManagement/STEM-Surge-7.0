@@ -126,13 +126,13 @@ namespace STEM.Surge.BasicControllers
                             if (key != Key)
                                 return;
 
-                            if (InitiationSource != null)
-                                if (!_Owner.CoordinatedKeyManager.Locked(InitiationSource))
-                                {
-                                    InitiationSource = null;
-                                    Assigned = false;
-                                    FileSize = 0;
-                                }
+                            //if (InitiationSource != null)
+                            //    if (!_Owner.CoordinatedKeyManager.Locked(InitiationSource))
+                            //    {
+                            //        InitiationSource = null;
+                            //        Assigned = false;
+                            //        FileSize = 0;
+                            //    }
 
                             if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
                                 _Owner.CoordinatedKeyManager.Unlock(Key, this);
@@ -326,6 +326,11 @@ namespace STEM.Surge.BasicControllers
                 if (key == null)
                     return branchIP;
 
+                long fileLen = 0;
+
+                if (FileExists(initiationSource))
+                    fileLen = GetFileInfo(initiationSource).Size;
+
                 lock (_Keys)
                 {
                     key = key.ToUpper();
@@ -369,9 +374,7 @@ namespace STEM.Surge.BasicControllers
                                 return null;
                             }
                             
-                            if (FileExists(initiationSource))
-                                _Keys[key].FileSize = new FileInfo(initiationSource).Length;
-
+                            _Keys[key].FileSize = fileLen;
                             _Keys[key].InitiationSource = initiationSource;
                             _Keys[key].Assigned = true;
                             return _Keys[key].BranchIP;
@@ -389,11 +392,6 @@ namespace STEM.Surge.BasicControllers
 
                         if (branchIP == null)
                             return null;
-
-                        long fileLen = 0;
-
-                        if (FileExists(initiationSource))
-                            fileLen = GetFileInfo(initiationSource).Size;
                         
                         binding = new BoundKey(this, initiationSource, key, branchIP, fileLen, true);
 
@@ -507,8 +505,8 @@ namespace STEM.Surge.BasicControllers
         /// <param name="key"></param>
         public override sealed void ExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
         {
-            lock (_Keys)
-            {
+            //lock (_Keys)
+            //{
                 try
                 {
                     base.ExecutionComplete(details, exceptions);
@@ -522,7 +520,7 @@ namespace STEM.Surge.BasicControllers
                 catch { }
 
                 SafeExecutionComplete(details, exceptions);
-            }
+            //}
         }
 
         public virtual void SafeExecutionComplete(DeploymentDetails details, List<Exception> exceptions)
