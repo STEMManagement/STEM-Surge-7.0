@@ -316,8 +316,18 @@ namespace STEM.Surge.BasicControllers
 
                 long fileLen = 0;
 
-                if (FileExists(initiationSource))
-                    fileLen = GetFileInfo(initiationSource).Size;
+                try
+                {
+                    if (FileExists(initiationSource))
+                        fileLen = GetFileInfo(initiationSource).Size;
+                }
+                catch
+                {
+                    if (key == null)
+                        return branchIP;
+
+                    return null;
+                }
 
                 lock (_Keys)
                 {
