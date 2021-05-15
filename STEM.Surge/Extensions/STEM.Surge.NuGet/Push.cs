@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using NuGet.Common;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
+using STEM.Sys.Security;
 
 namespace STEM.Surge.NuGet
 {
@@ -28,6 +29,19 @@ namespace STEM.Surge.NuGet
         [PasswordPropertyText(true)]
         [XmlIgnore]
         public string ApiKey { get; set; } = string.Empty;
+
+        [Browsable(false)]
+        public string ApiKeyEncoded
+        {
+            get
+            {
+                return this.Entangle(ApiKey);
+            }
+            set
+            {
+                ApiKey = this.Detangle(value);
+            }
+        }
 
         [Category("NuGet")]
         [DisplayName("Package Path")]
