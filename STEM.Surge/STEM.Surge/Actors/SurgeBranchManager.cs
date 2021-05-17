@@ -649,18 +649,8 @@ namespace STEM.Surge
                 if (c != null)
                     ManageConnection(c);
 
-                lock (_BranchHealthThreads)
-                {
-                    if (_BranchHealthThreads.ContainsKey(c.ToString()))
-                    {
-                        _BranchHealthThreads.Remove(c.ToString());
-                    }
-                }
-
                 ConnectionType m = new ConnectionType { Type = ConnectionType.Types.SurgeBranchManager };
                 m.PerformHandshake(c);
-
-                STEM.Sys.Global.ThreadPool.BeginAsync(new SendAssemblyList(c, this));
             }
         }
 
@@ -721,6 +711,12 @@ namespace STEM.Surge
 
                     if (!_Connection.Send(a))
                     {
+                        try
+                        {
+                            _Connection.Close();
+                        }
+                        catch { }
+
                         endAsync = true;
 
                         STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Forced disconnect, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Error);
@@ -1222,6 +1218,9 @@ namespace STEM.Surge
                 {
                     ConnectionType m = message as ConnectionType;
                     m.Respond(new MessageReceived(m.MessageID));
+
+                    if (m.Type == ConnectionType.Types.SurgeDeploymentManager)
+                        STEM.Sys.Global.ThreadPool.BeginAsync(new SendAssemblyList(connection, this));
                 }
                 else if (message is AssemblyInitializationComplete)
                 {
