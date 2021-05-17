@@ -23,7 +23,7 @@ namespace STEM.Surge.Messages
 {
 
     /// <summary>
-    /// Message sent from a SurgeActor to a DeploymentManager and from a DeploymentManager to a BranchManager requesting the branch delete all errored InstructionSets
+    /// Message sent from a SurgeActor to a DeploymentManager and from a DeploymentManager to a BranchManager requesting the branch return all errored InstructionSet IDs
     /// </summary>
     public class GetErrorIDs : STEM.Sys.Messaging.Message
     {
