@@ -25,13 +25,14 @@ namespace STEM.Sys.Serialization
         static System.Collections.Generic.Dictionary<AssemblyName, Assembly> _AssemblyByName = new System.Collections.Generic.Dictionary<AssemblyName, Assembly>();
 
         static System.Collections.Generic.Dictionary<string, Assembly> _CachedAssemblies = new System.Collections.Generic.Dictionary<string, Assembly>(StringComparer.InvariantCultureIgnoreCase);
-        static List<string> _Cached = new List<string>();
+        
+        static STEM.Sys.State.KeyManager _Keymanager = new State.KeyManager();
 
         static Thread _CachePoller = null;
 
         static void _Initialize()
         {
-            lock (_Cached)
+            lock (_CachedAssemblies)
             {
                 if (_CachePoller != null)
                     return;
@@ -54,17 +55,13 @@ namespace STEM.Sys.Serialization
                         lock (_AssemblyByName)
                             _AssemblyByName[aName] = asm;
 
-                        if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location)).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                        {
-                            _Cached.Add(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location)).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-                            _CachedAssemblies[System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location))] = asm;
-                        }
+                        string xform = System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(asm.Location), TransformFilename(asm.Location));
 
-                        if (!_Cached.Contains(asm.Location.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                        {
-                            _Cached.Add(asm.Location.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                        if (!_CachedAssemblies.ContainsKey(xform))
+                           _CachedAssemblies[xform] = asm;
+
+                        if (!_CachedAssemblies.ContainsKey(asm.Location))
                             _CachedAssemblies[asm.Location] = asm;
-                        }
                     }
                     catch { }
                 }
@@ -143,12 +140,6 @@ namespace STEM.Sys.Serialization
                     }
                     catch { }
             }
-
-            //try
-            //{
-            //    AddCache(AppDomain.CurrentDomain.BaseDirectory, false, false);
-            //}
-            //catch { }
 
             AddCache(VersionCache, false, true);
             AddCache(caches, renameSourceAssemblies);
@@ -401,18 +392,33 @@ namespace STEM.Sys.Serialization
                     {
                         List<FileInfo> infos = new List<FileInfo>();
                         foreach (string file in STEM.Sys.IO.Directory.STEM_GetFiles(dir, "*.dll|*.so|*.a|*.lib", false))
-                            infos.Add(new FileInfo(file));
+                            try
+                            {
+                                infos.Add(new FileInfo(file));
+                            }
+                            catch{ }
 
                         foreach (FileSystemInfo file in infos.OrderByDescending(i => i.LastWriteTimeUtc))
                             if (!file.FullName.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
-                                lock (_Cached)
+                                lock (_CachedAssemblies)
                                     if (!_Evaluated.ContainsKey(file.FullName) || _Evaluated[file.FullName] != file.LastWriteTimeUtc)
                                         if (!_Attempts.ContainsKey(file.FullName) || _Attempts[file.FullName] < 3)
+                                        {
+                                            bool myLock = false;
                                             try
                                             {
-                                                _CacherPool.RunOnce(new Cacher(cache, file.FullName, cache.RenameSourceAssemblies));
+                                                if (_Keymanager.Lock(file.FullName))
+                                                {
+                                                    myLock = true;
+                                                    _CacherPool.RunOnce(new Cacher(cache, file.FullName, cache.RenameSourceAssemblies));
+                                                }
                                             }
-                                            catch { }
+                                            catch
+                                            {
+                                                if (myLock)
+                                                    _Keymanager.Unlock(file.FullName);
+                                            }
+                                        }
                     }
                 }
             }
@@ -623,48 +629,56 @@ namespace STEM.Sys.Serialization
 
             file = STEM.Sys.IO.Path.AdjustPath(file);
 
-            try
-            {
-                FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(file);
+            int retry = 3;
+            while (retry-- > 0)
+                try
+                {
+                    FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(file);
 
-                if (!string.IsNullOrEmpty(fvi.OriginalFilename) && fvi.OriginalFilename.EndsWith(".DLL", StringComparison.InvariantCultureIgnoreCase))
-                    return STEM.Sys.IO.Path.GetFileNameWithoutExtension(fvi.OriginalFilename) + "." + fvi.FileMajorPart + "." + fvi.FileMinorPart + "." + fvi.FileBuildPart + "." + fvi.FilePrivatePart + ".dll";
-                else
-                    return STEM.Sys.IO.Path.GetFileName(file);
-            }
-            catch { }
+                    if (!string.IsNullOrEmpty(fvi.OriginalFilename) && fvi.OriginalFilename.EndsWith(".DLL", StringComparison.InvariantCultureIgnoreCase))
+                        return STEM.Sys.IO.Path.GetFileNameWithoutExtension(fvi.OriginalFilename) + "." + fvi.FileMajorPart + "." + fvi.FileMinorPart + "." + fvi.FileBuildPart + "." + fvi.FilePrivatePart + ".dll";
+                    else
+                        return STEM.Sys.IO.Path.GetFileName(file);
+                }
+                catch { System.Threading.Thread.Sleep(100); }
 
             return null;
         }
 
         static public List<Assembly> LoadedAssemblies()
         {
-            while (true)
+            lock (_CachedAssemblies)
                 try
                 {
                     return _CachedAssemblies.Values.ToList();
                 }
                 catch { }
+
+            return new List<Assembly>();
         }
 
         static public Assembly LoadedAssembly(string fullAssemblyName)
         {
-            while (true)
+            lock (_CachedAssemblies)
                 try
                 {
                     return _CachedAssemblies.Values.FirstOrDefault(i => i.FullName.Equals(fullAssemblyName, StringComparison.InvariantCultureIgnoreCase));
                 }
                 catch { }
+
+            return null;
         }
 
         static public string AssemblyLocation(Assembly assembly)
         {
-            while (true)
+            lock (_CachedAssemblies)
                 try
                 {
                     return _CachedAssemblies.Where(i => i.Value == assembly).Select(i => i.Key).FirstOrDefault();
                 }
                 catch { }
+
+            return null;
         }
 
         static public Dictionary<string, string> TransformedFileListing(string cacheDirectory)
@@ -694,15 +708,27 @@ namespace STEM.Sys.Serialization
 
             file = STEM.Sys.IO.Path.AdjustPath(file);
 
-            _Cache cache = null;
+            if (_Keymanager.Lock(file))
+            {
+                try
+                {
+                    _Cache cache = null;
 
-            lock (_Caches)
-                cache = _Caches.Where(i => STEM.Sys.IO.Path.GetDirectoryName(file).StartsWith(i.Path, StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(i => i.Path.Length).FirstOrDefault();
+                    lock (_Caches)
+                        cache = _Caches.Where(i => STEM.Sys.IO.Path.GetDirectoryName(file).StartsWith(i.Path, StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(i => i.Path.Length).FirstOrDefault();
 
-            if (cache != null)
-                return Cache(cache, file, cache.RenameSourceAssemblies);
-            else
-                return Cache(null, file, renameSourceAssemblies);
+                    if (cache != null)
+                        return Cache(cache, file, cache.RenameSourceAssemblies);
+                    else
+                        return Cache(null, file, renameSourceAssemblies);
+                }
+                finally
+                {
+                    _Keymanager.Unlock(file);
+                }
+            }
+
+            return null;
         }
 
         static STEM.Sys.Threading.ThreadPool _CacherPool = new Threading.ThreadPool(Int32.MaxValue);
@@ -724,7 +750,7 @@ namespace STEM.Sys.Serialization
             {
                 try
                 {
-                    lock (_Cached)
+                    lock (_CachedAssemblies)
                         if (_LastAttempt.ContainsKey(_File))
                             if ((DateTime.UtcNow - _LastAttempt[_File]).TotalSeconds < 10)
                                 return;
@@ -735,6 +761,13 @@ namespace STEM.Sys.Serialization
                 {
                     string s = ex.ToString();
                 }
+            }
+
+            protected override void Dispose(bool dispose)
+            {
+                _Keymanager.Unlock(_File);
+
+                base.Dispose(dispose);
             }
         }
 
@@ -781,13 +814,10 @@ namespace STEM.Sys.Serialization
                     {
                         try
                         {
-                            lock (_Cached)
+                            lock (_CachedAssemblies)
                                 _Evaluated[file] = File.GetLastWriteTimeUtc(file);
                         }
                         catch { }
-
-                        lock (_Cached)
-                            _Cached.Add(file.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
 
                         return vcFile;
                     }
@@ -927,27 +957,31 @@ namespace STEM.Sys.Serialization
                 {
                     if (File.Exists(vcFile))
                     {
-                        if (!IsAssembly(file))
-                        {
-                            try
+                        if (!IsAssembly(vcFile))
+                            lock (_CachedAssemblies)
                             {
-                                lock (_Cached)
+                                try
+                                {
+                                    _Evaluated[vcFile] = File.GetLastWriteTimeUtc(vcFile);
+                                }
+                                catch { }
+
+                                try
+                                {
                                     _Evaluated[file] = File.GetLastWriteTimeUtc(file);
+                                }
+                                catch { }
+
+                                return STEM.Sys.IO.Path.GetFileName(vcFile);
                             }
-                            catch { }
 
-                            lock (_Cached)
-                                _Cached.Add(file.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-
-                            return file;
-                        }
-
-                        lock (_Cached)
+                        lock (_CachedAssemblies)
                         {
                             if (!_Attempts.ContainsKey(file))
                                 _Attempts[file] = 0;
+                            else
+                                _Attempts[file] = _Attempts[file] + 1;
 
-                            _Attempts[file] = _Attempts[file] + 1;
                             _LastAttempt[file] = DateTime.UtcNow;
                         }
 
@@ -960,18 +994,12 @@ namespace STEM.Sys.Serialization
 
                             AssemblyName aName = new AssemblyName(asm.FullName);
 
-                            lock (_Cached)
+                            lock (_CachedAssemblies)
                             {
                                 _CachedAssemblies[vcFile] = asm;
 
                                 lock (_AssemblyByName)
                                     _AssemblyByName[aName] = asm;
-
-                                if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                                    _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-
-                                if (!_Cached.Contains(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                                    _Cached.Add(System.IO.Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(vcFile), xform).ToUpper(System.Globalization.CultureInfo.CurrentCulture));
 
                                 try
                                 {
@@ -1013,12 +1041,7 @@ namespace STEM.Sys.Serialization
                         }
                         catch (Exception ex)
                         {
-                            lock (_Cached)
-                                if (!_Cached.Contains(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                                {
-                                    _Cached.Add(vcFile.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-                                    STEM.Sys.EventLog.WriteEntry("VersionManager.Cache", new Exception("Could not load " + vcFile, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                                }
+                            STEM.Sys.EventLog.WriteEntry("VersionManager.Cache", new Exception("Could not load " + vcFile, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                         }
                     }
                 }
@@ -1030,7 +1053,7 @@ namespace STEM.Sys.Serialization
             {
                 try
                 {
-                    lock (_Cached)
+                    lock (_CachedAssemblies)
                         _Evaluated[file] = File.GetLastWriteTimeUtc(file);
                 }
                 catch { }
