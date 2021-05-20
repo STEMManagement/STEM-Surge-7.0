@@ -641,17 +641,14 @@ namespace STEM.Surge
             }
         }
 
-        protected override void onOpened(Connection connection)
+        protected override ConnectionType.Types ActorType()
         {
-            lock (ConnectionLock)
-            {
-                MessageConnection c = connection as MessageConnection;
-                if (c != null)
-                    ManageConnection(c);
+            return ConnectionType.Types.SurgeBranchManager;
+        }
 
-                ConnectionType m = new ConnectionType { Type = ConnectionType.Types.SurgeBranchManager };
-                m.PerformHandshake(c);
-            }
+        protected override void onHandshakeComplete(Connection connection)
+        {
+            STEM.Sys.Global.ThreadPool.BeginAsync(new SendAssemblyList((MessageConnection)connection, this));
         }
 
         class SendAssemblyList : STEM.Sys.Threading.IThreadable
@@ -1218,9 +1215,6 @@ namespace STEM.Surge
                 {
                     ConnectionType m = message as ConnectionType;
                     m.Respond(new MessageReceived(m.MessageID));
-
-                    if (m.Type == ConnectionType.Types.SurgeDeploymentManager)
-                        STEM.Sys.Global.ThreadPool.BeginAsync(new SendAssemblyList(connection, this));
                 }
                 else if (message is AssemblyInitializationComplete)
                 {

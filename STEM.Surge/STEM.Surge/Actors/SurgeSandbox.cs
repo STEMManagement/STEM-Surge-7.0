@@ -40,10 +40,14 @@ namespace STEM.Surge
                     ManageConnection(c);
                 
                 SandboxConnectionType m = new SandboxConnectionType { Type = ConnectionType.Types.SurgeSandbox, SandboxID = STEM.Sys.IO.Path.GetFileName(System.Environment.CurrentDirectory) };
+                m.onHandshakeComplete += SandboxConnectionType_onHandshakeComplete;
                 m.PerformHandshake(c);
-
-                STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ThreadStart(Timeout), TimeSpan.FromSeconds(30));
             }
+        }
+
+        private void SandboxConnectionType_onHandshakeComplete(Connection connection)
+        {
+            STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ThreadStart(Timeout), TimeSpan.FromSeconds(30));
         }
 
         protected override void onClosed(Connection connection)

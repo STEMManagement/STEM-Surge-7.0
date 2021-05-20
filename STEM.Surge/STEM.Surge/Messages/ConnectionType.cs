@@ -27,6 +27,9 @@ namespace STEM.Surge.Messages
     /// </summary>
     public class ConnectionType : STEM.Sys.Messaging.Message
     {
+        public delegate void HandshakeComplete(Connection connection);
+        public event HandshakeComplete onHandshakeComplete;
+
         public enum Types { SurgeActor, SurgeBranchManager, SurgeSandbox, SurgeDeploymentManager }
 
         public Types Type { get; set; }
@@ -60,6 +63,13 @@ namespace STEM.Surge.Messages
                 connection.Close();
                 return;
             }
+
+            if (onHandshakeComplete != null)
+                try
+                {
+                    onHandshakeComplete(connection);
+                }
+                catch { }
 
             STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake completed with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
         }

@@ -238,9 +238,19 @@ namespace STEM.Surge
                         _MessageConnections.Add(c);
                     }
 
-                ConnectionType m = new ConnectionType { Type = ConnectionType.Types.SurgeActor };
+                ConnectionType m = new ConnectionType { Type = ActorType() };
+                m.onHandshakeComplete += onHandshakeComplete;
                 m.PerformHandshake(c);
             }
+        }
+
+        protected virtual ConnectionType.Types ActorType()
+        {
+            return ConnectionType.Types.SurgeActor;
+        }
+
+        protected virtual void onHandshakeComplete(Connection connection)
+        {
         }
 
         /// <summary>

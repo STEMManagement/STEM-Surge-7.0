@@ -239,14 +239,15 @@ namespace STEM.Surge
             }
         }
 
+
         /// <summary>
         /// Called when the connection opens
         /// </summary>
         /// <param name="connection">The connection that opened</param>
-        protected override void onOpened(Sys.IO.TCP.Connection connection)
+        protected override void onHandshakeComplete(Connection connection)
         {
             // Call base
-            base.onOpened(connection);
+            base.onHandshakeComplete(connection);
 
             MessageConnection c = connection as MessageConnection;
 
@@ -274,10 +275,10 @@ namespace STEM.Surge
 
                         connectionOpenedCall = true;
                         _Connected = true;
-                    }
 
-                // Start sending assembly sync messages
-                STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ParameterizedThreadStart(SendAssemblyList), connection, TimeSpan.FromSeconds(30));
+                        // Start sending assembly sync messages
+                        STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ParameterizedThreadStart(SendAssemblyList), connection, TimeSpan.FromSeconds(30));
+                    }
 
                 if (connectionOpenedCall && onPrimaryConnectionOpened != null)
                     try
@@ -1187,8 +1188,8 @@ namespace STEM.Surge
 
                 if (aList.Descriptions.Count == 0)
                 {
-                    while (_AsmPool.LoadLevel > 0)
-                        System.Threading.Thread.Sleep(10);
+                    //while (_AsmPool.LoadLevel > 0)
+                    //    System.Threading.Thread.Sleep(10);
 
                     AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
                     a.Compress = true;
