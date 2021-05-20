@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using STEM.Sys.IO.TCP;
 using STEM.Surge.Messages;
+using STEM.Sys.Threading;
 
 namespace STEM.Surge
 {
@@ -39,200 +40,223 @@ namespace STEM.Surge
             _Pool.BeginAsync(this, TimeSpan.FromSeconds(1));
         }
 
-        List<AssemblyList> _AssemblyLists = new List<AssemblyList>();
-
         public void RegisterList(AssemblyList list)
         {
-            lock (_AssemblyLists)
+            lock (_RegisteredConnections)
             {
-                AssemblyList o = _AssemblyLists.FirstOrDefault(i => i.MessageConnection == list.MessageConnection);
-                if (o != null)
+                DeliverDelta d = null;
+                if (_RegisteredConnections.ContainsKey(list.MessageConnection))
                 {
-                    if (System.Threading.Monitor.TryEnter(o))
-                    {
-                        try
-                        {
-                            _AssemblyLists.Remove(o);
-                        }
-                        finally
-                        {
-                            System.Threading.Monitor.Exit(o);
-                        }
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    d = _RegisteredConnections[list.MessageConnection];
+                    d.ReceiveList(list);
+                    return;
                 }
 
-                _AssemblyLists.Add(list);
-                _Pool.BeginAsync(new System.Threading.ParameterizedThreadStart(DeliverDelta), list.MessageConnection, TimeSpan.FromSeconds(3));
-            }
-        }
-
-        void DeliverDelta(object o)
-        {
-            MessageConnection connection = o as MessageConnection;
-
-            AssemblyList list = null;
-
-            lock (_AssemblyLists)
-            {
-                list = _AssemblyLists.FirstOrDefault(i => i.MessageConnection == connection);
-                if (list == null)
+                if (d == null)
                 {
-                    _Pool.EndAsync(new System.Threading.ParameterizedThreadStart(DeliverDelta), o);
+                    d = new DeliverDelta(AssemblyList, list);
+                    _RegisteredConnections[list.MessageConnection] = d;
+                    _Pool.BeginAsync(d, TimeSpan.FromSeconds(3));
+
+                    list.MessageConnection.onClosed += MessageConnection_onClosed;
+
                     return;
                 }
             }
-            
-            bool deliveredAsms = false;
-            bool connectionClosed = false;
+        }
 
-            try
-            {
-                lock (list)
+        private void MessageConnection_onClosed(Connection connection)
+        {
+            MessageConnection c = connection as MessageConnection;
+
+            lock (_RegisteredConnections)
+                if (_RegisteredConnections.ContainsKey(c))
                 {
-                    bool initComplete = true;
+                    _RegisteredConnections[c].Dispose();
+                    _RegisteredConnections.Remove(c);
+                }
+        }
 
-                    List<string> listContent = list.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
-                    List<string> localContent;
+        Dictionary<MessageConnection, DeliverDelta> _RegisteredConnections = new Dictionary<MessageConnection, DeliverDelta>();
 
-                    while (true)
-                        try
-                        {
-                            localContent = AssemblyList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
-                            break;
-                        }
-                        catch { }
+        class DeliverDelta : STEM.Sys.Threading.IThreadable
+        {
+            AssemblyList _MasterList;
+            AssemblyList _ClientList;
 
-                    string platform = "";
+            object _ListLock = new object();
 
-                    if (list.IsWindows)
+            public DeliverDelta(AssemblyList masterList, AssemblyList clientList)
+            {
+                _MasterList = masterList;
+                _ClientList = clientList;
+            }
+
+            public void ReceiveList(AssemblyList list)
+            {
+                if (System.Threading.Monitor.TryEnter(_ListLock))
+                {
+                    try
                     {
-                        platform = "win-x86";
-                        if (list.IsX64)
-                            platform = "win-x64";
+                        _ClientList = list;
                     }
-                    else
+                    finally
                     {
-                        platform = "linux-x86";
-                        if (list.IsX64)
-                            platform = "linux-x64";
+                        System.Threading.Monitor.Exit(_ListLock);
                     }
+                }
+            }
 
-                    foreach (string name in localContent.ToList())
+            protected override void Execute(ThreadPool owner)
+            {
+                bool deliveredAsms = false;
+                bool connectionClosed = false;
+
+                try
+                {
+                    lock (_ListLock)
                     {
-                        STEM.Sys.IO.FileDescription f = null;
+                        bool initComplete = true;
+
+                        List<string> listContent = _ClientList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
+                        List<string> localContent;
 
                         while (true)
                             try
                             {
-                                f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                                localContent = _MasterList.Descriptions.Select(j => STEM.Sys.IO.Path.AdjustPath(j.Filename).ToUpper()).ToList();
                                 break;
                             }
                             catch { }
 
-                        string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
+                        string platform = "";
 
-                        if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
-                            localContent.Remove(name);
-                        if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
-                            localContent.Remove(name);
-                        if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
-                            localContent.Remove(name);
-                        if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
-                            localContent.Remove(name);
-                    }
+                        if (_ClientList.IsWindows)
+                        {
+                            platform = "win-x86";
+                            if (_ClientList.IsX64)
+                                platform = "win-x64";
+                        }
+                        else
+                        {
+                            platform = "linux-x86";
+                            if (_ClientList.IsX64)
+                                platform = "linux-x64";
+                        }
 
-                    initComplete = localContent.Except(listContent).Count() == 0;
+                        foreach (string name in localContent.ToList())
+                        {
+                            STEM.Sys.IO.FileDescription f = null;
 
-                    if (initComplete)
-                        if (!list.MessageConnection.Send(new AssemblyInitializationComplete()))
-                            if (!list.MessageConnection.Send(new AssemblyInitializationComplete()))
+                            while (true)
+                                try
+                                {
+                                    f = _MasterList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                                    break;
+                                }
+                                catch { }
+
+                            string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
+
+                            if (fullPath.IndexOf("win-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x86", StringComparison.InvariantCultureIgnoreCase))
+                                localContent.Remove(name);
+                            if (fullPath.IndexOf("win-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("win-x64", StringComparison.InvariantCultureIgnoreCase))
+                                localContent.Remove(name);
+                            if (fullPath.IndexOf("linux-x86", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x86", StringComparison.InvariantCultureIgnoreCase))
+                                localContent.Remove(name);
+                            if (fullPath.IndexOf("linux-x64", StringComparison.InvariantCultureIgnoreCase) >= 0 && !platform.Equals("linux-x64", StringComparison.InvariantCultureIgnoreCase))
+                                localContent.Remove(name);
+                        }
+
+                        initComplete = localContent.Except(listContent).Count() == 0;
+
+                        if (initComplete)
+                        {
+                            if (!_ClientList.MessageConnection.Send(new AssemblyInitializationComplete()))
                             {
-                                list.MessageConnection.Close();
+                                STEM.Sys.EventLog.WriteEntry("AssemblySync.DeliverDelta", "SendAssemblyList: Forced disconnect, " + _ClientList.MessageConnection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
+
+                                _ClientList.MessageConnection.Close();
                                 connectionClosed = true;
+                            }
+
+                            ExecutionInterval = TimeSpan.FromSeconds(30);
+
+                            return;
+                        }
+
+                        AssemblyList send = new AssemblyList();
+                        send.Path = _ClientList.Path;
+
+                        foreach (string name in localContent.Except(listContent).ToList())
+                        {
+                            STEM.Sys.IO.FileDescription f = null;
+
+                            while (true)
+                                try
+                                {
+                                    f = _MasterList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                                    break;
+                                }
+                                catch { }
+
+                            send.Descriptions.Add(f);
+                            _ClientList.Descriptions.Add(new STEM.Sys.IO.FileDescription(f.Filepath, f.Filename, false));
+
+                            if (!_ClientList.MessageConnection.Send(send))
+                            {
+                                try
+                                {
+                                    STEM.Sys.EventLog.WriteEntry("AssemblySync.DeliverDelta", "SendAssemblyList: Forced disconnect, " + _ClientList.MessageConnection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
+
+                                    _ClientList.MessageConnection.Close();
+                                    connectionClosed = true;
+                                }
+                                catch { }
+
                                 return;
                             }
 
-                    AssemblyList send = new AssemblyList();
-                    send.Path = list.Path;
-                    
-                    foreach (string name in localContent.Except(listContent).ToList())
-                    {
-                        STEM.Sys.IO.FileDescription f = AssemblyList.Descriptions.FirstOrDefault(i => i.Filename.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-
-                        string fullPath = System.IO.Path.Combine(f.Filepath, f.Filename);
-                        send.Descriptions.Add(f);
-                        list.Descriptions.Add(new STEM.Sys.IO.FileDescription(f.Filepath, f.Filename, false));
-
-                        if (!list.MessageConnection.Send(send))
-                        {
-                            try
-                            {
-                                STEM.Sys.EventLog.WriteEntry("AssemblySync.DeliverDelta", "SendAssemblyList: Forced disconnect, " + list.MessageConnection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
-
-                                list.MessageConnection.Close();
-                                connectionClosed = true;
-                            }
-                            catch { }
-
-                            return;
+                            send.Descriptions.Clear();
+                            deliveredAsms = true;
                         }
 
-                        send.Descriptions.Clear();
-                        deliveredAsms = true;
-                    }
-
-                    if (send.Descriptions.Count > 0)
-                    {
-                        if (!list.MessageConnection.Send(send))
+                        if (send.Descriptions.Count > 0)
                         {
-                            try
+                            if (!_ClientList.MessageConnection.Send(send))
                             {
-                                list.MessageConnection.Close();
-                                connectionClosed = true;
-                            }
-                            catch { }
+                                try
+                                {
+                                    STEM.Sys.EventLog.WriteEntry("AssemblySync.DeliverDelta", "SendAssemblyList: Forced disconnect, " + _ClientList.MessageConnection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
 
-                            return;
+                                    _ClientList.MessageConnection.Close();
+                                    connectionClosed = true;
+                                }
+                                catch { }
+
+                                return;
+                            }
+
+                            send.Descriptions.Clear();
+                            deliveredAsms = true;
                         }
 
-                        send.Descriptions.Clear();
-                        deliveredAsms = true;
+                        if (deliveredAsms)
+                            _ClientList.MessageConnection.Send(send);
                     }
-
-                    if (deliveredAsms)
-                        list.MessageConnection.Send(send);
                 }
-            }
-            catch { }
-            finally
-            {
-                if (connectionClosed)
-                    Dispose(connection);
-            }
-        }
-
-        public void Dispose(MessageConnection connection)
-        {
-            try
-            {
-                lock (_AssemblyLists)
+                catch { }
+                finally
                 {
-                    AssemblyList o = _AssemblyLists.FirstOrDefault(i => i.MessageConnection == connection);
-                    if (o != null)
-                        _AssemblyLists.Remove(o);
-
-                    _Pool.EndAsync(new System.Threading.ParameterizedThreadStart(DeliverDelta), connection);
+                    if (connectionClosed)
+                        owner.EndAsync(this);
                 }
             }
-            catch { }
         }
 
         protected override void Execute(Sys.Threading.ThreadPool owner)
         {
+            bool added = false;
             foreach (string s in STEM.Sys.IO.Directory.STEM_GetFiles(_ExtensionDirectory, "*.dll|*.so|*.a|*.lib", "!.Archive|!TEMP", _Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false))
                 if (!AssemblyList.Descriptions.Exists(i => i.Filename == s.Substring(_ExtensionDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar)))
                     try
@@ -241,9 +265,21 @@ namespace STEM.Surge
 
                         if (d.Content.Length > 0)
                             lock (AssemblyList)
+                            {
                                 AssemblyList.Descriptions.Add(d);
+                                added = true;
+                            }
                     }
                     catch { }
+
+            if (added)
+            {
+                lock (_RegisteredConnections)
+                    foreach (DeliverDelta d in _RegisteredConnections.Values)
+                    {
+                        d.ExecutionInterval = TimeSpan.FromSeconds(1);
+                    }
+            }
         }
     }
 }
