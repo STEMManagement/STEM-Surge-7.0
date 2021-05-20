@@ -329,31 +329,22 @@ namespace STEM.Sys.IO.TCP
         {
             lock (_Recycler)
             {
-                if (_Recycler.Count < 50)
-                    _Recycler.Add(buf);
+                if (_Recycler.Count < 20)
+                    _Recycler.Enqueue(buf);
             }
         }
 
-        static List<byte[]> _Recycler = new List<byte[]>();
+        Queue<byte[]> _Recycler = new Queue<byte[]>();
 
-        byte[] GetBuffer(int size)
+        byte[] GetBuffer()
         {
-            byte[] ret = null;
-
             lock (_Recycler)
             {
-                ret = _Recycler.OrderBy(i => i.Length).FirstOrDefault(i => i.Length >= size);
-
-                if (ret != null)
-                    _Recycler.Remove(ret);
-                else if (_Recycler.Count == 50)
-                    _Recycler.RemoveAt(0);
+                if (_Recycler.Count > 0)
+                    return _Recycler.Dequeue();
             }
 
-            if (ret == null)
-                ret = new byte[size];
-
-            return ret;
+            return new byte[1048576];
         }
 
         void Receive()
@@ -378,7 +369,7 @@ namespace STEM.Sys.IO.TCP
                         {
                             int rcvd = 0;
 
-                            byte[] buf = GetBuffer(2097152);
+                            byte[] buf = GetBuffer();
 
                             int pos = 0;
                             lock (client)
