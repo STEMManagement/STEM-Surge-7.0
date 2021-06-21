@@ -45,7 +45,7 @@ namespace STEM.Surge
             }
         }
 
-        private void SandboxConnectionType_onHandshakeComplete(Connection connection)
+        private void SandboxConnectionType_onHandshakeComplete(ConnectionType sender, Connection connection)
         {
             STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ThreadStart(Timeout), TimeSpan.FromSeconds(30));
         }
