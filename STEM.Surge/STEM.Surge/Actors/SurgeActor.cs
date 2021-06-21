@@ -146,21 +146,31 @@ namespace STEM.Surge
         {
             string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
 
+            bool firstConnection = false;
+
+            MessageConnection c = null;
+
             lock (ConnectionLock)
             {
-                MessageConnection c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
+                c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
 
                 if (c == null)
                 {
                     c = new MessageConnection(ipAddress, port, sslConnection, true, autoReconnect);
+                    _MessageConnections.Add(c);
+
                     c.onClosed += onClosed;
                     c.onReceived += onReceived;
                     c.onOpened += onOpened;
-                    _MessageConnections.Add(c);
-                }
 
-                return c.IsConnected();
+                    firstConnection = _MessageConnections.Count == 1;
+                }
             }
+
+            if (firstConnection)
+                System.Threading.Thread.Sleep(3000);
+
+            return c.IsConnected();
         }
 
         /// <summary>
@@ -176,21 +186,31 @@ namespace STEM.Surge
         {
             string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
 
+            bool firstConnection = false;
+
+            MessageConnection c = null;
+
             lock (ConnectionLock)
             {
-                MessageConnection c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
+                c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
 
                 if (c == null)
                 {
                     c = new MessageConnection(ipAddress, port, sslConnection, true, certificate, autoReconnect);
+                    _MessageConnections.Add(c);
+
                     c.onClosed += onClosed;
                     c.onReceived += onReceived;
                     c.onOpened += onOpened;
-                    _MessageConnections.Add(c);
-                }
 
-                return c.IsConnected();
+                    firstConnection = _MessageConnections.Count == 1;
+                }
             }
+
+            if (firstConnection)
+                System.Threading.Thread.Sleep(3000);
+
+            return c.IsConnected();
         }
 
         /// <summary>
@@ -249,7 +269,7 @@ namespace STEM.Surge
             return ConnectionType.Types.SurgeActor;
         }
 
-        protected virtual void onHandshakeComplete(Connection connection)
+        protected virtual void onHandshakeComplete(ConnectionType sender, Connection connection)
         {
         }
 
