@@ -244,10 +244,10 @@ namespace STEM.Surge
         /// Called when the connection opens
         /// </summary>
         /// <param name="connection">The connection that opened</param>
-        protected override void onHandshakeComplete(Connection connection)
+        protected override void onHandshakeComplete(ConnectionType sender, Connection connection)
         {
             // Call base
-            base.onHandshakeComplete(connection);
+            base.onHandshakeComplete(sender, connection);
 
             MessageConnection c = connection as MessageConnection;
 
