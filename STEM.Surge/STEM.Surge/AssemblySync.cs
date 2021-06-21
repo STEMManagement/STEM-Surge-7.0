@@ -45,9 +45,9 @@ namespace STEM.Surge
             lock (_RegisteredConnections)
             {
                 DeliverDelta d = null;
-                if (_RegisteredConnections.ContainsKey(list.MessageConnection))
+                if (_RegisteredConnections.ContainsKey(list.MessageConnection.GetHashCode()))
                 {
-                    d = _RegisteredConnections[list.MessageConnection];
+                    d = _RegisteredConnections[list.MessageConnection.GetHashCode()];
                     d.ReceiveList(list);
                     return;
                 }
@@ -55,7 +55,7 @@ namespace STEM.Surge
                 if (d == null)
                 {
                     d = new DeliverDelta(AssemblyList, list);
-                    _RegisteredConnections[list.MessageConnection] = d;
+                    _RegisteredConnections[list.MessageConnection.GetHashCode()] = d;
                     _Pool.BeginAsync(d, TimeSpan.FromSeconds(3));
 
                     list.MessageConnection.onClosed += MessageConnection_onClosed;
@@ -70,14 +70,14 @@ namespace STEM.Surge
             MessageConnection c = connection as MessageConnection;
 
             lock (_RegisteredConnections)
-                if (_RegisteredConnections.ContainsKey(c))
+                if (_RegisteredConnections.ContainsKey(c.GetHashCode()))
                 {
-                    _RegisteredConnections[c].Dispose();
-                    _RegisteredConnections.Remove(c);
+                    _RegisteredConnections[c.GetHashCode()].Dispose();
+                    _RegisteredConnections.Remove(c.GetHashCode());
                 }
         }
 
-        Dictionary<MessageConnection, DeliverDelta> _RegisteredConnections = new Dictionary<MessageConnection, DeliverDelta>();
+        Dictionary<int, DeliverDelta> _RegisteredConnections = new Dictionary<int, DeliverDelta>();
 
         class DeliverDelta : STEM.Sys.Threading.IThreadable
         {
