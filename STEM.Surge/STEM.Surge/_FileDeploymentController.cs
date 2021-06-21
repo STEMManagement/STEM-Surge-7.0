@@ -79,6 +79,7 @@ namespace STEM.Surge
             TemplateKVP["[SubDir]"] = "Reserved";
             TemplateKVP["[TargetNameWithoutExt]"] = "Reserved";
             TemplateKVP["[TargetExt]"] = "Reserved";
+            TemplateKVP["[FileSize]"] = "Reserved";
             TemplateKVP["[LastWriteTimeUtc]"] = "yyyy-MM-dd HH.mm.ss.fff";
             TemplateKVP["[LastAccessTimeUtc]"] = "yyyy-MM-dd HH.mm.ss.fff";
             TemplateKVP["[CreationTimeUtc]"] = "yyyy-MM-dd HH.mm.ss.fff";
@@ -150,6 +151,10 @@ namespace STEM.Surge
                     getFileInfo = true;
 
             if (getFileInfo == false)
+                if (xml.IndexOf("[FileSize]", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    getFileInfo = true;
+
+            if (getFileInfo == false)
                 foreach (string k in kvp.Keys)
                 {
                     if (kvp[k] != null)
@@ -169,12 +174,20 @@ namespace STEM.Surge
                             getFileInfo = true;
                             break;
                         }
+                        if (kvp[k].IndexOf("[FileSize]", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                        {
+                            getFileInfo = true;
+                            break;
+                        }
                     }
                 }
 
             if (getFileInfo)
             {
                 FDCFileInfo info = GetFileInfo(initiationSource);
+
+                if (info == null)
+                    info = new FDCFileInfo { CreationTimeUtc = DateTime.MinValue, LastAccessTimeUtc = DateTime.MinValue, LastWriteTimeUtc = DateTime.MinValue, Size = 0 };
 
                 foreach (string key in kvp.Keys.Where(i => i.Equals("[LastWriteTimeUtc]", StringComparison.InvariantCultureIgnoreCase)).ToList())
                     try
@@ -194,6 +207,13 @@ namespace STEM.Surge
                     try
                     {
                         kvp[key] = info.CreationTimeUtc.ToString(kvp[key], System.Globalization.CultureInfo.CurrentCulture);
+                    }
+                    catch { }
+
+                foreach (string key in kvp.Keys.Where(i => i.Equals("[FileSize]", StringComparison.InvariantCultureIgnoreCase)).ToList())
+                    try
+                    {
+                        kvp[key] = info.Size.ToString();
                     }
                     catch { }
             }
@@ -225,39 +245,43 @@ namespace STEM.Surge
         /// <returns>The time to use for ageing sources</returns>
         public virtual DateTime GetAgeBasis(string targetSource)
         {
-            FDCFileInfo fi = GetFileInfo(targetSource);
-
-            if (fi == null)
+            try
             {
-                FDCDirectoryInfo di = GetDirectoryInfo(targetSource);
+                FDCFileInfo fi = GetFileInfo(targetSource);
 
-                if (di == null)
-                    return DateTime.MinValue;
+                if (fi == null)
+                {
+                    FDCDirectoryInfo di = GetDirectoryInfo(targetSource);
+
+                    if (di == null)
+                        return DateTime.MinValue;
+
+                    switch (SelectedOrigin)
+                    {
+                        case STEM.Surge.AgeOrigin.LastWriteTime:
+                            return di.LastWriteTimeUtc;
+
+                        case STEM.Surge.AgeOrigin.LastAccessTime:
+                            return di.LastAccessTimeUtc;
+
+                        case STEM.Surge.AgeOrigin.CreationTime:
+                            return di.CreationTimeUtc;
+                    }
+                }
 
                 switch (SelectedOrigin)
                 {
                     case STEM.Surge.AgeOrigin.LastWriteTime:
-                        return di.LastWriteTimeUtc;
+                        return fi.LastWriteTimeUtc;
 
                     case STEM.Surge.AgeOrigin.LastAccessTime:
-                        return di.LastAccessTimeUtc;
+                        return fi.LastAccessTimeUtc;
 
                     case STEM.Surge.AgeOrigin.CreationTime:
-                        return di.CreationTimeUtc;
+                        return fi.CreationTimeUtc;
                 }
             }
-            
-            switch (SelectedOrigin)
-            {
-                case STEM.Surge.AgeOrigin.LastWriteTime:
-                    return fi.LastWriteTimeUtc;
-
-                case STEM.Surge.AgeOrigin.LastAccessTime:
-                    return fi.LastAccessTimeUtc;
-
-                case STEM.Surge.AgeOrigin.CreationTime:
-                    return fi.CreationTimeUtc;
-            }
+            catch { }
 
             return DateTime.MinValue;
         }
@@ -286,7 +310,7 @@ namespace STEM.Surge
             }
             catch { }
 
-            return false;
+            return !AgeTrigger;
         }
 
 
@@ -340,6 +364,7 @@ namespace STEM.Surge
                 if (File.Exists(file))
                     fi = new FileInfo(file);
             }
+            catch { }
             finally
             {
                 if (impersonated != null)
@@ -352,7 +377,7 @@ namespace STEM.Surge
             if (fi == null)
                 return null;
 
-            return new FDCFileInfo { CreationTimeUtc = fi.CreationTimeUtc, LastAccessTimeUtc = fi.LastAccessTimeUtc, LastWriteTimeUtc = fi.LastWriteTimeUtc, Size = fi.Length }; ;
+            return new FDCFileInfo { CreationTimeUtc = fi.CreationTimeUtc, LastAccessTimeUtc = fi.LastAccessTimeUtc, LastWriteTimeUtc = fi.LastWriteTimeUtc, Size = fi.Length };
         }
                 
         /// <summary>
@@ -388,6 +413,7 @@ namespace STEM.Surge
                 if (Directory.Exists(directory))
                     di = new DirectoryInfo(directory);
             }
+            catch { }
             finally
             {
                 if (impersonated != null)
@@ -400,7 +426,7 @@ namespace STEM.Surge
             if (di == null)
                 return null;
 
-            return new FDCDirectoryInfo { CreationTimeUtc = di.CreationTimeUtc, LastAccessTimeUtc = di.LastAccessTimeUtc, LastWriteTimeUtc = di.LastWriteTimeUtc }; ;
+            return new FDCDirectoryInfo { CreationTimeUtc = di.CreationTimeUtc, LastAccessTimeUtc = di.LastAccessTimeUtc, LastWriteTimeUtc = di.LastWriteTimeUtc };
         }
 
         /// <summary>
