@@ -646,9 +646,9 @@ namespace STEM.Surge
             return ConnectionType.Types.SurgeBranchManager;
         }
 
-        protected override void onHandshakeComplete(Connection connection)
+        protected override void onHandshakeComplete(ConnectionType sender, Connection connection)
         {
-            STEM.Sys.Global.ThreadPool.BeginAsync(new SendAssemblyList((MessageConnection)connection, this));
+            new SendAssemblyList((MessageConnection)connection, this);
         }
 
         class SendAssemblyList : STEM.Sys.Threading.IThreadable
@@ -663,6 +663,38 @@ namespace STEM.Surge
             {
                 _Connection = connection;
                 _Owner = owner;
+
+                if (_Owner._AssemblyInitializationComplete)
+                    Send();
+                else
+                    STEM.Sys.Global.ThreadPool.BeginAsync(this);
+            }
+
+            bool Send()
+            {
+                AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+
+                a.Compress = true;
+
+                if (!_Connection.Send(a))
+                {
+                    try
+                    {
+                        if (_Connection.IsConnected())
+                        {
+                            STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Forced disconnect, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Error);
+
+                            _Connection.Close();
+                        }
+                    }
+                    catch { }
+
+                    return false;
+                }
+
+                STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Success, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
+                
+                return true;
             }
 
             protected override void Execute(ThreadPool owner)
@@ -680,56 +712,49 @@ namespace STEM.Surge
                         }
                     }
 
+                    if (!_Connection.IsConnected())
+                    {
+                        endAsync = true;
+                        return;
+                    }
+
                     lock (_Lock)
                     {
                         if (_AssemblyListInitializer == null)
                             _AssemblyListInitializer = _Connection;
+                        else if (!_AssemblyListInitializer.IsConnected())
+                            _AssemblyListInitializer = _Connection;
 
                         if (!_Owner._AssemblyInitializationComplete)
-                            if (_AssemblyListInitializer != _Connection)
+                            if (_AssemblyListInitializer.RemoteAddress != _Connection.RemoteAddress)
                             {
                                 ExecutionInterval = TimeSpan.FromSeconds(1);
+                                endAsync = false;
+                                return;
+                            }
+
+                        if (_AssemblyListInitializer.RemoteAddress == _Connection.RemoteAddress)
+                            if (_Owner._AsmPool.LoadLevel > 0)
+                            {
+                                ExecutionInterval = TimeSpan.FromSeconds(1);
+                                endAsync = false;
                                 return;
                             }
                     }
 
-                    if (_AssemblyListInitializer == _Connection)
-                        if (_Owner._AsmPool.LoadLevel > 0)
-                        {
-                            ExecutionInterval = TimeSpan.FromMilliseconds(100);
-                            return;
-                        }
+                    ExecutionInterval = TimeSpan.FromSeconds(15);
 
-                    ExecutionInterval = TimeSpan.FromSeconds(5);
-
-                    AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
-
-                    a.Compress = true;
-
-                    if (!_Connection.Send(a))
-                    {
-                        try
-                        {
-                            _Connection.Close();
-                        }
-                        catch { }
-
-                        endAsync = true;
-
-                        STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Forced disconnect, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Error);
-                    }
-                    else
-                    {
-                        STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Success, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
-                    }
+                    endAsync = !Send();
+                    return;
                 }
                 finally
                 {
                     if (endAsync)
                         lock (_Lock)
                         {
-                            if (_AssemblyListInitializer == _Connection)
-                                _AssemblyListInitializer = null;
+                            if (_AssemblyListInitializer != null)
+                                if (_AssemblyListInitializer.RemoteAddress == _Connection.RemoteAddress)
+                                    _AssemblyListInitializer = null;
 
                             owner.EndAsync(this);
                         }
@@ -1316,13 +1341,15 @@ namespace STEM.Surge
 
                     lock (_BranchHealthThreads)
                     {
-                        if (_BranchHealthThreads.ContainsKey(connection.ToString()))
+                        string connectionKey = connection.ToString();
+
+                        if (_BranchHealthThreads.ContainsKey(connectionKey))
                             return;
 
                         System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(ReportState));
                         t.IsBackground = true;
-                        _BranchHealthThreads[connection.ToString()] = connection;
-                        t.Start(connection.ToString());
+                        _BranchHealthThreads[connectionKey] = connection;
+                        t.Start(connectionKey);
                     }
                 }
                 else if (message is RestartBranch)
@@ -1946,7 +1973,7 @@ namespace STEM.Surge
                     if (_MessageQueue.ContainsKey(connection.RemoteAddress + connection.RemotePort))
                         lock (_MessageQueueLock[connection.RemoteAddress + connection.RemotePort])
                         {
-                            if (_MessageQueue[connection.RemoteAddress + connection.RemoteAddress].Count > 0)
+                            if (_MessageQueue[connection.RemoteAddress + connection.RemotePort].Count > 0)
                             {
                                 try
                                 {
@@ -1967,10 +1994,20 @@ namespace STEM.Surge
                 try
                 {
                     lock (_BranchHealthThreads)
+                    {
                         if (!_BranchHealthThreads.ContainsKey(connectionKey))
                         {
                             return;
                         }
+                        else
+                        {
+                            if (connectionKey != connection.ToString())
+                            {
+                                _BranchHealthThreads.Remove(connectionKey);
+                                return;
+                            }
+                        }
+                    }
                 }
                 catch { }
             }
@@ -1984,7 +2021,13 @@ namespace STEM.Surge
             if (error)
                 try
                 {
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"), iSet.Serialize());
+                    if (File.Exists(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is")))
+                        File.Delete(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"));
+
+                    using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)))
+                    {
+                        fs.Write(iSet.Serialize());
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1993,8 +2036,14 @@ namespace STEM.Surge
 
             try
             {
+                if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
+                    File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
+
                 if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), iSet.Serialize());
+                    using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)))
+                    {
+                        fs.Write(iSet.Serialize());
+                    }
             }
             catch { }
         }
