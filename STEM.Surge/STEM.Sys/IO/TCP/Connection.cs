@@ -39,7 +39,7 @@ namespace STEM.Sys.IO.TCP
         Thread _CalloutThread = null;
         object _AccessMutex = new object();
 
-        bool _CloseBroadcast = true;
+        bool _CloseBroadcast = false;
         void BroadcastClose()
         {
             lock (_AccessMutex)
@@ -48,11 +48,11 @@ namespace STEM.Sys.IO.TCP
                 {
                     lock (_CallOutQueue)
                     {
-                        EnqueueCallout(new ConnectionClosed(_Closed));
-
                         if (_ConnectionClosed != null)
                             foreach (ConnectionClosed c in _ConnectionClosed.GetInvocationList())
                                 EnqueueCallout(c);
+
+                        EnqueueCallout(new ConnectionClosed(_Closed));
                     }
 
                     _CloseBroadcast = true;
@@ -106,7 +106,7 @@ namespace STEM.Sys.IO.TCP
 
         public Connection(TcpClient client, X509Certificate2 certificate)
         {
-            if (_TcpClient == client || client == null)
+            if (client == null)
                 return;
 
             ConnectionRole = TCP.Role.Server;
@@ -206,6 +206,11 @@ namespace STEM.Sys.IO.TCP
                 {
                     if (!IsConnected())
                     {
+                        if (_Open) // Can't re-open until the close was fully broadcast
+                            return;
+
+                        TcpClient client = null;
+
                         try
                         {
                             _TcpClient = null;
@@ -215,15 +220,24 @@ namespace STEM.Sys.IO.TCP
                             if (address == null || System.Net.IPAddress.None.ToString() == address)
                                 throw new Exception("Address could not be reached.");
 
-                            TcpClient client = new TcpClient(AddressFamily.InterNetwork);
+                            client = new TcpClient(AddressFamily.InterNetwork);
                             client.Connect(RemoteAddress, RemotePort);
 
-                            _TcpClient = client;
-                            
+                            client.ReceiveBufferSize = 1024 * 1024 * 256;
+                            client.SendBufferSize = 1024 * 256;
+                            client.Client.DontFragment = true;
+                            client.Client.Ttl = 42;
+
+                            client.LingerState = new LingerOption(true, 0);
+                            client.NoDelay = true;
+
+                            client.ReceiveTimeout = 5000;
+                            client.SendTimeout = 5000;
+
                             if (_SslConnection)
                             {
                                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                                _SslStream = new SslStream(_TcpClient.GetStream(), true, new RemoteCertificateValidationCallback(ValidateCertificate), null, EncryptionPolicy.RequireEncryption);
+                                _SslStream = new SslStream(client.GetStream(), true, new RemoteCertificateValidationCallback(ValidateCertificate), null, EncryptionPolicy.RequireEncryption);
 
                                 _SslStream.ReadTimeout = 5000;
                                 _SslStream.WriteTimeout = 5000;
@@ -240,28 +254,30 @@ namespace STEM.Sys.IO.TCP
                                 }
                             }
 
+                            _TcpClient = client;
+
                             if (!IsConnected())
                                 throw new IOException();
                         }
                         catch 
                         {
-                            if (_TcpClient != null)
+                            if (client != null)
                             {
                                 try
                                 {
-                                    _TcpClient.Client.Shutdown(SocketShutdown.Both);
+                                    client.Client.Shutdown(SocketShutdown.Both);
                                 }
                                 catch { }
 
                                 try
                                 {
-                                    _TcpClient.Close();
+                                    client.Close();
                                 }
                                 catch { }
 
                                 try
                                 {
-                                    _TcpClient.Dispose();
+                                    client.Dispose();
                                 }
                                 catch { }
                             }
@@ -303,6 +319,8 @@ namespace STEM.Sys.IO.TCP
                     LocalAddress = ((System.Net.IPEndPoint)_TcpClient.Client.LocalEndPoint).Address.ToString();
                     LocalPort = ((System.Net.IPEndPoint)_TcpClient.Client.LocalEndPoint).Port;
 
+                    _CloseBroadcast = false;
+
                     if (_Receiver == null)
                     {
                         _Receiver = new Thread(new ThreadStart(Receive));
@@ -319,8 +337,6 @@ namespace STEM.Sys.IO.TCP
 
                         EnqueueCallout(new ConnectionOpened(_Opened));
                     }
-
-                    _CloseBroadcast = false;
                 }
             }
         }
@@ -355,48 +371,58 @@ namespace STEM.Sys.IO.TCP
             {
                 while (_Receiver == System.Threading.Thread.CurrentThread)
                 {
-                    TcpClient client = _TcpClient;
+                    bool receive = true;
+                    lock (_AccessMutex)
+                        receive = (_TcpClient != null && _TcpClient.Connected);
 
-                    if (client != null && client.Connected)
+                    if (receive)
                     {
                         if (!_Open)
                         {
-                            System.Threading.Thread.Sleep(100);
+                            System.Threading.Thread.Sleep(10);
                             continue;
                         }
 
                         try
                         {
-                            int rcvd = 0;
-
                             byte[] buf = GetBuffer();
 
                             int pos = 0;
-                            lock (client)
-                                while (client.Available > 0 && pos < buf.Length)
-                                {
-                                    lastConnectionTest = DateTime.UtcNow;
-
-                                    if (_SslStream != null)
-                                    {
-                                        rcvd = _SslStream.Read(buf, pos, buf.Length - pos);
-                                    }
-                                    else
-                                    {
-                                        rcvd = client.GetStream().Read(buf, pos, buf.Length - pos);
-                                    }
-
-                                    pos += rcvd;
-
-                                    if (rcvd == 0)
-                                        break;
-                                }
-
-                            rcvd = pos;
-
-                            if (rcvd > 0)
+                            while (true)
                             {
-                                Receive(buf, rcvd, DateTime.UtcNow);
+                                int rcvd = 0;
+
+                                lock (_AccessMutex)
+                                    if (_TcpClient != null && _TcpClient.Connected)
+                                        if (_TcpClient.Available > 0 && pos < buf.Length)
+                                        {
+                                            lastConnectionTest = DateTime.UtcNow;
+
+                                            int read = _TcpClient.Available;
+
+                                            if (read > (buf.Length - pos))
+                                                read = buf.Length - pos;
+
+                                            if (_SslStream != null)
+                                            {
+                                                rcvd = _SslStream.Read(buf, pos, read);
+                                            }
+                                            else
+                                            {
+                                                rcvd = _TcpClient.GetStream().Read(buf, pos, read);
+                                            }
+                                        }
+
+                                pos += rcvd;
+
+                                if (rcvd == 0)
+                                    break;
+                            }
+
+                            if (pos > 0)
+                            {
+                                lock (_AccessMutex)
+                                    EnqueueReceiveCallout(buf, pos, DateTime.UtcNow);
                             }
                             else
                             {
@@ -431,14 +457,15 @@ namespace STEM.Sys.IO.TCP
                                 }
                             }
 
-                            if (client.Connected)
-                            {
-                                STEM.Sys.EventLog.WriteEntry("Connection.Receive", RemoteAddress + " - " + ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                            }
-                            else
-                            {
-                                IsConnected();
-                            }
+                            lock (_AccessMutex)
+                                if (_TcpClient != null && _TcpClient.Connected)
+                                {
+                                    STEM.Sys.EventLog.WriteEntry("Connection.Receive", RemoteAddress + " - " + ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                                }
+                                else
+                                {
+                                    IsConnected();
+                                }
                         }
                     }
                     else
@@ -463,63 +490,77 @@ namespace STEM.Sys.IO.TCP
 
         public bool IsConnected()
         {
-            if (_CloseBroadcast && _TcpClient == null)
-                return false;
-
-            TcpClient client = _TcpClient;
-
-            if (client != null)
-                lock (client)
-                {
-                    try
-                    {
-                        if (_SslStream != null)
-                        {
-                            _SslStream.Write(ConnectionTestMessage, 0, ConnectionTestMessage.Length);
-                            _SslStream.Flush();
-                        }
-                        else
-                        {
-                            client.GetStream().Write(ConnectionTestMessage, 0, ConnectionTestMessage.Length);
-                        }
-
-                        if (client.Connected)
-                        {
-                            return true;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-
             lock (_AccessMutex)
             {
-                if (client == _TcpClient)
+                if (_TcpClient == null)
+                    return false;
+
+                try
                 {
-                    try
+                    if (_SslStream != null)
                     {
-                        _TcpClient.Client.Shutdown(SocketShutdown.Both);
+                        _SslStream.Write(ConnectionTestMessage, 0, ConnectionTestMessage.Length);
+                        _SslStream.Flush();
                     }
-                    catch { }
-
-                    try
+                    else
                     {
-                        _TcpClient.Close();
+                        _TcpClient.GetStream().Write(ConnectionTestMessage, 0, ConnectionTestMessage.Length);
+                        _TcpClient.GetStream().Flush();
                     }
-                    catch { }
 
-                    try
+                    if (_TcpClient.Connected)
                     {
-                        _TcpClient.Dispose();
+                        return true;
                     }
-                    catch { }
-
-                    _TcpClient = null;
-                    _SslStream = null;
-
-                    BroadcastClose();
                 }
+                catch
+                {
+                }
+
+                try
+                {
+                    if (_Receiver != null)
+                    {
+                        Thread t = _Receiver;
+                        _Receiver = null;
+
+                        try
+                        {
+                            t.Interrupt();
+                        }
+                        catch { }
+
+                        try
+                        {
+                            t.Abort();
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    _TcpClient.Client.Shutdown(SocketShutdown.Both);
+                }
+                catch { }
+
+                try
+                {
+                    _TcpClient.Close();
+                }
+                catch { }
+
+                try
+                {
+                    _TcpClient.Dispose();
+                }
+                catch { }
+
+                _TcpClient = null;
+                _SslStream = null;
+
+                BroadcastClose();
 
                 return false;
             }
@@ -529,6 +570,28 @@ namespace STEM.Sys.IO.TCP
         {
             lock (_AccessMutex)
             {
+                try
+                {
+                    if (_Receiver != null)
+                    {
+                        Thread t = _Receiver;
+                        _Receiver = null;
+
+                        try
+                        {
+                            t.Interrupt();
+                        }
+                        catch { }
+
+                        try
+                        {
+                            t.Abort();
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
                 if (_TcpClient != null)
                 {
                     try
@@ -568,41 +631,13 @@ namespace STEM.Sys.IO.TCP
                     _TcpClient = null;
                     _SslStream = null;
 
-                    try
-                    {
-                        if (_Receiver != null)
-                        {
-                            Thread t = _Receiver;
-                            _Receiver = null;
-
-                            try
-                            {
-                                t.Interrupt();
-                            }
-                            catch { }
-
-                            try
-                            {
-                                t.Abort();
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
-
-                    _Receiver = null;
+                    BroadcastClose();
                 }
-                else
-                {
-                    return;
-                }
-
-                BroadcastClose();
             }
         }
 
         /// <summary>
-        /// Messages are queued to insure the socket remains clear.
+        /// Messages are queued to ensure the socket remains clear.
         /// If your message handling is time consuming and your inbound message
         /// traffic backing up, you can see how bad things have gotten by looking
         /// at MessageBacklog.
@@ -611,7 +646,8 @@ namespace STEM.Sys.IO.TCP
         {
             get
             {
-                return 0;
+                lock (_CallOutQueue)
+                    return _CallOutQueue.Count;
             }
         }
 
@@ -619,9 +655,7 @@ namespace STEM.Sys.IO.TCP
         {
             lock (_CallOutQueue)
             {
-                _CallOutQueue.Enqueue(c);
-
-                System.Threading.Monitor.Pulse(_CallOutQueue);
+                _CallOutQueue.Enqueue(new object[] { c, this });
 
                 if (_CalloutThread == null)
                 {
@@ -629,6 +663,25 @@ namespace STEM.Sys.IO.TCP
                     _CalloutThread.IsBackground = true;
                     _CalloutThread.Start();
                 }
+
+                System.Threading.Monitor.Pulse(_CallOutQueue);
+            }
+        }
+
+        void EnqueueReceiveCallout(byte[] message, int length, DateTime received)
+        {
+            lock (_CallOutQueue)
+            {
+                _CallOutQueue.Enqueue(new object[] { new ConnectionReceive(Receive), message, length, received });
+
+                if (_CalloutThread == null)
+                {
+                    _CalloutThread = new Thread(new ThreadStart(_CallOut));
+                    _CalloutThread.IsBackground = true;
+                    _CalloutThread.Start();
+                }
+
+                System.Threading.Monitor.Pulse(_CallOutQueue);
             }
         }
 
@@ -636,12 +689,26 @@ namespace STEM.Sys.IO.TCP
         void _Opened(Connection connection)
         {
             _Open = true;
+
+            try
+            {
+                ConnectionReset();
+            }
+            catch { }
         }
 
         void _Closed(Connection connection)
         {
             _Open = false;
+
+            try
+            {
+                ConnectionReset();
+            }
+            catch { }
         }
+
+        static STEM.Sys.Threading.ThreadPool _ReconnectPool = new Threading.ThreadPool(Int32.MaxValue, true);
 
         /// <summary>
         /// If this is a client connection, Reconnect attempts a reconnect to the server.
@@ -653,18 +720,30 @@ namespace STEM.Sys.IO.TCP
             if (ConnectionRole == TCP.Role.Server)
                 throw new Exception("Cannot reconnect from server.");
 
-            while (!IsConnected() && timeout.TotalSeconds > 0)
+            if (_Open == true)
+                lock (_AccessMutex)
+                    return !_CloseBroadcast;
+
+            while (true)
             {
-                Bind();
-
-                if (!IsConnected())
+                lock (_AccessMutex)
                 {
-                    System.Threading.Thread.Sleep(1000);
-                    timeout = timeout.Subtract(TimeSpan.FromSeconds(1));
-                }
-            }
+                    if (!_CloseBroadcast)
+                        return true;
 
-            return IsConnected();
+                    Bind();
+
+                    if (!_CloseBroadcast)
+                        return true;
+                }
+
+                timeout = timeout.Subtract(TimeSpan.FromSeconds(1));
+
+                if (timeout.TotalSeconds > 0)
+                    System.Threading.Thread.Sleep(1000);
+                else
+                    return false;
+            }
         }
 
         /// <summary>
@@ -682,6 +761,7 @@ namespace STEM.Sys.IO.TCP
                 Reconnect();
         }
 
+        delegate void ConnectionReceive(byte[] message, int length, DateTime received);
         public virtual void Receive(byte[] message, int length, DateTime received) { }
                 
         public delegate void ConnectionOpened(Connection connection);
@@ -697,7 +777,7 @@ namespace STEM.Sys.IO.TCP
                         Bind(value);
 
                         if (ConnectionRole == TCP.Role.Client && AutoReconnect)
-                            STEM.Sys.Global.ThreadPool.BeginAsync(new System.Threading.ThreadStart(_Reconnect), TimeSpan.FromSeconds(3));
+                            _ReconnectPool.BeginAsync(new System.Threading.ThreadStart(_Reconnect), TimeSpan.FromSeconds(3));
                     }
             }
 
@@ -710,7 +790,7 @@ namespace STEM.Sys.IO.TCP
 
                     if (_ConnectionOpened == null || _ConnectionOpened.GetInvocationList().Length == 0)
                         if (ConnectionRole == TCP.Role.Client && AutoReconnect)
-                            STEM.Sys.Global.ThreadPool.EndAsync(new System.Threading.ThreadStart(_Reconnect));
+                            _ReconnectPool.EndAsync(new System.Threading.ThreadStart(_Reconnect));
                 }
             }
         }
@@ -726,7 +806,7 @@ namespace STEM.Sys.IO.TCP
                     {
                         _ConnectionClosed += value;
 
-                        if (!IsConnected() && _Open)
+                        if (_CloseBroadcast)
                             EnqueueCallout(value);
                     }
             }
@@ -739,49 +819,42 @@ namespace STEM.Sys.IO.TCP
             }
         }
 
-        Queue<object> _CallOutQueue = new Queue<object>();
+        Queue<object[]> _CallOutQueue = new Queue<object[]>();
         void _CallOut()
         {
-            try
-            {
-                while (true)
+            while (true)
+                try
                 {
-                    if (_CalloutThread != System.Threading.Thread.CurrentThread)
-                        return;
-
-                    object cb = null;
-                    if (_CallOutQueue.Count > 0)
-                        lock (_CallOutQueue)
+                    object[] cb = null;
+                    lock (_CallOutQueue)
+                        if (_CalloutThread == System.Threading.Thread.CurrentThread)
+                        {
                             if (_CallOutQueue.Count > 0)
-                                if (_CalloutThread == System.Threading.Thread.CurrentThread)
-                                    cb = _CallOutQueue.Dequeue();
+                            {
+                                cb = _CallOutQueue.Dequeue();
+                            }
+                            else
+                            {
+                                System.Threading.Monitor.Wait(_CallOutQueue, 30000);
 
-                    if (cb == null)
-                        lock (_CallOutQueue)
-                            if (_CallOutQueue.Count == 0)
-                                if (_CalloutThread == System.Threading.Thread.CurrentThread)
-                                {
-                                    System.Threading.Monitor.Wait(_CallOutQueue, 250);
-
-                                    if (_CallOutQueue.Count == 0)
-                                        if (_CalloutThread == System.Threading.Thread.CurrentThread)
-                                        {
-                                            _CalloutThread = null;
-                                            return;
-                                        }
-
-                                    continue;
-                                }
-                                else
-                                {
-                                    return;
-                                }
+                                if (_CallOutQueue.Count == 0)
+                                    if (_CalloutThread == System.Threading.Thread.CurrentThread)
+                                    {
+                                        _CalloutThread = null;
+                                        return;
+                                    }
+                            }
+                        }
+                        else
+                        {
+                            return;
+                        }
 
                     if (cb != null)
                     {
-                        if (cb is ConnectionClosed)
+                        if (cb[0] is ConnectionClosed)
                         {
-                            ConnectionClosed c = cb as ConnectionClosed;
+                            ConnectionClosed c = cb[0] as ConnectionClosed;
 
                             try
                             {
@@ -792,9 +865,9 @@ namespace STEM.Sys.IO.TCP
                                 STEM.Sys.EventLog.WriteEntry("Connection.ConnectionClosed", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                             }
                         }
-                        else if (cb is ConnectionOpened)
+                        else if (cb[0] is ConnectionOpened)
                         {
-                            ConnectionOpened c = cb as ConnectionOpened;
+                            ConnectionOpened c = cb[0] as ConnectionOpened;
                             try
                             {
                                 c(this);
@@ -804,17 +877,24 @@ namespace STEM.Sys.IO.TCP
                                 STEM.Sys.EventLog.WriteEntry("Connection.ConnectionOpened", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                             }
                         }
-
-                        cb = null;
+                        else if (cb[0] is ConnectionReceive)
+                        {
+                            ConnectionReceive c = cb[0] as ConnectionReceive;
+                            try
+                            {
+                                c((byte[])cb[1], (int)cb[2], (DateTime)cb[3]);
+                            }
+                            catch (Exception ex)
+                            {
+                                STEM.Sys.EventLog.WriteEntry("Connection.ConnectionReceive", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                            }
+                        }
                     }
                 }
-            }
-            finally
-            {
-                lock (_CallOutQueue)
-                    if (_CalloutThread == System.Threading.Thread.CurrentThread)
-                        _CalloutThread = null;
-            }
+                catch (Exception ex)
+                {
+                    STEM.Sys.EventLog.WriteEntry("Connection._CallOut", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                }
         }
 
         public bool Send(byte[] message)
@@ -830,57 +910,59 @@ namespace STEM.Sys.IO.TCP
             if (message == null || message.Length == 0 || message.Length < offset)
                 throw new ArgumentNullException(nameof(message));
 
-            TcpClient client = _TcpClient;
+            lock (_AccessMutex)
+            {
+                if (_TcpClient != null && _TcpClient.Connected)
+                    try
+                    {
+                        int retry = 0;
 
-            if (client != null && client.Connected)
-                try
-                {
-                    length = length + offset;
-
-                    while (client != null && client.Connected && offset < length)
-                        try
-                        {
-                            lock (client)
+                        while (_TcpClient.Connected)
+                            try
+                            {
                                 if (_SslStream != null)
                                 {
-                                    _SslStream.Write(message, offset, length - offset);
+                                    _SslStream.Write(message, offset, length);
                                     _SslStream.Flush();
                                 }
                                 else
                                 {
-                                    client.GetStream().Write(message, offset, length - offset);
+                                    _TcpClient.GetStream().Write(message, offset, length);
+                                    _TcpClient.GetStream().Flush();
                                 }
 
-                            offset += length - offset;
-                        }
-                        catch (SocketException ex)
-                        {
-                            if (ex.SocketErrorCode == SocketError.WouldBlock ||
-                                ex.SocketErrorCode == SocketError.IOPending ||
-                                ex.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
-                            {
-                                // socket buffer is probably full, wait and try again
-                                Thread.Sleep(10);
+                                return true;
                             }
-                            else
+                            catch (SocketException ex)
                             {
-                                STEM.Sys.EventLog.WriteEntry("Connection.Send", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                            }
-                        }
+                                if (ex.SocketErrorCode == SocketError.WouldBlock ||
+                                    ex.SocketErrorCode == SocketError.IOPending ||
+                                    ex.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
+                                {
+                                    if (retry++ > 10)
+                                        throw ex;
 
-                    return offset == length;
-                }
-                catch (Exception ex)
-                {
-                    if (client.Connected)
-                    {
-                        STEM.Sys.EventLog.WriteEntry("Connection.Send", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                                    // socket buffer is probably full, wait and try again
+                                    Thread.Sleep(10);
+                                }
+                                else
+                                {
+                                    throw ex;
+                                }
+                            }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        IsConnected();
+                        if (_TcpClient.Connected)
+                        {
+                            STEM.Sys.EventLog.WriteEntry("Connection.Send", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        }
+                        else
+                        {
+                            IsConnected();
+                        }
                     }
-                }
+            }
 
             return false;
         }
@@ -936,6 +1018,15 @@ namespace STEM.Sys.IO.TCP
             return false;
         }
 
+        protected virtual void ConnectionReset()
+        {
+        }
+
+        public int SessionID()
+        {
+            return GetHashCode();
+        }
+
         public override int GetHashCode()
         {
             return (LocalAddress.ToUpper(System.Globalization.CultureInfo.CurrentCulture) + ":" + LocalPort + "," + RemoteAddress.ToUpper(System.Globalization.CultureInfo.CurrentCulture) + ":" + RemotePort).GetHashCode();
@@ -961,7 +1052,7 @@ namespace STEM.Sys.IO.TCP
         {
             try
             {
-                _TcpClient.Dispose();
+                Close();
             }
             catch { }
         }

@@ -27,7 +27,7 @@ namespace STEM.Surge.Messages
     /// </summary>
     public class ConnectionType : STEM.Sys.Messaging.Message
     {
-        public delegate void HandshakeComplete(Connection connection);
+        public delegate void HandshakeComplete(ConnectionType sender, Connection connection);
         public event HandshakeComplete onHandshakeComplete;
 
         public enum Types { SurgeActor, SurgeBranchManager, SurgeSandbox, SurgeDeploymentManager }
@@ -38,8 +38,12 @@ namespace STEM.Surge.Messages
         {
         }
 
+        int _ConnectionSessionID = 0;
+
         public void PerformHandshake(MessageConnection connection)
         {
+            _ConnectionSessionID = connection.SessionID();
+
             STEM.Sys.Global.ThreadPool.RunOnce(new System.Threading.ParameterizedThreadStart(Handshake), connection);
         }
 
@@ -47,31 +51,60 @@ namespace STEM.Surge.Messages
         {
             MessageConnection connection = o as MessageConnection;
 
-            STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Performing handshake with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
-
-            int retry = 0;
-            Message response = connection.Send(this, TimeSpan.FromSeconds(10));
-            while ((response is Timeout) && (retry < 5))
+            try
             {
-                STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake timeout with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
-                response = connection.Send(this, TimeSpan.FromSeconds(10));
-                retry++;
-            }
-
-            if (response is Timeout || response is Undeliverable)
-            {
-                connection.Close();
-                return;
-            }
-
-            if (onHandshakeComplete != null)
-                try
+                if (connection.SessionID() != _ConnectionSessionID)
                 {
-                    onHandshakeComplete(connection);
+                    STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake Undeliverable to " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
+                    return;
                 }
-                catch { }
 
-            STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake completed with " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
+                int port = connection.LocalPort;
+                if (connection.ConnectionRole == Role.Server)
+                    port = connection.RemotePort;
+
+                STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Performing handshake with " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+
+                Message response = connection.Send(this, TimeSpan.FromSeconds(15));
+
+                if (response is Timeout)
+                {
+                    if (connection.SessionID() != _ConnectionSessionID)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake Undeliverable to " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+                        return;
+                    }
+
+                    STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake timeout with " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+
+                    if (onHandshakeComplete != null)
+                        connection.Close();
+
+                    return;
+                }
+
+                if (response is Undeliverable)
+                {
+                    STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake Undeliverable to " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+                    return;
+                }
+
+                if (onHandshakeComplete != null)
+                    try
+                    {
+                        onHandshakeComplete(this, connection);
+                    }
+                    catch { }
+
+                STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake completed with " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+            }
+            catch
+            {
+                if (connection.SessionID() == _ConnectionSessionID)
+                {
+                    connection.Close();
+                }
+            }
         }
     }
 }

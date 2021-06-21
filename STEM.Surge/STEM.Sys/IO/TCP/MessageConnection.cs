@@ -30,16 +30,16 @@ namespace STEM.Sys.IO.TCP
         ThreadedQueue _ResponseReceivedQueue = null;
 
         Queue<Message> _Waiting = new Queue<Message>();
-        Dictionary<Message, Message> _LocalWaiting = new Dictionary<Message, Message>();
+        Dictionary<Guid, Message> _LocalWaiting = new Dictionary<Guid, Message>();
 
         private bool _QueueReceivedData = false;
 
         public MessageConnection(string address, int port, bool sslConnection, bool queueReceivedData, bool autoReconnect = false)
             : base(address, port, sslConnection, autoReconnect)
         {
-            _QueueReceivedData = queueReceivedData;
+            //_QueueReceivedData = queueReceivedData;
 
-            if (queueReceivedData)
+            if (_QueueReceivedData)
             {
                 _MessageReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
                 _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
@@ -52,9 +52,9 @@ namespace STEM.Sys.IO.TCP
         public MessageConnection(string address, int port, bool sslConnection, bool queueReceivedData, X509Certificate2 certificate, bool autoReconnect = false)
             : base(address, port, sslConnection, certificate, autoReconnect)
         {
-            _QueueReceivedData = queueReceivedData;
+            //_QueueReceivedData = queueReceivedData;
 
-            if (queueReceivedData)
+            if (_QueueReceivedData)
             {
                 _MessageReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
                 _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
@@ -67,9 +67,9 @@ namespace STEM.Sys.IO.TCP
         public MessageConnection(System.Net.Sockets.TcpClient client, X509Certificate2 certificate, bool queueReceivedData)
             : base(client, certificate)
         {
-            _QueueReceivedData = queueReceivedData;
+            //_QueueReceivedData = queueReceivedData;
 
-            if (queueReceivedData)
+            if (_QueueReceivedData)
             {
                 _MessageReceivedQueue = new ThreadedQueue(RemoteAddress + ":" + RemotePort, TimeSpan.FromSeconds(20));
                 _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
@@ -84,9 +84,9 @@ namespace STEM.Sys.IO.TCP
             get
             {
                 if (_MessageReceivedQueue != null)
-                    return _MessageReceivedQueue.QueuedBacklog;
+                    return _MessageReceivedQueue.QueuedBacklog + base.MessageBacklog;
 
-                return 0;
+                return base.MessageBacklog;
             }
         }
 
@@ -167,9 +167,9 @@ namespace STEM.Sys.IO.TCP
         {
             lock (_LocalWaiting)
             {
-                if (_LocalWaiting.ContainsKey(orig))
+                if (_LocalWaiting.ContainsKey(orig.MessageID))
                 {
-                    _LocalWaiting[orig] = response;
+                    _LocalWaiting[orig.MessageID] = response;
                     orig.onResponse -= Waiting_onResponse;
 
                     lock (_AwaitResponse)
@@ -210,6 +210,11 @@ namespace STEM.Sys.IO.TCP
         {
             try
             {
+                if (m.Contains("STEM.Sys.Messaging.MessageReceived"))
+                {
+                    STEM.Sys.EventLog.WriteEntry(System.Reflection.Assembly.GetEntryAssembly().GetName().Name + ".MessageConnection.ProcessMessageReceived", "MessageReceived received from " + this.RemoteAddress + ":" + this.LocalPort, STEM.Sys.EventLog.EventLogEntryType.Information);
+                }
+
                 Message message = Message.Deserialize(m) as Message;
 
                 if (message != null)
@@ -385,49 +390,93 @@ namespace STEM.Sys.IO.TCP
             }
         }
 
+        protected override void ConnectionReset()
+        {
+            try
+            {
+                base.ConnectionReset();
+            }
+            catch { }
+
+            lock (_LocalWaiting)
+            {
+                lock (_AwaitResponse)
+                {
+                    foreach (Guid id in _AwaitResponse.Keys.ToList())
+                    {
+                        Message orig = _AwaitResponse[id];
+
+                        if (_LocalWaiting.ContainsKey(orig.MessageID))
+                        {
+                            _LocalWaiting[orig.MessageID] = new Undeliverable(orig.MessageID); 
+                            orig.onResponse -= Waiting_onResponse;
+                        }
+
+                        StopWaiting(orig);
+
+                        if (_ResponseReceivedQueue != null)
+                            _ResponseReceivedQueue.EnqueueObject(new object[] { orig, new Undeliverable(orig.MessageID) });
+                    }
+                }
+            }
+        }
+
         public Message Send(Message message, TimeSpan waitForResponse, bool acceptResponsesUntilDisposed = false)
         {
             if (message != null)
             {
                 double wait = waitForResponse.TotalMilliseconds;
-                if (wait > 0)
-                    lock (_LocalWaiting)
+                
+                lock (_LocalWaiting)
+                {
+                    if (!_LocalWaiting.ContainsKey(message.MessageID))
                     {
-                        if (!_LocalWaiting.ContainsKey(message))
-                        {
-                            message.onResponse += Waiting_onResponse;
-                            _LocalWaiting[message] = null;
-                        }
+                        message.onResponse += Waiting_onResponse;
+                        _LocalWaiting[message.MessageID] = null;
+
+                        Send(message, acceptResponsesUntilDisposed);
                     }
+                    else
+                    {
+                        return new Undeliverable(message.MessageID);
+                    }
+                }
 
                 Message ret = null;
 
-                Send(message, acceptResponsesUntilDisposed);
+                System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+                sw.Start();
 
-                DateTime start = DateTime.UtcNow;
-                while ((DateTime.UtcNow - start).TotalMilliseconds < wait)
+                try
                 {
-                    lock (_LocalWaiting)
+                    while (sw.ElapsedMilliseconds < wait)
                     {
-                        if (_LocalWaiting.ContainsKey(message))
-                            ret = _LocalWaiting[message];
-
-                        if (ret != null)
+                        lock (_LocalWaiting)
                         {
-                            _LocalWaiting.Remove(message);
-                            return ret;
-                        }
-                    }
+                            if (_LocalWaiting.ContainsKey(message.MessageID))
+                                ret = _LocalWaiting[message.MessageID];
 
-                    System.Threading.Thread.Sleep(25);
+                            if (ret != null)
+                            {
+                                _LocalWaiting.Remove(message.MessageID);
+                                return ret;
+                            }
+                        }
+
+                        System.Threading.Thread.Sleep(25);
+                    }
+                }
+                finally
+                {
+                    sw.Stop();
                 }
 
                 lock (_LocalWaiting)
                 {
-                    if (_LocalWaiting.ContainsKey(message))
+                    if (_LocalWaiting.ContainsKey(message.MessageID))
                     {
-                        ret = _LocalWaiting[message];
-                        _LocalWaiting.Remove(message);
+                        ret = _LocalWaiting[message.MessageID];
+                        _LocalWaiting.Remove(message.MessageID);
                     }
 
                     if (ret == null)
@@ -440,7 +489,7 @@ namespace STEM.Sys.IO.TCP
                     return new Timeout(message.MessageID);
             }
             
-            return new Undeliverable();
+            return new Undeliverable(message.MessageID);
         }
 
         internal void Waiting_onResponse(Message delivered, Message response)
@@ -473,8 +522,6 @@ namespace STEM.Sys.IO.TCP
                                 m.Message.onDisposing += Message_onDisposing;
                                 _AwaitResponse[m.Message.MessageID] = m.Message;
                             }
-
-                        message.RegisterSender(this);
                     }
                     else
                     {
