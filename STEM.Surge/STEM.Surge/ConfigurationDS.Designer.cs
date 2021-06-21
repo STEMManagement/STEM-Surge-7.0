@@ -513,7 +513,7 @@ namespace STEM.Surge {
                 this.columnUseSSL.AllowDBNull = false;
                 this.columnUseSSL.DefaultValue = ((bool)(false));
                 this.columnCertificateFriendlyName.DefaultValue = ((string)("STEM.Surge"));
-                this.columnEventLogName.DefaultValue = ((string)("STEM.Surge"));
+                this.columnEventLogName.DefaultValue = ((string)("Application"));
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -784,7 +784,7 @@ namespace STEM.Surge {
             public string EventLogName {
                 get {
                     if (this.IsEventLogNameNull()) {
-                        return "STEM.Surge";
+                        return "Application";
                     }
                     else {
                         return ((string)(this[this.tableSettings.EventLogNameColumn]));
