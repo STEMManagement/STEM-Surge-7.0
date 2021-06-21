@@ -361,7 +361,7 @@
             this.eventLogName.Name = "eventLogName";
             this.eventLogName.Size = new System.Drawing.Size(282, 21);
             this.eventLogName.TabIndex = 44;
-            this.eventLogName.Text = "STEM.Surge";
+            this.eventLogName.Text = "Application";
             // 
             // label7
             // 
