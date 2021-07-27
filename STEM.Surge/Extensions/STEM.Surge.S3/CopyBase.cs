@@ -105,6 +105,14 @@ namespace STEM.Surge.S3
         [DisplayName("Zero Files Action"), Description("What flow action should be taken if no files are found?")]
         public FailureAction ZeroFilesAction { get; set; }
 
+        [Category("Large File Handling")]
+        [DisplayName("Minimum Part Size (bytes)"), Description("When uploading a file, how large should uploadable chunks be?")]
+        public int MinimumPartSize { get; set; }
+
+        [Category("Large File Handling")]
+        [DisplayName("Maximum Number Of Parts"), Description("When uploading a file, should 'Minimum Part Size' be modified to limit to a 'Maximum Number Of Parts'?")]
+        public int MaximumNumberOfParts { get; set; }
+
         public CopyBase()
             : base()
         {
@@ -128,8 +136,12 @@ namespace STEM.Surge.S3
 
             ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
+
+            MinimumPartSize = 10485760;
+            MaximumNumberOfParts = 1000;
         }
 
+        Dictionary<string, int> _PartSize = new Dictionary<string, int>();
         Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
 
         protected override void _Rollback()
@@ -210,7 +222,7 @@ namespace STEM.Surge.S3
                                     BucketName = bucket,
                                     Key = prefix,
                                     FilePath = STEM.Sys.IO.Path.AdjustPath(s),
-                                    PartSize = 10485760
+                                    PartSize = _PartSize[d]
                                 };
 
                                 ftu.UploadAsync(request).Wait();
@@ -308,17 +320,22 @@ namespace STEM.Surge.S3
                                 {
                                     string dFile = "";
 
+                                    long fileSz = 0;
+
+                                    if (Direction == S3Direction.ToS3Bucket)
+                                        fileSz = new FileInfo(s).Length;
+                                    else
+                                        fileSz = Authentication.GetFileInfo(s).Size;
+
+                                    _PartSize[s] = (int)Math.Max(MinimumPartSize, fileSz / MaximumNumberOfParts);
+
                                     try
                                     {
                                         if (PopulatePostMortemMeta)
                                         {
                                             PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
                                             PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
-
-                                            if (Direction == S3Direction.ToS3Bucket)
-                                                PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
-                                            else
-                                                PostMortemMetaData["FileSize"] = Authentication.GetFileInfo(s).Size.ToString();
+                                            PostMortemMetaData["FileSize"] = fileSz.ToString();
                                         }
                                     }
                                     catch { }
@@ -386,7 +403,7 @@ namespace STEM.Surge.S3
                                             BucketName = bucket,
                                             Key = prefix,
                                             FilePath = STEM.Sys.IO.Path.AdjustPath(s),
-                                            PartSize = 10485760
+                                            PartSize = _PartSize[s]
                                         };
 
                                         ftu.UploadAsync(request).Wait();
