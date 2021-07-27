@@ -784,7 +784,12 @@ namespace STEM.Sys.Serialization
             if (file.EndsWith("STEM.Auth.dll", StringComparison.InvariantCultureIgnoreCase))
                 return file;
 
-            string xform = TransformFilename(file);
+            bool isAsm = IsAssembly(file);
+
+            string xform = Path.GetFileName(file);
+            
+            if (isAsm)
+                xform = TransformFilename(file);
 
             if (String.IsNullOrEmpty(xform))
                 STEM.Sys.EventLog.WriteEntry("VersionManager.Cache", new Exception(file, new ArgumentNullException(nameof(xform))), EventLog.EventLogEntryType.Information);
@@ -957,7 +962,7 @@ namespace STEM.Sys.Serialization
                 {
                     if (File.Exists(vcFile))
                     {
-                        if (!IsAssembly(vcFile))
+                        if (!isAsm)
                             lock (_CachedAssemblies)
                             {
                                 try
