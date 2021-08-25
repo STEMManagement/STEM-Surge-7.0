@@ -199,25 +199,21 @@ namespace STEM.Surge
 
                                     return;
                                 }
-                            }
 
-                            connection.Send(new AssemblyInitializationComplete());
+                                connection.Send(new AssemblyInitializationComplete());
 
-                            lock (sandbox)
-                            {
                                 sandbox.MessageConnection = connection;
 
                                 foreach (Runner i in _Statics.Where(i => i.AssignInstructionSet.ExecuteStaticInSandboxes))
                                     connection.Send(i.AssignInstructionSet);
 
-                                foreach (AssignInstructionSet i in sandbox.AssignedInstructionSets.ToList())
+                                foreach (AssignInstructionSet i in sandbox.AssignedInstructionSets)
                                 {
                                     i.SandboxID = "";
                                     i.SandboxAppConfigXml = "";
                                     if (!connection.Send(i))
                                     {
                                         i.ExecutionCompleted = DateTime.UtcNow;
-                                        //sandbox.AssignedInstructionSets.Remove(i);
 
                                         ExecutionCompleted ec = new ExecutionCompleted();
 
@@ -248,10 +244,10 @@ namespace STEM.Surge
             {
                 RunningSandbox sandbox = null;
                 lock (_RunningSandboxes)
+                {
                     sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
 
-                if (sandbox != null)
-                    lock (sandbox)
+                    if (sandbox != null)
                     {
                         InstructionMessage m = message as InstructionMessage;
 
@@ -259,13 +255,13 @@ namespace STEM.Surge
 
                         if (a != null && m is ExecutionCompleted)
                             a.ExecutionCompleted = m.TimeSent;
-                            //sandbox.AssignedInstructionSets.Remove(a);
 
                         if (a != null)
                         {
                             SurgeBranchManager.SendMessage(m, a.MessageConnection, this);
                         }
                     }
+                }
             }
             else if (message is BranchHealthDetails)
             {
@@ -343,38 +339,36 @@ namespace STEM.Surge
             {
                 lock (_RunningSandboxes)
                 {
-                    lock (this)
-                    {
-                        _RunningSandboxes.Remove(SandboxID);
+                    _RunningSandboxes.Remove(SandboxID);
 
-                        foreach (AssignInstructionSet i in AssignedInstructionSets.ToList())
+                    _SandboxPool.EndAsync(this);
+
+                    foreach (AssignInstructionSet i in AssignedInstructionSets.ToList())
+                    {
+                        try
+                        {
+                            AssignedInstructionSets.Remove(i);
+
+                            ExecutionCompleted ec = new ExecutionCompleted();
+
+                            ec.InstructionSetID = i.InstructionSetID;
+                            ec.DeploymentControllerID = i.DeploymentControllerID;
+
+                            ec.InitiationSource = i.InitiationSource;
+                            ec.TimeCompleted = DateTime.UtcNow;
+
+                            ec.Exceptions = new List<Exception>();
+
+                            SurgeBranchManager.SendMessage(ec, i.MessageConnection, _Owner);
+                        }
+                        catch { }
+                        finally
                         {
                             try
                             {
-                                AssignedInstructionSets.Remove(i);
-
-                                ExecutionCompleted ec = new ExecutionCompleted();
-
-                                ec.InstructionSetID = i.InstructionSetID;
-                                ec.DeploymentControllerID = i.DeploymentControllerID;
-
-                                ec.InitiationSource = i.InitiationSource;
-                                ec.TimeCompleted = DateTime.UtcNow;
-
-                                ec.Exceptions = new List<Exception>();
-
-                                SurgeBranchManager.SendMessage(ec, i.MessageConnection, _Owner);
+                                File.Delete(Path.Combine(_Owner.InstructionCache, i.InstructionSetID.ToString() + ".is"));
                             }
                             catch { }
-                            finally
-                            {
-                                while (File.Exists(Path.Combine(_Owner.InstructionCache, i.InstructionSetID.ToString() + ".is")))
-                                    try
-                                    {
-                                        File.Delete(Path.Combine(_Owner.InstructionCache, i.InstructionSetID.ToString() + ".is"));
-                                    }
-                                    catch { System.Threading.Thread.Sleep(10); }
-                            }
                         }
                     }
 
@@ -397,8 +391,6 @@ namespace STEM.Surge
                                 break;
                             }
                             catch { System.Threading.Thread.Sleep(1000); retry--; }
-
-                    _SandboxPool.EndAsync(this);
                 }
             }
         }
@@ -1537,27 +1529,24 @@ namespace STEM.Surge
                                 {
                                     sandbox = _RunningSandboxes[sandboxID];
                                 }
-                            }
 
-                            if (sandbox == null)
-                            {
-                                ExecutionCompleted ec = new ExecutionCompleted();
+                                if (sandbox == null)
+                                {
+                                    ExecutionCompleted ec = new ExecutionCompleted();
 
-                                ec.InstructionSetID = m.InstructionSetID;
-                                ec.DeploymentControllerID = m.DeploymentControllerID;
+                                    ec.InstructionSetID = m.InstructionSetID;
+                                    ec.DeploymentControllerID = m.DeploymentControllerID;
 
-                                ec.InitiationSource = m.InitiationSource;
-                                ec.TimeCompleted = DateTime.UtcNow;
+                                    ec.InitiationSource = m.InitiationSource;
+                                    ec.TimeCompleted = DateTime.UtcNow;
 
-                                ec.Exceptions = new List<Exception>();
+                                    ec.Exceptions = new List<Exception>();
 
-                                SurgeBranchManager.SendMessage(ec, connection, this);
+                                    SurgeBranchManager.SendMessage(ec, connection, this);
 
-                                return;
-                            }
+                                    return;
+                                }
 
-                            lock (sandbox)
-                            {
                                 if (!_RunningSandboxes.ContainsKey(sandboxID))
                                 {
                                     // Closed between fetch and here
@@ -1884,8 +1873,7 @@ namespace STEM.Surge
                             assignments = _Assigned.Where(i => !i.IsStatic && i.MessageConnection.RemoteAddress == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()).ToList();
                             
                             foreach (RunningSandbox s in _RunningSandboxes.Values)
-                                lock (s)
-                                    assignments.AddRange(s.AssignedInstructionSets.Where(i => !i.IsStatic && i.DeploymentManagerIP == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()));
+                                assignments.AddRange(s.AssignedInstructionSets.Where(i => !i.IsStatic && i.DeploymentManagerIP == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()));
 
                             statics = _Statics.Select(i => i.AssignInstructionSet.InitiationSource).ToList();
                         }
@@ -1905,9 +1893,8 @@ namespace STEM.Surge
 
                         lock (_RunningSandboxes)
                             foreach (RunningSandbox s in _RunningSandboxes.Values)
-                                lock (s)
-                                    foreach (AssignInstructionSet x in s.AssignedInstructionSets.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
-                                        s.AssignedInstructionSets.Remove(x);
+                                foreach (AssignInstructionSet x in s.AssignedInstructionSets.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
+                                    s.AssignedInstructionSets.Remove(x);
                     }
 
                     return true;

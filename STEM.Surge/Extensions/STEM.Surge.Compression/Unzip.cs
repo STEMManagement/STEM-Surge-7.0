@@ -92,7 +92,7 @@ namespace STEM.Surge.Compression
                                     case Sys.IO.FileExistsAction.OverwriteIfNewer:
 
                                         if (File.GetLastWriteTimeUtc(outputFile) >= File.GetLastWriteTimeUtc(SourceFile))
-                                            return true;
+                                            continue;
 
                                         File.Delete(outputFile);
                                         break;
