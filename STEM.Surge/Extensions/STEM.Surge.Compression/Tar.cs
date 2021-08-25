@@ -60,6 +60,14 @@ namespace STEM.Surge.Compression
         [DisplayName("Retain Directory Structure"), DescriptionAttribute("Retain the directory tree or flatten it to a single file listing?")]
         public bool RetainDirectoryStructure { get; set; }
 
+        [Category("Destination")]
+        [DisplayName("Allow Empty Tar Result"), DescriptionAttribute("When no source file(s) exist create an empty tar?")]
+        public bool AllowEmptyTarResult { get; set; }
+
+        [Category("Source")]
+        [DisplayName("Delete Source"), DescriptionAttribute("Delete the source file(s) upon successful tar creation?")]
+        public bool DeleteSource { get; set; }
+
         public Tar()
             : base()
         {
@@ -71,16 +79,19 @@ namespace STEM.Surge.Compression
             RecurseSource = false;
             RetainDirectoryStructure = true;
             ExpandSource = false;
+            AllowEmptyTarResult = false;
+            DeleteSource = false;
         }
 
         Dictionary<string, string> _Files = new Dictionary<string, string>();
+        string _CreatedFile = "";
 
         protected override bool _Run()
         {
             SourcePath = STEM.Sys.IO.Path.AdjustPath(SourcePath);
             OutputFile = STEM.Sys.IO.Path.AdjustPath(OutputFile);
 
-            string tmpFile = Path.Combine(Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(OutputFile), "Temp"), STEM.Sys.IO.Path.GetFileName(OutputFile));
+            string tmpFile = Path.Combine(Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(OutputFile), "TEMP"), STEM.Sys.IO.Path.GetFileName(OutputFile));
             try
             {
                 if (!Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(tmpFile)))
@@ -110,13 +121,10 @@ namespace STEM.Surge.Compression
 
                         case Sys.IO.FileExistsAction.Skip:
                             return true;
-
-                        case Sys.IO.FileExistsAction.MakeUnique:
-                            OutputFile = STEM.Sys.IO.File.UniqueFilename(OutputFile);
-                            break;
                     }
                 }
 
+                long outLen = 0;
                 using (FileStream fs = File.Open(tmpFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
                     using (TarOutputStream tStream = new TarOutputStream(fs))
@@ -131,25 +139,88 @@ namespace STEM.Surge.Compression
 
                             name = name.Trim(Path.DirectorySeparatorChar);
 
-                            TarEntry e = TarEntry.CreateEntryFromFile(file);
-                            e.Name = name;
-                            e.ModTime = File.GetLastWriteTimeUtc(file);
-
-                            using (FileStream s = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            if (InstructionSet.KeyManager.Lock(file))
                             {
-                                tStream.PutNextEntry(e);
+                                try
+                                {
+                                    TarEntry e = TarEntry.CreateEntryFromFile(file);
+                                    e.Name = name;
+                                    e.ModTime = File.GetLastWriteTimeUtc(file);
 
-                                s.CopyTo(tStream);
+                                    using (FileStream s = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read))
+                                    {
+                                        tStream.PutNextEntry(e);
 
-                                tStream.CloseEntry();
+                                        s.CopyTo(tStream);
 
-                                _Files[name] = file;
+                                        tStream.CloseEntry();
+
+                                        _Files[name] = file;
+                                    }
+                                }
+                                finally
+                                {
+                                    if (!_Files.ContainsKey(name))
+                                        InstructionSet.KeyManager.Unlock(file);
+                                }
                             }
                         }
                     }
+
+                    outLen = fs.Length;
                 }
 
-                File.Move(tmpFile, OutputFile);
+                bool goodOutput = (_Files.Count > 0) || AllowEmptyTarResult;
+
+                if (goodOutput)
+                {
+                    if (File.Exists(OutputFile))
+                    {
+                        switch (OutputFileExists)
+                        {
+                            case Sys.IO.FileExistsAction.Throw:
+                                throw new IOException("The output file already exists.");
+
+                            case Sys.IO.FileExistsAction.Overwrite:
+                                File.Delete(OutputFile);
+                                break;
+
+                            case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                if (File.GetLastWriteTimeUtc(OutputFile) >= Directory.GetLastWriteTimeUtc(SourcePath))
+                                    return true;
+
+                                File.Delete(OutputFile);
+                                break;
+
+                            case Sys.IO.FileExistsAction.Skip:
+                                return true;
+                        }
+                    }
+
+                    STEM.Sys.IO.File.STEM_Move(tmpFile, OutputFile, OutputFileExists, out _CreatedFile);
+
+                    if (DeleteSource)
+                    {
+                        foreach (string file in _Files.Values)
+                        {
+                            try
+                            {
+                                File.Delete(file);
+                            }
+                            catch
+                            {
+                            }
+                        }
+                    }
+
+                    if (PopulatePostMortemMeta)
+                    {
+                        PostMortemMetaData["FilesArchived"] = _Files.Count.ToString();
+                        PostMortemMetaData["OutputFilename"] = _CreatedFile;
+                        PostMortemMetaData["OutputBytes"] = outLen.ToString();
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -164,6 +235,9 @@ namespace STEM.Surge.Compression
                         File.Delete(tmpFile);
                 }
                 catch { }
+
+                foreach (string file in _Files.Values)
+                    InstructionSet.KeyManager.Unlock(file);
             }
 
             return Exceptions.Count == 0;
@@ -173,9 +247,15 @@ namespace STEM.Surge.Compression
         {
             try
             {
+                if (String.IsNullOrEmpty(_CreatedFile))
+                    return;
+
+                if (!File.Exists(_CreatedFile))
+                    return;
+
                 if (_Files.Count > 0)
                 {
-                    using (FileStream fs = File.Open(OutputFile, FileMode.Open, FileAccess.Read, FileShare.None))
+                    using (FileStream fs = File.Open(_CreatedFile, FileMode.Open, FileAccess.Read, FileShare.None))
                     {
                         using (TarInputStream tStream = new TarInputStream(fs))
                         {
@@ -217,15 +297,30 @@ namespace STEM.Surge.Compression
                             }
                         }
                     }
-
-                    if (File.Exists(OutputFile))
-                        File.Delete(OutputFile);
                 }
+
+                _Files.Clear();
             }
             catch (Exception ex)
             {
                 AppendToMessage(ex.ToString());
                 Exceptions.Add(ex);
+                _CreatedFile = "";
+            }
+            finally
+            {
+                try
+                {
+                    if (!String.IsNullOrEmpty(_CreatedFile))
+                        if (_Files.Count == 0)
+                            if (File.Exists(_CreatedFile))
+                                File.Delete(_CreatedFile);
+                }
+                catch (Exception ex)
+                {
+                    AppendToMessage(ex.ToString());
+                    Exceptions.Add(ex);
+                }
             }
         }
     }
