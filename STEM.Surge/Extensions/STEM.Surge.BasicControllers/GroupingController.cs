@@ -61,6 +61,9 @@ namespace STEM.Surge.BasicControllers
                 _LastList = list.OrderBy(i => rnd.Next()).ToList();
             }
 
+            if (HonorPriorityFilters)
+                _LastList = ApplyPriorityFilterOrdering(_LastList);
+
             if (_LastList.Count == 0)
                 return new List<string>();
 

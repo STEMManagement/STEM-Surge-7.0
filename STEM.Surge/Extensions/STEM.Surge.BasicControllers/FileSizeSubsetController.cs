@@ -127,6 +127,9 @@ namespace STEM.Surge.BasicControllers
                         files.Remove(f);
                 }
 
+                if (HonorPriorityFilters)
+                    files = ApplyPriorityFilterOrdering(files);
+
                 return files;
             }
         }

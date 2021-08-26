@@ -84,13 +84,22 @@ namespace STEM.Surge.BasicControllers
 
         public override List<string> ListPreprocess(IReadOnlyList<string> list)
         {
+            List<string> returnList = null;
+
             if (RandomizeList)
             {
                 Random rnd = new Random();
-                return list.OrderBy(i => rnd.Next()).ToList();
+                returnList = list.OrderBy(i => rnd.Next()).ToList();
+            }
+            else
+            {
+                returnList = new List<string>(list);
             }
 
-            return new List<string>(list);
+            if (HonorPriorityFilters)
+                returnList = ApplyPriorityFilterOrdering(returnList);
+
+            return returnList;
         }
 
         Random _Random = new Random();

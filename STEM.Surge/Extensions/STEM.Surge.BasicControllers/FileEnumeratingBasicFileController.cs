@@ -404,6 +404,9 @@ namespace STEM.Surge.BasicControllers
             if (SortMethod == PreProcessSortMethod.Random)
                 return files.OrderBy(i => rand.Next()).ToList();
 
+            if (HonorPriorityFilters)
+                files = ApplyPriorityFilterOrdering(files);
+
             return files;
         }
 

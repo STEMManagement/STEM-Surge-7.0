@@ -162,7 +162,11 @@ namespace STEM.Surge.XML
                 STEM.Sys.EventLog.WriteEntry("XmlRepeatingController.ListPreprocess", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
-            return _PreProcessResult.Keys.ToList();
+            List<string> returnList = _PreProcessResult.Keys.ToList();
+            if (HonorPriorityFilters)
+                returnList = ApplyPriorityFilterOrdering(returnList);
+
+            return returnList;
         }
         
         public override DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)

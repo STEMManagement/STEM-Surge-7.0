@@ -18,7 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Xml.Serialization;
+using System.Text.RegularExpressions;
 using STEM.Sys.State;
 using STEM.Sys.Messaging;
 using STEM.Surge.Messages;
@@ -39,6 +41,7 @@ namespace STEM.Surge
         public _DeploymentController()
         {
             AllowThreadedAssignment = true;
+            HonorPriorityFilters = false;
             PollError = "";
             PreprocessPerformsDiscovery = false;
 
@@ -178,7 +181,14 @@ namespace STEM.Surge
         [Category("Assignment Profile")]
         [DisplayName("Allow Async Assignment"), DescriptionAttribute("Allow any given listing to be assigned from, without regard to order, and from multiple managers simultaneously?")]
         public bool AllowThreadedAssignment { get; set; }
-        
+
+
+        /// <summary>
+        /// Request that the controller order assignments using the Priority Filter set if implemented?
+        /// </summary>
+        [Category("Assignment Profile")]
+        [DisplayName("Honor Priority Filters"), DescriptionAttribute("Request that the controller order assignments using the Priority Filter set if implemented?")]
+        public bool HonorPriorityFilters { get; set; }
 
         /// <summary>
         /// Often Controllers use a partially configured InstructionSet from disk in GenerateDeploymentDetails; this is the reference
@@ -203,6 +213,13 @@ namespace STEM.Surge
         [Browsable(false)]
         [XmlIgnore]
         public abstract List<string> CoordinateWith { get; }
+
+        /// <summary>
+        /// A list optionally used by controllers to order assignments (mostly used by ListPreprocess)
+        /// </summary>
+        [Browsable(false)]
+        [XmlIgnore]
+        public abstract List<string> PriorityFilters { get; }
 
         /// <summary>
         /// This KeyManager can be used to "lock" values across all coordinated Deployment Manager Services 
@@ -486,7 +503,61 @@ namespace STEM.Surge
         /// <returns>The list of strings to be walked</returns>
         public virtual List<string> ListPreprocess(IReadOnlyList<string> list)
         {
-            return new List<string>(list);
+            return ApplyPriorityFilterOrdering(list);
+        }
+
+        /// <summary>
+        /// This method presents opportunity for the Controller to evaluate the list of sources found in the 
+        /// sourceDirectory using the directoryFilter and fileFilter. The Controller can simply
+        /// choose to return the list unaltered or perform some work and return a list strings that will
+        /// be evaluated one at a time and passed to GenerateDeploymentDetails().
+        /// </summary>
+        /// <param name="list">The list of sources found</param>
+        /// <returns>The list of strings to be walked</returns>
+        public virtual List<string> ApplyPriorityFilterOrdering(IReadOnlyList<string> list)
+        {
+            if (HonorPriorityFilters)
+            {
+                if (list.Count == 0)
+                    return new List<string>();
+
+                List<string> filters = PriorityFilters;
+
+                if (filters == null || filters.Count == 0)
+                    return new List<string>(list);
+
+                Dictionary<string, List<string>> results = new Dictionary<string, List<string>>();
+                foreach (string filter in filters)
+                    results[filter] = new List<string>();
+
+                List<string> working = new List<string>(list);
+
+                foreach (string filter in filters)
+                {
+                    Regex inFilter = STEM.Sys.IO.Path.BuildInclusiveFilter(filter);
+                    Regex exFilter = STEM.Sys.IO.Path.BuildExclusiveFilter(filter);
+
+                    results[filter] = STEM.Sys.IO.Path.WhereStringsMatch(working, inFilter);
+                    results[filter] = STEM.Sys.IO.Path.WhereStringsNotMatch(results[filter], exFilter);
+
+                    if (results[filter].Count > 0)
+                        working = working.Except(results[filter]).ToList();
+                }
+
+                List<string> ret = new List<string>();
+                foreach (string filter in filters)
+                    if (results[filter].Count > 0)
+                        ret.AddRange(results[filter]);
+
+                if (working.Count > 0)
+                    ret.AddRange(working);
+
+                return ret;
+            }
+            else
+            {
+                return new List<string>(list);
+            }
         }
 
         /// <summary>

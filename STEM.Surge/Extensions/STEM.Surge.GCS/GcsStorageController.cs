@@ -77,6 +77,9 @@ namespace STEM.Surge.GCS
                     returnList.Sort();
                 }
 
+                if (HonorPriorityFilters)
+                    returnList = ApplyPriorityFilterOrdering(returnList);
+
                 PollError = "";
             }
             catch (AggregateException ex)

@@ -94,6 +94,9 @@ namespace STEM.Surge.FTP
                     returnList.Sort();
                 }
 
+                if (HonorPriorityFilters)
+                    returnList = ApplyPriorityFilterOrdering(returnList);
+
                 PollError = "";
             }
             catch (Exception ex)

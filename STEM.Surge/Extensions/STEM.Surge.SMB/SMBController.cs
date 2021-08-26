@@ -83,6 +83,9 @@ namespace STEM.Surge.SMB
                     returnList.Sort();
                 }
 
+                if (HonorPriorityFilters)
+                    returnList = ApplyPriorityFilterOrdering(returnList);
+
                 PollError = "";
             }
             catch (Exception ex)

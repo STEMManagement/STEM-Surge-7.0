@@ -96,6 +96,9 @@ namespace STEM.Surge.Azure
                 STEM.Sys.EventLog.WriteEntry("AzureController.ListPreprocess", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
+            if (HonorPriorityFilters)
+                returnList = ApplyPriorityFilterOrdering(returnList);
+
             return returnList;
         }
 
