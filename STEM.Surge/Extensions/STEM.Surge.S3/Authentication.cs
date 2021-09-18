@@ -82,6 +82,16 @@ namespace STEM.Surge.S3
             }
         }
 
+
+
+        [Category("S3 Role")]
+        [DisplayName("Role Name"), DescriptionAttribute("Is this session to assume an AWS Role?")]
+        public string RoleName { get; set; }
+
+        [Category("S3 Role")]
+        [DisplayName("Role Session Name"), DescriptionAttribute("When this session assumes an AWS Role, what is the session name to be?")]
+        public string RoleSessionName { get; set; }
+
         public Authentication()
         {
             AllowBucketControl = false;
@@ -89,6 +99,8 @@ namespace STEM.Surge.S3
             ServiceURL = "";
             AccessKey = "";
             SecretKey = "";
+            RoleName = "";
+            RoleSessionName = "";
         }
 
         IAmazonS3 _Client = null;
@@ -105,10 +117,24 @@ namespace STEM.Surge.S3
                     {
                         if (String.IsNullOrEmpty(ServiceURL))
                         {
-                            _Client = new AmazonS3Client(AccessKey, SecretKey, Amazon.RegionEndpoint.GetBySystemName(Region));
+                            Amazon.Runtime.AWSCredentials creds = null;
+
+                            creds = new Amazon.Runtime.BasicAWSCredentials(AccessKey, SecretKey);
+
+                            if (!String.IsNullOrEmpty(RoleName))
+                                creds = new Amazon.Runtime.AssumeRoleAWSCredentials(creds, RoleName, RoleSessionName);
+
+                            _Client = new AmazonS3Client(creds, Amazon.RegionEndpoint.GetBySystemName(Region));
                         }
                         else
                         {
+                            Amazon.Runtime.AWSCredentials creds = null;
+
+                            creds = new Amazon.Runtime.BasicAWSCredentials(AccessKey, SecretKey);
+
+                            if (!String.IsNullOrEmpty(RoleName))
+                                creds = new Amazon.Runtime.AssumeRoleAWSCredentials(creds, RoleName, RoleSessionName); 
+
                             AmazonS3Config cfg = new AmazonS3Config
                             {
                                 RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(Region),
@@ -116,7 +142,7 @@ namespace STEM.Surge.S3
                                 ForcePathStyle = true
                             };
 
-                            _Client = new AmazonS3Client(AccessKey, SecretKey, cfg);
+                            _Client = new AmazonS3Client(creds, cfg);
                         }
                     }
                 }
