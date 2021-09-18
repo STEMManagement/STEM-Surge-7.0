@@ -26,6 +26,9 @@ using Amazon.S3.Transfer;
 
 namespace STEM.Surge.S3
 {
+    public enum S3ACL { NoACL, AuthenticatedRead, AWSExecRead, BucketOwnerFullControl, BucketOwnerRead, LogDeliveryWrite, Private, PublicRead, PublicReadWrite }
+    public enum S3EncryptionMethod { None, AES256, AWSKMS }
+
     public abstract class CopyBase : STEM.Surge.Instruction
     {
         protected enum ActionType { Copy, Move }
@@ -101,6 +104,18 @@ namespace STEM.Surge.S3
         [DisplayName("S3 Direction"), DescriptionAttribute("Is the action to or from an S3 bucket?")]
         public S3Direction Direction { get; set; }
 
+        [Category("S3")]
+        [DisplayName("ACL"), DescriptionAttribute("When writing to an S3 bucket, what ACL should be used?")]
+        public S3ACL ACL { get; set; }
+
+        [Category("S3")]
+        [DisplayName("Server Side Encryption Method"), DescriptionAttribute("When writing to an S3 bucket, what EncryptionMethod should be used?")]
+        public S3EncryptionMethod EncryptionMethod { get; set; }
+
+        [Category("S3")]
+        [DisplayName("Server Side Encryption KMS Key ID"), DescriptionAttribute("When writing to an S3 bucket and using AWSKMS Server Side Encryption, what KMS Key ID should be used?")]
+        public string KMS_Key_ID { get; set; }
+
         [Category("Flow")]
         [DisplayName("Zero Files Action"), Description("What flow action should be taken if no files are found?")]
         public FailureAction ZeroFilesAction { get; set; }
@@ -136,6 +151,10 @@ namespace STEM.Surge.S3
 
             ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
+
+            ACL = S3ACL.NoACL;
+            EncryptionMethod = S3EncryptionMethod.None;
+            KMS_Key_ID = "";
 
             MinimumPartSize = 10485760;
             MaximumNumberOfParts = 1000;
@@ -212,6 +231,8 @@ namespace STEM.Surge.S3
                             }
                             else
                             {
+
+                                //
                                 string bucket = Authentication.BucketFromPath(d);
                                 string prefix = Authentication.PrefixFromPath(d);
 
@@ -224,6 +245,53 @@ namespace STEM.Surge.S3
                                     FilePath = STEM.Sys.IO.Path.AdjustPath(s),
                                     PartSize = _PartSize[d]
                                 };
+
+                                switch (EncryptionMethod)
+                                {
+                                    case S3EncryptionMethod.AES256:
+                                        request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
+                                        break;
+
+                                    case S3EncryptionMethod.AWSKMS:
+                                        request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
+                                        request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
+                                        break;
+                                }
+
+                                switch (ACL)
+                                {
+                                    case S3ACL.AuthenticatedRead:
+                                        request.CannedACL = S3CannedACL.AuthenticatedRead;
+                                        break;
+
+                                    case S3ACL.AWSExecRead:
+                                        request.CannedACL = S3CannedACL.AWSExecRead;
+                                        break;
+
+                                    case S3ACL.BucketOwnerFullControl:
+                                        request.CannedACL = S3CannedACL.BucketOwnerFullControl;
+                                        break;
+
+                                    case S3ACL.BucketOwnerRead:
+                                        request.CannedACL = S3CannedACL.BucketOwnerRead;
+                                        break;
+
+                                    case S3ACL.LogDeliveryWrite:
+                                        request.CannedACL = S3CannedACL.LogDeliveryWrite;
+                                        break;
+
+                                    case S3ACL.Private:
+                                        request.CannedACL = S3CannedACL.Private;
+                                        break;
+
+                                    case S3ACL.PublicRead:
+                                        request.CannedACL = S3CannedACL.PublicRead;
+                                        break;
+
+                                    case S3ACL.PublicReadWrite:
+                                        request.CannedACL = S3CannedACL.PublicReadWrite;
+                                        break;
+                                }
 
                                 ftu.UploadAsync(request).Wait();
                             }
@@ -405,6 +473,53 @@ namespace STEM.Surge.S3
                                             FilePath = STEM.Sys.IO.Path.AdjustPath(s),
                                             PartSize = _PartSize[s]
                                         };
+
+                                        switch (EncryptionMethod)
+                                        {
+                                            case S3EncryptionMethod.AES256:
+                                                request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
+                                                break;
+
+                                            case S3EncryptionMethod.AWSKMS:
+                                                request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
+                                                request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
+                                                break;
+                                        }
+
+                                        switch (ACL)
+                                        {
+                                            case S3ACL.AuthenticatedRead:
+                                                request.CannedACL = S3CannedACL.AuthenticatedRead;
+                                                break;
+
+                                            case S3ACL.AWSExecRead:
+                                                request.CannedACL = S3CannedACL.AWSExecRead;
+                                                break;
+
+                                            case S3ACL.BucketOwnerFullControl:
+                                                request.CannedACL = S3CannedACL.BucketOwnerFullControl;
+                                                break;
+
+                                            case S3ACL.BucketOwnerRead:
+                                                request.CannedACL = S3CannedACL.BucketOwnerRead;
+                                                break;
+
+                                            case S3ACL.LogDeliveryWrite:
+                                                request.CannedACL = S3CannedACL.LogDeliveryWrite;
+                                                break;
+
+                                            case S3ACL.Private:
+                                                request.CannedACL = S3CannedACL.Private;
+                                                break;
+
+                                            case S3ACL.PublicRead:
+                                                request.CannedACL = S3CannedACL.PublicRead;
+                                                break;
+
+                                            case S3ACL.PublicReadWrite:
+                                                request.CannedACL = S3CannedACL.PublicReadWrite;
+                                                break;
+                                        }
 
                                         ftu.UploadAsync(request).Wait();
                                     }
