@@ -44,8 +44,6 @@ namespace STEM.Sys.State
 
                             if (so != null)
                                 _CacheObjects[so.Key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = so;
-                            else
-                                File.Delete(file);
                         }
                         catch { }
                     }
@@ -173,6 +171,20 @@ namespace STEM.Sys.State
 
                 try
                 {
+                    if (!_CacheObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                    {
+                        string file = Path.Combine(CacheDirectory, STEM.Sys.State.KeyManager.GetHash(key) + ".cache");
+                        if (File.Exists(file))
+                            try
+                            {
+                                SessionObject so = SessionObject.Deserialize(File.ReadAllText(file));
+
+                                if (so != null)
+                                    _CacheObjects[so.Key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = so;
+                            }
+                            catch { }
+                    }
+
                     if (_CacheObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
                     {
                         object ret = _CacheObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].Value;
