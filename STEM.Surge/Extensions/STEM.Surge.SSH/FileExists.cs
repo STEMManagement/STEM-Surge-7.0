@@ -70,15 +70,24 @@ namespace STEM.Surge.SSH
         {
             try
             {
-                PostMortemMetaData["LastOperation"] = "NextAddress";
-                string address = Authentication.NextAddress(ServerAddress);
+                string address = null;
+                if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
+                    address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
 
                 if (address == null)
                 {
-                    Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                    Exceptions.Add(ex);
-                    AppendToMessage(ex.Message);
-                    return false;
+                    PostMortemMetaData["LastOperation"] = "NextAddress";
+                    address = Authentication.NextAddress(ServerAddress);
+
+                    if (address == null)
+                    {
+                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
+                        Exceptions.Add(ex);
+                        AppendToMessage(ex.Message);
+                        return false;
+                    }
+
+                    InstructionSet.InstructionSetContainer["ServerAddress"] = address;
                 }
 
                 Surge.FailureAction tgtAction = FileNotExistsAction;

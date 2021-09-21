@@ -240,14 +240,25 @@ namespace STEM.Surge.SSH
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
+                    _Address = null;
+                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
+                        _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
 
                     if (_Address == null)
                     {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return;
+                        PostMortemMetaData["LastOperation"] = "NextAddress";
+
+                        _Address = Authentication.NextAddress(ServerAddress);
+
+                        if (_Address == null)
+                        {
+                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
+                            Exceptions.Add(ex);
+                            AppendToMessage(ex.Message);
+                            return;
+                        }
+
+                        InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
                     }
 
                     Exceptions.Clear();
@@ -268,14 +279,25 @@ namespace STEM.Surge.SSH
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
+                    _Address = null;
+                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
+                        _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
 
                     if (_Address == null)
                     {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
+                        PostMortemMetaData["LastOperation"] = "NextAddress";
+
+                        _Address = Authentication.NextAddress(ServerAddress);
+
+                        if (_Address == null)
+                        {
+                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
+                            Exceptions.Add(ex);
+                            AppendToMessage(ex.Message);
+                            return false;
+                        }
+
+                        InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
                     }
 
                     Exceptions.Clear();
@@ -367,15 +389,15 @@ namespace STEM.Surge.SSH
 
                                             if (Direction == SshDirection.ToSshServer)
                                             {
-                                                PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
                                                 PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
                                                 PostMortemMetaData["DestinationIP"] = _Address;
+                                                PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
                                             }
                                             else
                                             {
-                                                PostMortemMetaData["FileSize"] = Authentication.GetFileInfo(_Address, Int32.Parse(Port), s).Size.ToString();
                                                 PostMortemMetaData["SourceIP"] = _Address;
                                                 PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
+                                                PostMortemMetaData["FileSize"] = Authentication.GetFileInfo(_Address, Int32.Parse(Port), s).Size.ToString();
                                             }
                                         }
                                     }

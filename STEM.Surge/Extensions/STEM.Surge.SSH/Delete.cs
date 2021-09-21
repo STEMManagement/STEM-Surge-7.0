@@ -105,14 +105,25 @@ namespace STEM.Surge.SSH
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
+                    _Address = null;
+                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
+                        _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
 
                     if (_Address == null)
                     {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
+                        PostMortemMetaData["LastOperation"] = "NextAddress";
+
+                        _Address = Authentication.NextAddress(ServerAddress);
+
+                        if (_Address == null)
+                        {
+                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
+                            Exceptions.Add(ex);
+                            AppendToMessage(ex.Message);
+                            return false;
+                        }
+
+                        InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
                     }
 
                     Exceptions.Clear();
@@ -137,14 +148,25 @@ namespace STEM.Surge.SSH
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
+                    _Address = null;
+                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
+                        _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
 
                     if (_Address == null)
                     {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return;
+                        PostMortemMetaData["LastOperation"] = "NextAddress";
+
+                        _Address = Authentication.NextAddress(ServerAddress);
+
+                        if (_Address == null)
+                        {
+                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
+                            Exceptions.Add(ex);
+                            AppendToMessage(ex.Message);
+                            return;
+                        }
+
+                        InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
                     }
 
                     Exceptions.Clear();
