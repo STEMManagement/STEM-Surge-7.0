@@ -72,7 +72,12 @@ namespace STEM.Surge
         protected override void onReceived(MessageConnection connection, Message message)
         {
             if (message is AssignInstructionSet)
-                _LastAssignment = DateTime.UtcNow;
+            {
+                AssignInstructionSet m = message as AssignInstructionSet;
+
+                if (!m.IsStatic)
+                    _LastAssignment = DateTime.UtcNow;
+            }
 
             base.onReceived(connection, message);
         }
