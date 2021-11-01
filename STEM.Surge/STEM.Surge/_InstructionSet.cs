@@ -28,6 +28,7 @@ using STEM.Sys.IO.TCP;
 using STEM.Sys.Messaging;
 using STEM.Sys.State;
 using STEM.Surge.Messages;
+using System.Runtime.InteropServices;
 
 namespace STEM.Surge
 {
@@ -42,6 +43,10 @@ namespace STEM.Surge
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public abstract class _InstructionSet : STEM.Sys.Serializable, IDisposable
     {
+        [DllImport("Kernel32.dll", CallingConvention = CallingConvention.Winapi)]
+        private static extern void GetSystemTimePreciseAsFileTime(out long filetime);
+
+
         /// <summary>
         /// Unique ID of this instance
         /// </summary>
@@ -601,6 +606,23 @@ namespace STEM.Surge
 
         public abstract void Run(SurgeBranchManager branchManager, MessageConnection connection, string cacheDirectory, KeyManager keyManager, string clientAddress);
 
+        static DateTime PreciseTime()
+        {
+            DateTime utcNow = DateTime.UtcNow;
+
+            try
+            {
+                long filetime;
+                GetSystemTimePreciseAsFileTime(out filetime);
+                utcNow = DateTime.FromFileTimeUtc(filetime);
+            }
+            catch
+            {
+            }
+
+            return utcNow;
+        }
+
         protected void Run(SurgeBranchManager branchManager, MessageConnection connection, string cacheDirectory, KeyManager keyManager)
         {
             BranchManager = branchManager;
@@ -610,7 +632,7 @@ namespace STEM.Surge
             {
                 KeyManager = keyManager;
 
-                Started = DateTime.UtcNow;
+                Started = PreciseTime();
                 
                 if (cacheDirectory != null)
                     ReportMessage(new ExecutionStarted(this));
@@ -631,7 +653,7 @@ namespace STEM.Surge
                     PrepareSet();
 
                     _Instructions[iNum].Message = "";
-                    _Instructions[iNum].Start = DateTime.UtcNow;
+                    _Instructions[iNum].Start = PreciseTime();
 
                     if (_Instructions[iNum].Stage == STEM.Surge.Stage.Skip || _Instructions[iNum].Stage == STEM.Surge.Stage.Completed)
                     {
@@ -640,7 +662,7 @@ namespace STEM.Surge
                         if (cacheDirectory != null)
                             File.WriteAllText(Path.Combine(cacheDirectory, ID.ToString() + ".is"), xml);
 
-                        _Instructions[iNum].Finish = DateTime.UtcNow;
+                        _Instructions[iNum].Finish = PreciseTime();
                         iNum++;
                         continue;
                     }
@@ -663,7 +685,7 @@ namespace STEM.Surge
                         STEM.Sys.EventLog.WriteEntry(ProcessName, ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                     }
 
-                    _Instructions[iNum].Finish = DateTime.UtcNow;
+                    _Instructions[iNum].Finish = PreciseTime();
                     iNum++;
                 }
 
@@ -675,7 +697,7 @@ namespace STEM.Surge
             }
             finally
             {
-                Completed = DateTime.UtcNow;
+                Completed = PreciseTime();
 
                 _Stop = true;
 
