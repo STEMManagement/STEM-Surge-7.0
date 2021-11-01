@@ -55,7 +55,7 @@ namespace STEM.Sys.Messaging
             MessageID = Guid.NewGuid();
             Compress = true;
             AcceptResponsesUntilDisposed = false;
-            SentVia = new List<MessageConnection>();
+            _SentVia = new List<MessageConnection>();
         }
 
         [XmlIgnore]
@@ -114,7 +114,7 @@ namespace STEM.Sys.Messaging
         /// </summary>
         public delegate void MessageResponse(Message delivered, Message response);
 
-        internal List<MessageResponse> _onResponse = new List<MessageResponse>();
+        List<MessageResponse> _onResponse = new List<MessageResponse>();
 
         /// <summary>
         /// Receive a message that was sent in response to this message
@@ -139,36 +139,43 @@ namespace STEM.Sys.Messaging
                 if (value == null)
                     return;
 
+                List<MessageConnection> sentVia = null;
                 lock (_onResponse)
                 {
                     if (_onResponse.Contains(value))
                     {
                         _onResponse.Remove(value);
                     }
+                    else
+                    {
+                        return;
+                    }
 
                     if (_onResponse.Count == 0)
                     {
                         AcceptingResponses = false;
-
-                        lock (SentVia)
-                            foreach (MessageConnection c in SentVia)
-                                c.StopWaiting(this);
+                        sentVia = _SentVia.ToList();
                     }
                 }
+
+                if (sentVia != null)
+                    foreach (MessageConnection c in sentVia)
+                        c.StopWaiting(this);
             }
         }
 
+        List<MessageConnection> _SentVia { get; set; }
+        Queue<Message> _Responses = new Queue<Message>();
+
         [XmlIgnore]
-        public List<MessageConnection> SentVia { get; private set; }
-        internal Queue<Message> Responses = new Queue<Message>();
-        internal bool AcceptingResponses { get; set; }
+        public bool AcceptingResponses { get; private set; }
         public bool AcceptResponsesUntilDisposed { get; set; }
 
         internal void RegisterSender(MessageConnection sender)
         {
-            lock (SentVia)
-                if (!SentVia.Contains(sender))
-                    SentVia.Add(sender);
+            lock (_onResponse)
+                if (!_SentVia.Contains(sender))
+                    _SentVia.Add(sender);
         }
 
         /// <summary>
@@ -181,9 +188,9 @@ namespace STEM.Sys.Messaging
             DateTime start = DateTime.UtcNow;
             while ((DateTime.UtcNow - start).Ticks < wait.Ticks)
             {
-                lock (Responses)
-                    if (Responses.Count > 0)
-                        return Responses.Dequeue();
+                lock (_Responses)
+                    if (_Responses.Count > 0)
+                        return _Responses.Dequeue();
 
                 System.Threading.Thread.Sleep(10);
             }
@@ -197,9 +204,9 @@ namespace STEM.Sys.Messaging
         /// <returns>A message response or null if none have arrived</returns>
         public Message GetNextResponse()
         {
-            lock (Responses)
-                if (Responses.Count > 0)
-                    return Responses.Dequeue();
+            lock (_Responses)
+                if (_Responses.Count > 0)
+                    return _Responses.Dequeue();
 
             return null;
         }
@@ -226,17 +233,17 @@ namespace STEM.Sys.Messaging
 
                 if (!handled)
                 {
-                    lock (Responses)
-                        Responses.Enqueue(response);
+                    lock (_Responses)
+                        _Responses.Enqueue(response);
 
                     if (!AcceptResponsesUntilDisposed)
                     {
+                        List<MessageConnection> sentVia = null;
                         lock (_onResponse)
-                        {
-                            lock (SentVia)
-                                foreach (MessageConnection c in SentVia)
-                                    c.StopWaiting(this);
-                        }
+                            sentVia = _SentVia.ToList();
+
+                        foreach (MessageConnection c in sentVia)
+                            c.StopWaiting(this);
                     }
                     else
                     {
@@ -286,23 +293,25 @@ namespace STEM.Sys.Messaging
                 STEM.Sys.EventLog.WriteEntry("Message.Dispose", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
             }
 
+            List<MessageConnection> sentVia = null;
             lock (_onResponse)
             {
                 AcceptingResponses = false;
                 AcceptResponsesUntilDisposed = false;
 
-                _onResponse = new List<MessageResponse>();
+                _onResponse.Clear();
 
-                lock (SentVia)
-                    foreach (MessageConnection c in SentVia)
-                        c.StopWaiting(this);
+                sentVia = _SentVia.ToList();
+                _SentVia.Clear();
             }
+
+            foreach (MessageConnection c in sentVia)
+                c.StopWaiting(this);
         }
 
         List<EventHandler> _onDisposing = new List<EventHandler>();
         public event EventHandler onDisposing
         {
-
             add
             {
                 if (value == null)

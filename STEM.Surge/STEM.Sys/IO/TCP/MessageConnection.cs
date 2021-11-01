@@ -111,22 +111,28 @@ namespace STEM.Sys.IO.TCP
                 _ResponseReceivedQueue = null;
             }
 
+            List<Message> awaiting = null;
             lock (_AwaitResponse)
             {
-                foreach (Message ar in _AwaitResponse.Values.ToList())
+                awaiting = _AwaitResponse.Values.ToList();
+                _AwaitResponse.Clear();
+            }
+
+            foreach (Message ar in awaiting)
+            {
+                StopWaiting(ar);
+
+                ConnectionLost m = new ConnectionLost(ar.MessageID);
+
+                m.MessageConnection = this;
+                m.TimeSent = m.TimeReceived = DateTime.UtcNow;
+
+                try
                 {
-                    ConnectionLost m = new ConnectionLost(ar.MessageID);
-
-                    m.MessageConnection = this;
-                    m.TimeSent = m.TimeReceived = DateTime.UtcNow;
-
-                    try
-                    {
-                        if (_ReceiveResponse != null)
-                            _ReceiveResponse(this, ar, m);
-                    }
-                    catch { }
+                    if (_ReceiveResponse != null)
+                        _ReceiveResponse(this, ar, m);
                 }
+                catch { }
             }
         }
 
@@ -172,11 +178,13 @@ namespace STEM.Sys.IO.TCP
                     _LocalWaiting[orig.MessageID] = response;
                     orig.onResponse -= Waiting_onResponse;
 
-                    lock (_AwaitResponse)
+                    while (true)
                         try
                         {
                             if (!_AwaitResponse.ContainsKey(awaitID))
                                 return;
+
+                            break;
                         }
                         catch { }
                 }
@@ -245,16 +253,15 @@ namespace STEM.Sys.IO.TCP
                     response.Message.MessageConnection = this;
 
                     Message orig = null;
-                    if (_AwaitResponse.Count > 0)
-                        while(true)
-                            try
-                            {
-                                if (_AwaitResponse.ContainsKey(response.RespondingTo))
-                                    orig = _AwaitResponse[response.RespondingTo];
+                    while (true)
+                        try
+                        {
+                            if (_AwaitResponse.ContainsKey(response.RespondingTo))
+                                orig = _AwaitResponse[response.RespondingTo];
 
-                                break;
-                            }
-                            catch { System.Threading.Thread.Sleep(10); }
+                            break;
+                        }
+                        catch { System.Threading.Thread.Sleep(10); }
 
                     if (orig != null)
                     {
@@ -399,25 +406,23 @@ namespace STEM.Sys.IO.TCP
             catch { }
 
             lock (_LocalWaiting)
+                foreach (Guid id in _LocalWaiting.Keys.ToList())
+                    _LocalWaiting[id] = new Undeliverable(id);
+
+            List<Message> awaiting = new List<Message>();
+            lock (_AwaitResponse)
             {
-                lock (_AwaitResponse)
-                {
-                    foreach (Guid id in _AwaitResponse.Keys.ToList())
-                    {
-                        Message orig = _AwaitResponse[id];
+                awaiting = _AwaitResponse.Values.ToList();
+                _AwaitResponse.Clear();
+            }
 
-                        if (_LocalWaiting.ContainsKey(orig.MessageID))
-                        {
-                            _LocalWaiting[orig.MessageID] = new Undeliverable(orig.MessageID); 
-                            orig.onResponse -= Waiting_onResponse;
-                        }
+            foreach (Message orig in awaiting)
+            {
+                orig.onResponse -= Waiting_onResponse;
+                StopWaiting(orig);
 
-                        StopWaiting(orig);
-
-                        if (_ResponseReceivedQueue != null)
-                            _ResponseReceivedQueue.EnqueueObject(new object[] { orig, new Undeliverable(orig.MessageID) });
-                    }
-                }
+                if (_ResponseReceivedQueue != null)
+                    _ResponseReceivedQueue.EnqueueObject(new object[] { orig, new Undeliverable(orig.MessageID) });
             }
         }
 
@@ -433,14 +438,14 @@ namespace STEM.Sys.IO.TCP
                     {
                         message.onResponse += Waiting_onResponse;
                         _LocalWaiting[message.MessageID] = null;
-
-                        Send(message, acceptResponsesUntilDisposed);
                     }
                     else
                     {
                         return new Undeliverable(message.MessageID);
                     }
                 }
+
+                Send(message, acceptResponsesUntilDisposed);
 
                 Message ret = null;
 
