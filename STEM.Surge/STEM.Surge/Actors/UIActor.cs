@@ -776,6 +776,7 @@ namespace STEM.Surge
                     {
                         if (e.BranchIP == null)
                             continue;
+
                         Branches.Entry o = branchEntries.FirstOrDefault(i => i.BranchIP == e.BranchIP);
 
                         mrt.LastManagerReport = m.TimeReceived;
@@ -784,13 +785,16 @@ namespace STEM.Surge
 
                         if (o == null)
                         {
-                            branchEntries.Add(e);
+                            o = new Branches.Entry();
+                            o.Assigned = e.Assigned;
+                            o.Processing = e.Processing;
+                            o.CopyFrom(e);
+                            branchEntries.Add(o);
                         }
                         else
                         {
                             o.Assigned += e.Assigned;
                             o.Processing += e.Processing;
-
                             o.CopyFrom(e);
                         }
                     }
