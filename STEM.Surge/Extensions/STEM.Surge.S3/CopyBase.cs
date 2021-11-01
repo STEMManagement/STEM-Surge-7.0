@@ -194,17 +194,8 @@ namespace STEM.Surge.S3
                                             Directory.CreateDirectory(tmp);
 
                                         tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
-
-                                        TransferUtility ftu = new TransferUtility(Authentication.Client);
-                                                                                
-                                        TransferUtilityDownloadRequest request = new TransferUtilityDownloadRequest
-                                        {
-                                            BucketName = bucket,
-                                            Key = prefix,
-                                            FilePath = tmp
-                                        };
-
-                                        ftu.DownloadAsync(request).Wait();
+										
+                                        TransferUtilityDownload(bucket, prefix, tmp);
 
                                         try
                                         {
@@ -231,69 +222,10 @@ namespace STEM.Surge.S3
                             }
                             else
                             {
-
-                                //
                                 string bucket = Authentication.BucketFromPath(d);
                                 string prefix = Authentication.PrefixFromPath(d);
-
-                                TransferUtility ftu = new TransferUtility(Authentication.Client);
-
-                                TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
-                                {
-                                    BucketName = bucket,
-                                    Key = prefix,
-                                    FilePath = STEM.Sys.IO.Path.AdjustPath(s),
-                                    PartSize = _PartSize[d]
-                                };
-
-                                switch (EncryptionMethod)
-                                {
-                                    case S3EncryptionMethod.AES256:
-                                        request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
-                                        break;
-
-                                    case S3EncryptionMethod.AWSKMS:
-                                        request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
-                                        request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
-                                        break;
-                                }
-
-                                switch (ACL)
-                                {
-                                    case S3ACL.AuthenticatedRead:
-                                        request.CannedACL = S3CannedACL.AuthenticatedRead;
-                                        break;
-
-                                    case S3ACL.AWSExecRead:
-                                        request.CannedACL = S3CannedACL.AWSExecRead;
-                                        break;
-
-                                    case S3ACL.BucketOwnerFullControl:
-                                        request.CannedACL = S3CannedACL.BucketOwnerFullControl;
-                                        break;
-
-                                    case S3ACL.BucketOwnerRead:
-                                        request.CannedACL = S3CannedACL.BucketOwnerRead;
-                                        break;
-
-                                    case S3ACL.LogDeliveryWrite:
-                                        request.CannedACL = S3CannedACL.LogDeliveryWrite;
-                                        break;
-
-                                    case S3ACL.Private:
-                                        request.CannedACL = S3CannedACL.Private;
-                                        break;
-
-                                    case S3ACL.PublicRead:
-                                        request.CannedACL = S3CannedACL.PublicRead;
-                                        break;
-
-                                    case S3ACL.PublicReadWrite:
-                                        request.CannedACL = S3CannedACL.PublicReadWrite;
-                                        break;
-                                }
-
-                                ftu.UploadAsync(request).Wait();
+								
+                                TransferUtilityUpload(bucket, prefix, s, d);
                             }
                         }
 
@@ -368,6 +300,11 @@ namespace STEM.Surge.S3
                     {
                         string bucket = Authentication.BucketFromPath(src);
                         string prefix = Authentication.PrefixFromPath(src);
+                        if (PopulatePostMortemMeta)
+                        {
+                            PostMortemMetaData["Bucket"] = bucket;
+                            PostMortemMetaData["Prefix"] = prefix;
+                        }
 
                         items = Authentication.ListObjects(bucket, prefix, S3ListType.File, RecurseSource, DirectoryFilter, FileFilter);
 
@@ -463,65 +400,13 @@ namespace STEM.Surge.S3
 
                                         string bucket = Authentication.BucketFromPath(dFile);
                                         string prefix = Authentication.PrefixFromPath(dFile);
-
-                                        TransferUtility ftu = new TransferUtility(Authentication.Client);
-
-                                        TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
+                                        if (PopulatePostMortemMeta)
                                         {
-                                            BucketName = bucket,
-                                            Key = prefix,
-                                            FilePath = STEM.Sys.IO.Path.AdjustPath(s),
-                                            PartSize = _PartSize[s]
-                                        };
-
-                                        switch (EncryptionMethod)
-                                        {
-                                            case S3EncryptionMethod.AES256:
-                                                request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
-                                                break;
-
-                                            case S3EncryptionMethod.AWSKMS:
-                                                request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
-                                                request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
-                                                break;
+                                            PostMortemMetaData["Bucket"] = bucket;
+                                            PostMortemMetaData["Prefix"] = prefix;
                                         }
-
-                                        switch (ACL)
-                                        {
-                                            case S3ACL.AuthenticatedRead:
-                                                request.CannedACL = S3CannedACL.AuthenticatedRead;
-                                                break;
-
-                                            case S3ACL.AWSExecRead:
-                                                request.CannedACL = S3CannedACL.AWSExecRead;
-                                                break;
-
-                                            case S3ACL.BucketOwnerFullControl:
-                                                request.CannedACL = S3CannedACL.BucketOwnerFullControl;
-                                                break;
-
-                                            case S3ACL.BucketOwnerRead:
-                                                request.CannedACL = S3CannedACL.BucketOwnerRead;
-                                                break;
-
-                                            case S3ACL.LogDeliveryWrite:
-                                                request.CannedACL = S3CannedACL.LogDeliveryWrite;
-                                                break;
-
-                                            case S3ACL.Private:
-                                                request.CannedACL = S3CannedACL.Private;
-                                                break;
-
-                                            case S3ACL.PublicRead:
-                                                request.CannedACL = S3CannedACL.PublicRead;
-                                                break;
-
-                                            case S3ACL.PublicReadWrite:
-                                                request.CannedACL = S3CannedACL.PublicReadWrite;
-                                                break;
-                                        }
-
-                                        ftu.UploadAsync(request).Wait();
+										
+                                        TransferUtilityUpload(bucket, prefix, s, s);
                                     }
                                     else
                                     {
@@ -577,6 +462,11 @@ namespace STEM.Surge.S3
 
                                         string bucket = Authentication.BucketFromPath(s);
                                         string prefix = Authentication.PrefixFromPath(s);
+                                        if (PopulatePostMortemMeta)
+                                        {
+                                            PostMortemMetaData["Bucket"] = bucket;
+                                            PostMortemMetaData["Prefix"] = prefix;
+                                        }
 
                                         FDCFileInfo fi = Authentication.GetFileInfo(s);
 
@@ -591,17 +481,8 @@ namespace STEM.Surge.S3
                                                     Directory.CreateDirectory(tmp);
 
                                                 tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
-
-                                                TransferUtility ftu = new TransferUtility(Authentication.Client);
-
-                                                TransferUtilityDownloadRequest request = new TransferUtilityDownloadRequest
-                                                {
-                                                    BucketName = bucket,
-                                                    Key = prefix,
-                                                    FilePath = tmp
-                                                };
-
-                                                ftu.DownloadAsync(request).Wait();
+												
+                                                TransferUtilityDownload(bucket, prefix, tmp);
 
                                                 try
                                                 {
@@ -673,8 +554,8 @@ namespace STEM.Surge.S3
                             foreach (Exception e in ex.InnerExceptions)
                             {
                                 AppendToMessage(e.Message);
-                                Exceptions.Add(e);
                             }
+							Exceptions.Add(ex); //add the entire message to the collection to maintain the top level exception's stack
                         }
                         catch (Exception ex)
                         {
@@ -694,8 +575,8 @@ namespace STEM.Surge.S3
                 foreach (Exception e in ex.InnerExceptions)
                 {
                     AppendToMessage(e.Message);
-                    Exceptions.Add(e);
                 }
+                Exceptions.Add(ex); //add the entire message to the collection to maintain the top level exception's stack
             }
             catch (Exception ex)
             {
@@ -731,6 +612,83 @@ namespace STEM.Surge.S3
             }
 
             return Exceptions.Count == 0;
+        }
+		
+        protected void TransferUtilityDownload(string bucket, string prefix, string downloadpath)
+        {	
+			TransferUtility ftu = new TransferUtility(Authentication.Client);
+													
+			TransferUtilityDownloadRequest request = new TransferUtilityDownloadRequest
+			{
+                BucketName = bucket,
+                Key = prefix,
+                FilePath = downloadpath
+			};
+
+			ftu.DownloadAsync(request).Wait();
+        }
+		
+        //pathkey should be the same as sourcepath except during rollback
+        protected void TransferUtilityUpload(string bucket, string prefix, string sourcepath, string pathkey)
+		{
+			TransferUtility ftu = new TransferUtility(Authentication.Client);
+
+			TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
+			{
+                BucketName = bucket,
+                Key = prefix,
+                FilePath = STEM.Sys.IO.Path.AdjustPath(sourcepath),
+                PartSize = _PartSize[pathkey]
+			};
+
+			switch (EncryptionMethod)
+			{
+                case S3EncryptionMethod.AES256:
+                    request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
+                    break;
+
+                case S3EncryptionMethod.AWSKMS:
+                    request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
+                    request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
+                    break;
+			}
+
+			switch (ACL)
+			{
+                case S3ACL.AuthenticatedRead:
+                    request.CannedACL = S3CannedACL.AuthenticatedRead;
+                    break;
+
+                case S3ACL.AWSExecRead:
+                    request.CannedACL = S3CannedACL.AWSExecRead;
+                    break;
+
+                case S3ACL.BucketOwnerFullControl:
+                    request.CannedACL = S3CannedACL.BucketOwnerFullControl;
+                    break;
+
+                case S3ACL.BucketOwnerRead:
+                    request.CannedACL = S3CannedACL.BucketOwnerRead;
+                    break;
+
+                case S3ACL.LogDeliveryWrite:
+                    request.CannedACL = S3CannedACL.LogDeliveryWrite;
+                    break;
+
+                case S3ACL.Private:
+                    request.CannedACL = S3CannedACL.Private;
+                    break;
+
+                case S3ACL.PublicRead:
+                    request.CannedACL = S3CannedACL.PublicRead;
+                    break;
+
+                case S3ACL.PublicReadWrite:
+                    request.CannedACL = S3CannedACL.PublicReadWrite;
+                    break;
+			}
+
+			ftu.UploadAsync(request).Wait();
         }
 
         protected override void Dispose(bool dispose)

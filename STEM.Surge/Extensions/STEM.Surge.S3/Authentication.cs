@@ -369,11 +369,11 @@ namespace STEM.Surge.S3
                     Size = r.Result.ContentLength
                 };
             }
-            catch (AggregateException)
-            {
-                //foreach (Exception e in ex.InnerExceptions)
-                //    STEM.Sys.EventLog.WriteEntry("Authentication.GetFileInfo", e.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-            }
+            //catch (AggregateException)
+            //{
+            //    //foreach (Exception e in ex.InnerExceptions)
+            //    //    STEM.Sys.EventLog.WriteEntry("Authentication.GetFileInfo", e.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+            //}
             catch (Exception ex)
             {
                 STEM.Sys.EventLog.WriteEntry("Authentication.GetFileInfo", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
@@ -445,11 +445,11 @@ namespace STEM.Surge.S3
                     }
                 }
             }
-            catch (AggregateException)
-            {
-                //foreach (Exception e in ex.InnerExceptions)
-                //    STEM.Sys.EventLog.WriteEntry("Authentication.GetDirectoryInfo", e.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-            }
+            //catch (AggregateException)
+            //{
+            //    //foreach (Exception e in ex.InnerExceptions)
+            //    //    STEM.Sys.EventLog.WriteEntry("Authentication.GetDirectoryInfo", e.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+            //}
             catch (Exception ex)
             {
                 STEM.Sys.EventLog.WriteEntry("Authentication.GetDirectoryInfo", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);

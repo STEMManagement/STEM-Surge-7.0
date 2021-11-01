@@ -88,6 +88,11 @@ namespace STEM.Surge.S3
 
                 string bucket = Authentication.BucketFromPath(SourceFile);
                 string prefix = Authentication.PrefixFromPath(SourceFile);
+                if (PopulatePostMortemMeta)
+                {
+                    PostMortemMetaData["Bucket"] = bucket;
+                    PostMortemMetaData["Prefix"] = prefix;
+                }
 
                 System.Threading.Tasks.Task<System.IO.Stream> streamResult = Authentication.Client.GetObjectStreamAsync(bucket, prefix, null);
                 streamResult.Wait();
@@ -153,8 +158,8 @@ namespace STEM.Surge.S3
                 foreach (Exception e in ex.InnerExceptions)
                 {
                     AppendToMessage(e.Message);
-                    Exceptions.Add(e);
                 }
+                Exceptions.Add(ex); //add the entire message to the collection to maintain the top level exception's stack
             }
             catch (Exception ex)
             {

@@ -106,6 +106,11 @@ namespace STEM.Surge.S3
             {
                 string bucket = Authentication.BucketFromPath(SourcePath);
                 string prefix = Authentication.PrefixFromPath(SourcePath);
+                if (PopulatePostMortemMeta)
+                {
+                    PostMortemMetaData["Bucket"] = bucket;
+                    PostMortemMetaData["Prefix"] = prefix;
+                }
 
                 List<S3Object> items = Authentication.ListObjects(bucket, prefix, S3ListType.All, RecurseSource, DirectoryFilter, FileFilter);
                 

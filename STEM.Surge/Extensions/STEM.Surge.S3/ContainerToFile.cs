@@ -144,6 +144,11 @@ namespace STEM.Surge.S3
 
                 string bucket = Authentication.BucketFromPath(file);
                 string prefix = Authentication.PrefixFromPath(file);
+                if (PopulatePostMortemMeta)
+                {
+                    PostMortemMetaData["Bucket"] = bucket;
+                    PostMortemMetaData["Prefix"] = prefix;
+                }
 
                 if (!Authentication.DirectoryExists(STEM.Sys.IO.Path.GetDirectoryName(file)))
                     Authentication.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(file));
