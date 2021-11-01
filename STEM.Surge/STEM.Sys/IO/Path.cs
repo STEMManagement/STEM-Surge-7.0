@@ -199,11 +199,12 @@ namespace STEM.Sys.IO
             string p = STEM.Sys.IO.Path.AdjustPath(path);
 
             string machine = p.TrimStart('\\').TrimStart('/');
-            if (p.Contains(":"))
-                return Net.MachineIP();
 
             if (machine.IndexOf(System.IO.Path.DirectorySeparatorChar) != -1)
                 machine = machine.Substring(0, machine.IndexOf(System.IO.Path.DirectorySeparatorChar));
+
+            if (machine.Contains(":"))
+                return Net.MachineIP();
 
             return machine;
         }
