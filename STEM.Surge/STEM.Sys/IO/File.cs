@@ -260,6 +260,32 @@ namespace STEM.Sys.IO
 
             destinationFilename = "";
 
+            if (isMove)
+            {
+                string sourceAddress = STEM.Sys.IO.Net.MachineAddress(STEM.Sys.IO.Path.FirstTokenOfPath(source));
+                string destinationAddress = STEM.Sys.IO.Net.MachineAddress(STEM.Sys.IO.Path.FirstTokenOfPath(destination));
+
+                if (sourceAddress == destinationAddress)
+                {
+                    string sp = STEM.Sys.IO.Path.AdjustPath(source).TrimStart('\\').TrimStart('/');
+
+                    if (sp.IndexOf(System.IO.Path.DirectorySeparatorChar) != -1)
+                        sp = sp.Substring(sp.IndexOf(System.IO.Path.DirectorySeparatorChar));
+
+                    sp = STEM.Sys.IO.Path.FirstTokenOfPath(sp);
+
+                    string dp = STEM.Sys.IO.Path.AdjustPath(destination).TrimStart('\\').TrimStart('/');
+
+                    if (dp.IndexOf(System.IO.Path.DirectorySeparatorChar) != -1)
+                        dp = dp.Substring(dp.IndexOf(System.IO.Path.DirectorySeparatorChar));
+
+                    dp = STEM.Sys.IO.Path.FirstTokenOfPath(dp);
+
+                    if (sp.Equals(dp, StringComparison.InvariantCultureIgnoreCase))
+                        useTempHop = false;
+                }
+            }
+
             while (retryCount >= 0)
             {
                 if (!System.IO.File.Exists(source))
