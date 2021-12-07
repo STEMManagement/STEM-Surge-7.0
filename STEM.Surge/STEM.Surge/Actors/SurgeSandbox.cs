@@ -33,12 +33,11 @@ namespace STEM.Surge
 
         protected override void onOpened(Connection connection)
         {
-            lock (ConnectionLock)
+            MessageConnection c = connection as MessageConnection;
+            if (c != null)
             {
-                MessageConnection c = connection as MessageConnection;
-                if (c != null)
-                    ManageConnection(c);
-                
+                ManageConnection(c);
+
                 SandboxConnectionType m = new SandboxConnectionType { Type = ConnectionType.Types.SurgeSandbox, SandboxID = STEM.Sys.IO.Path.GetFileName(System.Environment.CurrentDirectory) };
                 m.onHandshakeComplete += SandboxConnectionType_onHandshakeComplete;
                 m.PerformHandshake(c);
