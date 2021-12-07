@@ -64,7 +64,7 @@ namespace STEM.Surge
 
         bool _SES = false;
         bool _UseSSL = false;
-        
+
         public void Dispose()
         {
             if (_TcpConnectionListener != null)
@@ -91,7 +91,8 @@ namespace STEM.Surge
                 foreach (string f in Directory.GetFiles(InstructionCache, "*.is"))
                     try
                     {
-                        _Stale.Add(f);
+                        File.Delete(f);
+                        //_Stale.Add(f);
                     }
                     catch
                     {
@@ -118,171 +119,223 @@ namespace STEM.Surge
 
             if (_SES)
             {
-                ConnectToDeploymentManager(STEM.Sys.IO.Net.MachineIP(), _UseSSL ? CommunicationPort+1 : CommunicationPort, _UseSSL, certificate, true);
+                ConnectToDeploymentManager(STEM.Sys.IO.Net.MachineIP(), _UseSSL ? CommunicationPort + 1 : CommunicationPort, _UseSSL, certificate, true);
             }
         }
 
         void _TcpConnectionListener_onConnect(TcpConnectionListener caller, System.Net.Sockets.Socket soc)
         {
-            lock (ConnectionLock)
-            {
-                MessageConnection c = new MessageConnection(new System.Net.Sockets.TcpClient { Client = soc }, null, true);
+            MessageConnection c = new MessageConnection(new System.Net.Sockets.TcpClient { Client = soc }, null, true);
 
-                c.onClosed += _SandboxConnections_onClosed;
-                c.onReceived += _SandboxConnections_onReceived;
-                c.onOpened += _SandboxConnections_onOpened;
-            }
+            c.onClosed += _SandboxConnections_onClosed;
+            c.onReceived += _SandboxConnections_onReceived;
+            c.onOpened += _SandboxConnections_onOpened;
         }
 
         void _SandboxConnections_onOpened(Connection connection)
         {
-            lock (ConnectionLock)
+            MessageConnection c = connection as MessageConnection;
+            if (c != null)
             {
-                MessageConnection c = connection as MessageConnection;
-                if (c != null)
-                {
-                    ConnectionType m = new ConnectionType { Type = ConnectionType.Types.SurgeBranchManager };
-                    m.PerformHandshake(c);
-                }
+                ConnectionType m = new ConnectionType { Type = ConnectionType.Types.SurgeBranchManager };
+                m.PerformHandshake(c);
             }
+
+            ManageConnection(c);
         }
 
         void _SandboxConnections_onClosed(Connection connection)
         {
-            lock (ConnectionLock)
-            {
-                base.onClosed(connection);
+            base.onClosed(connection);
 
-                lock (_RunningSandboxes)
+            RunningSandbox sandbox = null;
+
+            while (true)
+                try
                 {
-                    RunningSandbox sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
-
-                    if (sandbox != null)
-                        sandbox.Clear();
+                    sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
+                    break;
                 }
-            }
+                catch { }
+
+            if (sandbox != null)
+                sandbox.Clear();
         }
 
         void _SandboxConnections_onReceived(MessageConnection connection, Message message)
         {
             if (message is ConnectionType)
             {
-                lock (ConnectionLock)
+                ConnectionType m = message as ConnectionType;
+
+                m.Respond(new MessageReceived(m.MessageID));
+
+                switch (m.Type)
                 {
-                    ConnectionType m = message as ConnectionType;
+                    case ConnectionType.Types.SurgeSandbox:
+                        SandboxConnectionType sm = m as SandboxConnectionType;
+                        if (sm == null)
+                        {
+                            connection.Close();
+                            return;
+                        }
 
-                    m.Respond(new MessageReceived(m.MessageID));
+                        RunningSandbox sandbox = null;
 
-                    switch (m.Type)
-                    {
-                        case ConnectionType.Types.SurgeSandbox:
-                            SandboxConnectionType sm = m as SandboxConnectionType;
-                            if (sm == null)
-                            {
-                                connection.Close();
-                                return;
-                            }
-
-                            RunningSandbox sandbox = null;
-
-                            lock (_RunningSandboxes)
+                        while (true)
+                            try
                             {
                                 sandbox = _RunningSandboxes.Where(i => i.Value.SandboxID == sm.SandboxID).Select(i => i.Value).FirstOrDefault();
+                                break;
+                            }
+                            catch { }
 
-                                if (sandbox == null)
+                        if (sandbox == null)
+                        {
+                            try
+                            {
+                                connection.Close();
+                            }
+                            catch { }
+
+                            return;
+                        }
+
+                        sandbox.MessageConnection = connection;
+
+                        connection.Send(new AssemblyInitializationComplete());
+
+                        foreach (Runner i in _Statics.Where(i => i.AssignInstructionSet.ExecuteStaticInSandboxes))
+                            connection.Send(i.AssignInstructionSet);
+
+                        lock (_Assigned)
+                            foreach (AssignInstructionSet i in sandbox.AssignedInstructionSets)
+                            {
+                                i.SandboxID = "";
+                                i.SandboxAppConfigXml = "";
+                                if (!connection.Send(i))
                                 {
-                                    try
-                                    {
-                                        connection.Close();
-                                    }
-                                    catch { }
+                                    i.ExecutionCompleted = DateTime.UtcNow;
 
-                                    return;
-                                }
+                                    ExecutionCompleted ec = new ExecutionCompleted();
 
-                                connection.Send(new AssemblyInitializationComplete());
+                                    ec.InstructionSetID = i.InstructionSetID;
+                                    ec.DeploymentControllerID = i.DeploymentControllerID;
 
-                                sandbox.MessageConnection = connection;
+                                    ec.InitiationSource = i.InitiationSource;
+                                    ec.TimeCompleted = DateTime.UtcNow;
 
-                                foreach (Runner i in _Statics.Where(i => i.AssignInstructionSet.ExecuteStaticInSandboxes))
-                                    connection.Send(i.AssignInstructionSet);
+                                    ec.Exceptions = new List<Exception>();
 
-                                foreach (AssignInstructionSet i in sandbox.AssignedInstructionSets)
-                                {
-                                    i.SandboxID = "";
-                                    i.SandboxAppConfigXml = "";
-                                    if (!connection.Send(i))
-                                    {
-                                        i.ExecutionCompleted = DateTime.UtcNow;
-
-                                        ExecutionCompleted ec = new ExecutionCompleted();
-
-                                        ec.InstructionSetID = i.InstructionSetID;
-                                        ec.DeploymentControllerID = i.DeploymentControllerID;
-
-                                        ec.InitiationSource = i.InitiationSource;
-                                        ec.TimeCompleted = DateTime.UtcNow;
-
-                                        ec.Exceptions = new List<Exception>();
-
-                                        SurgeBranchManager.SendMessage(ec, i.MessageConnection, this);
-                                    }
+                                    SurgeBranchManager.SendMessage(ec, i.MessageConnection, this);
                                 }
                             }
 
-                            break;
+                        break;
 
-                        default:
-                            connection.Close();
-                            break;
-                    }
-
-                    return;
+                    default:
+                        connection.Close();
+                        break;
                 }
+
+                return;
             }
             else if (message is InstructionMessage)
             {
                 RunningSandbox sandbox = null;
-                lock (_RunningSandboxes)
-                {
-                    sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
-
-                    if (sandbox != null)
+                while (true)
+                    try
                     {
-                        InstructionMessage m = message as InstructionMessage;
+                        sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
+                        break;
+                    }
+                    catch { }
 
-                        AssignInstructionSet a = sandbox.AssignedInstructionSets.FirstOrDefault(i => i.InstructionSetID == m.InstructionSetID);
+                if (sandbox == null)
+                {
+                    try
+                    {
+                        connection.Close();
+                    }
+                    catch { }
 
-                        if (a != null && m is ExecutionCompleted)
-                            a.ExecutionCompleted = m.TimeSent;
+                    return;
+                }
+                else
+                {
+                    InstructionMessage m = message as InstructionMessage;
 
-                        if (a != null)
+                    AssignInstructionSet a = null;
+
+                    while (true)
+                        try
                         {
-                            SurgeBranchManager.SendMessage(m, a.MessageConnection, this);
+                            a = sandbox.AssignedInstructionSets.FirstOrDefault(i => i.InstructionSetID == m.InstructionSetID);
+                            break;
                         }
+                        catch { }
+
+                    if (a != null && m is ExecutionCompleted)
+                        a.ExecutionCompleted = m.TimeSent;
+
+                    if (a != null)
+                    {
+                        SurgeBranchManager.SendMessage(m, a.MessageConnection, this);
                     }
                 }
             }
             else if (message is BranchHealthDetails)
             {
-                lock (_RunningSandboxes)
+                RunningSandbox sandbox = null;
+                while (true)
+                    try
+                    {
+                        sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
+                        break;
+                    }
+                    catch { }
+
+                if (sandbox == null)
                 {
-                    RunningSandbox s = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
-
-                    if (s == null)
+                    try
                     {
-                        try
-                        {
-                            connection.Close();
-                        }
-                        catch { }
+                        connection.Close();
+                    }
+                    catch { }
 
-                        return;
-                    }
-                    else
+                    return;
+                }
+                else
+                {
+                    sandbox.LastHealthDetails = DateTime.UtcNow;
+                }
+            }
+            else if (message is KillSandbox)
+            {
+                RunningSandbox sandbox = null;
+                while (true)
+                    try
                     {
-                        s.LastHealthDetails = DateTime.UtcNow;
+                        sandbox = _RunningSandboxes.Where(i => i.Value.MessageConnection == connection).Select(i => i.Value).FirstOrDefault();
+                        break;
                     }
+                    catch { }
+
+                if (sandbox == null)
+                {
+                    try
+                    {
+                        connection.Close();
+                    }
+                    catch { }
+
+                    return;
+                }
+                else
+                {
+                    STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.RunningSandbox.Kill", "Sandbox torn down due to a kill request. (" + sandbox.SandboxID + ")", STEM.Sys.EventLog.EventLogEntryType.Information);
+
+                    sandbox.Kill();
                 }
             }
         }
@@ -292,6 +345,29 @@ namespace STEM.Surge
         static Dictionary<string, RunningSandbox> _RunningSandboxes = new Dictionary<string, RunningSandbox>();
         class RunningSandbox : STEM.Sys.Threading.IThreadable
         {
+            static STEM.Sys.State.KeyManager _AppKeyManager = new Sys.State.KeyManager();
+
+            public static bool ReserveApplication(string sandboxID)
+            {
+                lock (_AppKeyManager)
+                {
+                    if (_AppKeyManager.Locked(sandboxID))
+                        return false;
+
+                    _AppKeyManager.Lock(sandboxID);
+
+                    return true;
+                }
+            }
+
+            public static void ReleaseApplication(string sandboxID)
+            {
+                lock (_AppKeyManager)
+                {
+                    _AppKeyManager.Unlock(sandboxID);
+                }
+            }
+
             SurgeBranchManager _Owner = null;
 
             public Process Process { get; set; }
@@ -318,28 +394,46 @@ namespace STEM.Surge
             {
                 if ((DateTime.UtcNow - LastHealthDetails).TotalMinutes > 5)
                 {
-                    try
-                    {
-                        MessageConnection.Close();
-                    }
-                    catch { }
-
-                    try
-                    {
-                        Process.Kill();
-                    }
-                    catch { }
-
+                    Kill();
                     STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.RunningSandbox.Silent", "Sandbox torn down due to socket silence. (" + SandboxID + ")", STEM.Sys.EventLog.EventLogEntryType.Information);
                 }
+            }
+
+            public void Kill()
+            {
+                try
+                {
+                    MessageConnection.Close();
+                }
+                catch { }
+
+                try
+                {
+                    Process.Kill();
+                }
+                catch { }
+
+                try
+                {
+                    Clear();
+                }
+                catch { }
             }
 
 
             public void Clear()
             {
-                lock (_RunningSandboxes)
+                try
                 {
-                    _RunningSandboxes.Remove(SandboxID);
+                    while (true)
+                        try
+                        {
+                            if (_RunningSandboxes.ContainsKey(SandboxID))
+                                _RunningSandboxes.Remove(SandboxID);
+
+                            break;
+                        }
+                        catch { }
 
                     _SandboxPool.EndAsync(this);
 
@@ -392,6 +486,10 @@ namespace STEM.Surge
                             }
                             catch { System.Threading.Thread.Sleep(1000); retry--; }
                 }
+                finally
+                {
+                    ReleaseApplication(SandboxID);
+                }
             }
         }
 
@@ -399,210 +497,225 @@ namespace STEM.Surge
         {
             try
             {
-                string appPath = Path.Combine(System.Environment.CurrentDirectory, Path.Combine("Sandboxes", sandboxID));
+                while (!RunningSandbox.ReserveApplication(sandboxID))
+                {
+                    lock (_RunningSandboxes)
+                        if (_RunningSandboxes.ContainsKey(sandboxID))
+                            return _RunningSandboxes[sandboxID];
 
-                if (Directory.Exists(appPath))
+                    System.Threading.Thread.Sleep(10);
+                }
+
+                lock (_RunningSandboxes)
                     try
                     {
-                        STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
-                    }
-                    catch { }
+                        string appPath = Path.Combine(System.Environment.CurrentDirectory, Path.Combine("Sandboxes", sandboxID));
 
-                if (!Directory.Exists(appPath))
-                    Directory.CreateDirectory(appPath);
-
-                if (sandboxID.StartsWith("1"))
-                    foreach (string dll in STEM.Sys.IO.Directory.STEM_GetFiles(STEM.Sys.Serialization.VersionManager.VersionCache, "*.dll|*.so|*.a|*.lib", "!.Archive|!TEMP", SearchOption.AllDirectories, false))
-                    {
-                        string file = dll.Replace(STEM.Sys.IO.Path.FirstTokenOfPath(dll), STEM.Sys.IO.Path.FirstTokenOfPath(STEM.Sys.Serialization.VersionManager.VersionCache)).Substring(STEM.Sys.Serialization.VersionManager.VersionCache.Length).Trim(Path.DirectorySeparatorChar);
-                        file = Path.Combine(Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(STEM.Sys.Serialization.VersionManager.VersionCache)), file);
-                        string dir = STEM.Sys.IO.Path.GetDirectoryName(file);
-
-                        if (!Directory.Exists(dir))
-                            Directory.CreateDirectory(dir);
-
-                        File.Copy(dll, file);
-                    }
-
-                ConfigurationDS configurationDS = new ConfigurationDS();
-                configurationDS.ReadXml(Path.Combine(System.Environment.CurrentDirectory, "SurgeService.cfg"));
-
-                configurationDS.Settings[0].SurgeCommunicationPort = _TcpConnectionListener.Port;
-
-                if (altAssmStore != null)
-                {
-                    configurationDS.Settings[0].AlternateAssemblyStore = altAssmStore;
-                }
-
-                configurationDS.WriteXml(Path.Combine(appPath, "SurgeService.cfg"));
-
-                if (!STEM.Sys.Control.IsWindows)
-                {
-                    lock (_RunningSandboxes)
-                    {
-                        try
-                        {
-                            File.Copy("STEM.SurgeService", Path.Combine(appPath, sandboxID));
+                        if (Directory.Exists(appPath))
                             try
                             {
-                                File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.deps.json"), Path.Combine(appPath, sandboxID + ".deps.json"));
+                                STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
                             }
                             catch { }
+
+                        if (!Directory.Exists(appPath))
+                            Directory.CreateDirectory(appPath);
+
+                        if (sandboxID.StartsWith("1"))
+                            foreach (string dll in STEM.Sys.IO.Directory.STEM_GetFiles(STEM.Sys.Serialization.VersionManager.VersionCache, "*.dll|*.so|*.a|*.lib", "!.Archive|!TEMP", SearchOption.AllDirectories, false))
+                            {
+                                string file = dll.Replace(STEM.Sys.IO.Path.FirstTokenOfPath(dll), STEM.Sys.IO.Path.FirstTokenOfPath(STEM.Sys.Serialization.VersionManager.VersionCache)).Substring(STEM.Sys.Serialization.VersionManager.VersionCache.Length).Trim(Path.DirectorySeparatorChar);
+                                file = Path.Combine(Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(STEM.Sys.Serialization.VersionManager.VersionCache)), file);
+                                string dir = STEM.Sys.IO.Path.GetDirectoryName(file);
+
+                                if (!Directory.Exists(dir))
+                                    Directory.CreateDirectory(dir);
+
+                                File.Copy(dll, file);
+                            }
+
+                        ConfigurationDS configurationDS = new ConfigurationDS();
+                        configurationDS.ReadXml(Path.Combine(System.Environment.CurrentDirectory, "SurgeService.cfg"));
+
+                        configurationDS.Settings[0].SurgeCommunicationPort = _TcpConnectionListener.Port;
+
+                        if (altAssmStore != null)
+                        {
+                            configurationDS.Settings[0].AlternateAssemblyStore = altAssmStore;
+                        }
+
+                        configurationDS.WriteXml(Path.Combine(appPath, "SurgeService.cfg"));
+
+                        if (!STEM.Sys.Control.IsWindows)
+                        {
                             try
                             {
-                                File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.runtimeconfig.json"), Path.Combine(appPath, sandboxID + ".runtimeconfig.json"));
+                                File.Copy("STEM.SurgeService", Path.Combine(appPath, sandboxID));
+                                try
+                                {
+                                    File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.deps.json"), Path.Combine(appPath, sandboxID + ".deps.json"));
+                                }
+                                catch { }
+                                try
+                                {
+                                    File.Copy(Path.Combine(System.Environment.CurrentDirectory, "STEM.SurgeService.runtimeconfig.json"), Path.Combine(appPath, sandboxID + ".runtimeconfig.json"));
+                                }
+                                catch { }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.LaunchSandbox", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                            }
+
+                            foreach (string f in Directory.GetFiles(System.Environment.CurrentDirectory, "*.*"))
+                                if (!f.EndsWith("STEM.Auth.dll") && !f.EndsWith("SurgeService.cfg"))
+                                    File.Copy(f, Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(f)));
+
+                            appPath = Path.Combine(appPath, sandboxID);
+
+                            try
+                            {
+                                ProcessStartInfo si = new ProcessStartInfo();
+                                si.CreateNoWindow = true;
+                                si.UseShellExecute = false;
+
+                                si.FileName = appPath;
+                                si.Arguments = "-sandbox";
+
+                                Process p = new Process();
+                                p.StartInfo = si;
+                                p.EnableRaisingEvents = true;
+                                p.Exited += ClearSandbox;
+
+                                p.Start();
+
+                                RunningSandbox s = new RunningSandbox(this);
+                                s.Process = p;
+                                s.ApplicationDirectory = STEM.Sys.IO.Path.GetDirectoryName(appPath);
+                                s.SandboxID = sandboxID;
+                                s.VersionCacheSync = sandboxID.StartsWith("1", StringComparison.InvariantCultureIgnoreCase);
+                                s.LastHealthDetails = DateTime.UtcNow;
+
+                                _SandboxPool.BeginAsync(s);
+
+                                _RunningSandboxes[s.SandboxID] = s;
+
+                                return s;
+                            }
+                            catch
+                            {
+                                int retry = 10;
+                                appPath = STEM.Sys.IO.Path.GetDirectoryName(appPath);
+                                if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
+                                    while (Directory.Exists(appPath) && retry > 0)
+                                        try
+                                        {
+                                            STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
+                                            break;
+                                        }
+                                        catch { System.Threading.Thread.Sleep(1000); retry--; }
+
+                                retry = 10;
+                                appPath = STEM.Sys.IO.Path.GetDirectoryName(appPath);
+                                if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
+                                    while (Directory.Exists(appPath) && retry > 0)
+                                        try
+                                        {
+                                            STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
+                                            break;
+                                        }
+                                        catch { System.Threading.Thread.Sleep(1000); retry--; }
+                            }
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.LaunchSandbox", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                        }
+                            try
+                            {
+                                File.Copy(Process.GetCurrentProcess().MainModule.FileName, Path.Combine(appPath, sandboxID + ".exe"));
+                                try
+                                {
+                                    string appConfigXml = appConfig;
 
-                        foreach (string f in Directory.GetFiles(System.Environment.CurrentDirectory, "*.*"))
-                            if (!f.EndsWith("STEM.Auth.dll") && !f.EndsWith("SurgeService.cfg"))
-                                File.Copy(f, Path.Combine(appPath, STEM.Sys.IO.Path.GetFileName(f)));
-                        
-                        appPath = Path.Combine(appPath, sandboxID);
+                                    if (appConfigXml.Trim().Length < 1)
+                                        appConfigXml = File.ReadAllText(Path.Combine(System.Environment.CurrentDirectory, Process.GetCurrentProcess().MainModule.FileName + ".config"));
 
-                        try
-                        {
-                            ProcessStartInfo si = new ProcessStartInfo();
-                            si.CreateNoWindow = true;
-                            si.UseShellExecute = false;
+                                    File.WriteAllText(Path.Combine(appPath, sandboxID + ".exe.config"), appConfigXml);
+                                }
+                                catch { }
+                            }
+                            catch (Exception ex)
+                            {
+                                STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.LaunchSandbox", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                            }
 
-                            si.FileName = appPath;
-                            si.Arguments = "-sandbox";
+                            foreach (string dll in Directory.GetFiles(System.Environment.CurrentDirectory, "*.dll"))
+                                File.Copy(dll, Path.Combine(appPath, Path.GetFileName(dll)));
 
-                            Process p = new Process();
-                            p.StartInfo = si;
-                            p.EnableRaisingEvents = true;
-                            p.Exited += ClearSandbox;
+                            foreach (string dll in Directory.GetFiles(System.Environment.CurrentDirectory, "*.json"))
+                                File.Copy(dll, Path.Combine(appPath, Path.GetFileName(dll)));
 
-                            p.Start();
+                            appPath = Path.Combine(appPath, sandboxID + ".exe");
 
-                            RunningSandbox s = new RunningSandbox(this);
-                            s.Process = p;
-                            s.ApplicationDirectory = STEM.Sys.IO.Path.GetDirectoryName(appPath);
-                            s.SandboxID = sandboxID;
-                            s.VersionCacheSync = sandboxID.StartsWith("1", StringComparison.InvariantCultureIgnoreCase);
-                            s.LastHealthDetails = DateTime.UtcNow;
+                            try
+                            {
+                                ProcessStartInfo si = new ProcessStartInfo();
+                                si.CreateNoWindow = true;
+                                si.UseShellExecute = false;
 
-                            _SandboxPool.BeginAsync(s);
+                                si.FileName = appPath;
+                                si.Arguments = " -sandbox";
 
-                            _RunningSandboxes[s.SandboxID] = s;
+                                Process p = new Process();
+                                p.StartInfo = si;
+                                p.EnableRaisingEvents = true;
+                                p.Exited += ClearSandbox;
 
-                            return s;
-                        }
-                        catch
-                        {
-                            int retry = 10;
-                            appPath = STEM.Sys.IO.Path.GetDirectoryName(appPath);
-                            if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
-                                while (Directory.Exists(appPath) && retry > 0)
-                                    try
-                                    {
-                                        STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
-                                        break;
-                                    }
-                                    catch { System.Threading.Thread.Sleep(1000); retry--; }
+                                p.Start();
 
-                            retry = 10;
-                            appPath = STEM.Sys.IO.Path.GetDirectoryName(appPath);
-                            if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
-                                while (Directory.Exists(appPath) && retry > 0)
-                                    try
-                                    {
-                                        STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
-                                        break;
-                                    }
-                                    catch { System.Threading.Thread.Sleep(1000); retry--; }
+                                RunningSandbox s = new RunningSandbox(this);
+                                s.Process = p;
+                                s.ApplicationDirectory = STEM.Sys.IO.Path.GetDirectoryName(appPath);
+                                s.SandboxID = sandboxID;
+                                s.VersionCacheSync = sandboxID.StartsWith("1", StringComparison.InvariantCultureIgnoreCase);
+                                s.LastHealthDetails = DateTime.UtcNow;
+
+                                _SandboxPool.BeginAsync(s);
+
+                                _RunningSandboxes[s.SandboxID] = s;
+
+                                return s;
+                            }
+                            catch
+                            {
+                                int retry = 10;
+                                appPath = Path.GetDirectoryName(appPath);
+                                if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
+                                    while (Directory.Exists(appPath) && retry > 0)
+                                        try
+                                        {
+                                            STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
+                                            break;
+                                        }
+                                        catch { System.Threading.Thread.Sleep(1000); retry--; }
+
+                                retry = 10;
+                                appPath = Path.GetDirectoryName(appPath);
+                                if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
+                                    while (Directory.Exists(appPath) && retry > 0)
+                                        try
+                                        {
+                                            STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
+                                            break;
+                                        }
+                                        catch { System.Threading.Thread.Sleep(1000); retry--; }
+                            }
                         }
                     }
-                }
-                else
-                {
-                    lock (_RunningSandboxes)
+                    finally
                     {
-                        try
-                        {
-                            File.Copy(Process.GetCurrentProcess().MainModule.FileName, Path.Combine(appPath, sandboxID + ".exe"));
-                            try
-                            {
-                                string appConfigXml = appConfig;
-
-                                if (appConfigXml.Trim().Length < 1)
-                                    appConfigXml = File.ReadAllText(Path.Combine(System.Environment.CurrentDirectory, Process.GetCurrentProcess().MainModule.FileName + ".config"));
-
-                                File.WriteAllText(Path.Combine(appPath, sandboxID + ".exe.config"), appConfigXml);
-                            }
-                            catch { }
-                        }
-                        catch (Exception ex)
-                        {
-                            STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.LaunchSandbox", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                        }
-
-                        foreach (string dll in Directory.GetFiles(System.Environment.CurrentDirectory, "*.dll"))
-                            File.Copy(dll, Path.Combine(appPath, Path.GetFileName(dll)));
-
-                        appPath = Path.Combine(appPath, sandboxID + ".exe");
-
-                        try
-                        {
-                            ProcessStartInfo si = new ProcessStartInfo();
-                            si.CreateNoWindow = true;
-                            si.UseShellExecute = false;
-
-                            si.FileName = appPath;
-                            si.Arguments = " -sandbox";
-
-                            Process p = new Process();
-                            p.StartInfo = si;
-                            p.EnableRaisingEvents = true;
-                            p.Exited += ClearSandbox;
-
-                            p.Start();
-
-                            RunningSandbox s = new RunningSandbox(this);
-                            s.Process = p;
-                            s.ApplicationDirectory = STEM.Sys.IO.Path.GetDirectoryName(appPath);
-                            s.SandboxID = sandboxID;
-                            s.VersionCacheSync = sandboxID.StartsWith("1", StringComparison.InvariantCultureIgnoreCase);
-                            s.LastHealthDetails = DateTime.UtcNow;
-
-                            _SandboxPool.BeginAsync(s);
-
-                            _RunningSandboxes[s.SandboxID] = s;
-
-                            return s;
-                        }
-                        catch
-                        {
-                            int retry = 10;
-                            appPath = Path.GetDirectoryName(appPath);
-                            if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
-                                while (Directory.Exists(appPath) && retry > 0)
-                                    try
-                                    {
-                                        STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
-                                        break;
-                                    }
-                                    catch { System.Threading.Thread.Sleep(1000); retry--; }
-
-                            retry = 10;
-                            appPath = Path.GetDirectoryName(appPath);
-                            if (Directory.GetDirectories(appPath).Count() == 0 && Directory.GetFiles(appPath).Count() == 0)
-                                while (Directory.Exists(appPath) && retry > 0)
-                                    try
-                                    {
-                                        STEM.Sys.IO.Directory.STEM_Delete(appPath, false);
-                                        break;
-                                    }
-                                    catch { System.Threading.Thread.Sleep(1000); retry--; }
-                        }
+                        if (!_RunningSandboxes.ContainsKey(sandboxID))
+                            RunningSandbox.ReleaseApplication(sandboxID);
                     }
-                }
             }
             catch (Exception ex)
             {
@@ -612,25 +725,21 @@ namespace STEM.Surge
             return null;
         }
 
-
         void ClearSandbox(object sender, EventArgs e)
         {
             Process p = (Process)sender;
 
-            lock (_RunningSandboxes)
-            {
+            RunningSandbox sandbox = null;
+            while (true)
                 try
                 {
-                    RunningSandbox n = _RunningSandboxes.Where(i => i.Value.Process.Id == p.Id).Select(i => i.Value).FirstOrDefault();
+                    sandbox = _RunningSandboxes.Where(i => i.Value.Process.Id == p.Id).Select(i => i.Value).FirstOrDefault();
+                    break;
+                }
+                catch { }
 
-                    if (n != null)
-                        n.Clear();
-                }
-                catch (Exception ex)
-                {
-                    STEM.Sys.EventLog.WriteEntry("SurgeBranchManager.ClearSandbox", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                }
-            }
+            if (sandbox != null)
+                sandbox.Clear();
         }
 
         protected override ConnectionType.Types ActorType()
@@ -1262,74 +1371,74 @@ namespace STEM.Surge
                         }
                     }
 
-                    lock (_Assigned)
-                    {
-                        foreach (AssignInstructionSet a in _Assigned.Where(i => i.MessageConnection.RemoteAddress == connection.RemoteAddress))
-                        {
-                            try
-                            {
-                                if (!a.IsStatic)
-                                    lock (a)
-                                    {
-                                        if (a.ExecutionCompleted == DateTime.MinValue)
-                                            connection.Send(new RequestResume(a.InstructionSet));
-                                    }
-                            }
-                            catch { }
-                        }
+                    //lock (_Assigned)
+                    //{
+                    //    foreach (AssignInstructionSet a in _Assigned.Where(i => i.MessageConnection.RemoteAddress == connection.RemoteAddress))
+                    //    {
+                    //        try
+                    //        {
+                    //            if (!a.IsStatic)
+                    //                lock (a)
+                    //                {
+                    //                    if (a.ExecutionCompleted == DateTime.MinValue)
+                    //                        connection.Send(new RequestResume(a.InstructionSet));
+                    //                }
+                    //        }
+                    //        catch { }
+                    //    }
 
-                        foreach (string s in _Stale.ToList())
-                        {
-                            try
-                            {
-                                _InstructionSet iSet = _InstructionSet.Deserialize(System.IO.File.ReadAllText(s)) as _InstructionSet;
+                    //    foreach (string s in _Stale.ToList())
+                    //    {
+                    //        try
+                    //        {
+                    //            _InstructionSet iSet = _InstructionSet.Deserialize(System.IO.File.ReadAllText(s)) as _InstructionSet;
 
-                                if (iSet != null)
-                                {
-                                    if (iSet.DeploymentManagerIP == connection.RemoteAddress)
-                                    {
-                                        RequestResume m = new RequestResume(iSet);
+                    //            if (iSet != null)
+                    //            {
+                    //                if (iSet.DeploymentManagerIP == connection.RemoteAddress)
+                    //                {
+                    //                    RequestResume m = new RequestResume(iSet);
 
-                                        m.onResponse += RequestResume_onResponse;
+                    //                    m.onResponse += RequestResume_onResponse;
 
-                                        if (!connection.Send(m))
-                                        {
-                                            ExecutionCompleted ec = new ExecutionCompleted { DeploymentControllerID = iSet.DeploymentControllerID, InstructionSetID = iSet.ID, InitiationSource = iSet.InitiationSource, Exceptions = new List<Exception>() };
-                                            connection.Send(ec);
+                    //                    if (!connection.Send(m))
+                    //                    {
+                    //                        ExecutionCompleted ec = new ExecutionCompleted { DeploymentControllerID = iSet.DeploymentControllerID, InstructionSetID = iSet.ID, InitiationSource = iSet.InitiationSource, Exceptions = new List<Exception>() };
+                    //                        connection.Send(ec);
 
-                                            while (File.Exists(s))
-                                                try
-                                                {
-                                                    File.Delete(s);
-                                                }
-                                                catch { System.Threading.Thread.Sleep(10); }
+                    //                        while (File.Exists(s))
+                    //                            try
+                    //                            {
+                    //                                File.Delete(s);
+                    //                            }
+                    //                            catch { System.Threading.Thread.Sleep(10); }
 
-                                            _Stale.Remove(s);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    _Stale.Remove(s);
-                                }
-                            }
-                            catch
-                            {
-                                while (File.Exists(s))
-                                    try
-                                    {
-                                        File.Delete(s);
-                                    }
-                                    catch { System.Threading.Thread.Sleep(10); }
+                    //                        _Stale.Remove(s);
+                    //                    }
+                    //                }
+                    //            }
+                    //            else
+                    //            {
+                    //                _Stale.Remove(s);
+                    //            }
+                    //        }
+                    //        catch
+                    //        {
+                    //            while (File.Exists(s))
+                    //                try
+                    //                {
+                    //                    File.Delete(s);
+                    //                }
+                    //                catch { System.Threading.Thread.Sleep(10); }
 
-                                try
-                                {
-                                    _Stale.Remove(s);
-                                }
-                                catch { }
-                            }
-                        }
-                    }
+                    //            try
+                    //            {
+                    //                _Stale.Remove(s);
+                    //            }
+                    //            catch { }
+                    //        }
+                    //    }
+                    //}
 
                     lock (_BranchHealthThreads)
                     {
@@ -1386,23 +1495,29 @@ namespace STEM.Surge
                     }
                     catch { }
 
-                    lock (_RunningSandboxes)
-                    {
-                        foreach (RunningSandbox s in _RunningSandboxes.Values.ToList())
-                            try
-                            {
-                                if (s.MessageConnection != null)
-                                    if (!s.MessageConnection.Send(message))
+                    List<RunningSandbox> sandboxes = null;
+                    while (true)
+                        try
+                        {
+                            sandboxes = _RunningSandboxes.Values.ToList();
+                            break;
+                        }
+                        catch { }
+
+                    foreach (RunningSandbox sandbox in sandboxes)
+                        try
+                        {
+                            if (sandbox.MessageConnection != null)
+                                if (!sandbox.MessageConnection.Send(message))
+                                {
+                                    try
                                     {
-                                        try
-                                        {
-                                            s.MessageConnection.Close();
-                                        }
-                                        catch { }
+                                        sandbox.MessageConnection.Close();
                                     }
-                            }
-                            catch { }
-                    }
+                                    catch { }
+                                }
+                        }
+                        catch { }
                 }
                 else if (message is GetServiceConfiguration)
                 {
@@ -1468,15 +1583,17 @@ namespace STEM.Surge
                         }
                         else
                         {
-                            lock (_RunningSandboxes)
-                            {
-                                RunningSandbox sandbox = _RunningSandboxes.Where(i => i.Value.AssignedInstructionSets.Exists(j => j.InstructionSetID == m.InstructionSetID)).Select(i => i.Value).FirstOrDefault();
-
-                                if (sandbox != null)
+                            RunningSandbox sandbox = null;
+                            while (true)
+                                try
                                 {
-                                    sandbox.MessageConnection.Send(m);
+                                    sandbox = _RunningSandboxes.Where(i => i.Value.AssignedInstructionSets.Exists(j => j.InstructionSetID == m.InstructionSetID)).Select(i => i.Value).FirstOrDefault();
+                                    break;
                                 }
-                            }
+                                catch { }
+
+                            if (sandbox != null)
+                                sandbox.MessageConnection.Send(m);
                         }
                     }
                 }
@@ -1488,16 +1605,22 @@ namespace STEM.Surge
                     {
                         if (m.IsStatic && m.ExecuteStaticInSandboxes)
                         {
-                            lock (_RunningSandboxes)
-                            {
-                                foreach (RunningSandbox s in _RunningSandboxes.Values)
+                            List<RunningSandbox> sandboxes = null;
+                            while (true)
+                                try
                                 {
-                                    try
-                                    {
-                                        s.MessageConnection.Send(m);
-                                    }
-                                    catch { }
+                                    sandboxes = _RunningSandboxes.Values.ToList();
+                                    break;
                                 }
+                                catch { }
+
+                            foreach (RunningSandbox sandbox in sandboxes)
+                            {
+                                try
+                                {
+                                    sandbox.MessageConnection.Send(m);
+                                }
+                                catch { }
                             }
                         }
 
@@ -1529,63 +1652,46 @@ namespace STEM.Surge
                                 {
                                     sandbox = _RunningSandboxes[sandboxID];
                                 }
+                            }
 
-                                if (sandbox == null)
-                                {
-                                    ExecutionCompleted ec = new ExecutionCompleted();
+                            if (sandbox == null)
+                            {
+                                ExecutionCompleted ec = new ExecutionCompleted();
 
-                                    ec.InstructionSetID = m.InstructionSetID;
-                                    ec.DeploymentControllerID = m.DeploymentControllerID;
+                                ec.InstructionSetID = m.InstructionSetID;
+                                ec.DeploymentControllerID = m.DeploymentControllerID;
 
-                                    ec.InitiationSource = m.InitiationSource;
-                                    ec.TimeCompleted = DateTime.UtcNow;
+                                ec.InitiationSource = m.InitiationSource;
+                                ec.TimeCompleted = DateTime.UtcNow;
 
-                                    ec.Exceptions = new List<Exception>();
+                                ec.Exceptions = new List<Exception>();
 
-                                    SurgeBranchManager.SendMessage(ec, connection, this);
+                                SurgeBranchManager.SendMessage(ec, connection, this);
 
-                                    return;
-                                }
+                                return;
+                            }
 
-                                if (!_RunningSandboxes.ContainsKey(sandboxID))
-                                {
-                                    // Closed between fetch and here
-
-                                    ExecutionCompleted ec = new ExecutionCompleted();
-
-                                    ec.InstructionSetID = m.InstructionSetID;
-                                    ec.DeploymentControllerID = m.DeploymentControllerID;
-
-                                    ec.InitiationSource = m.InitiationSource;
-                                    ec.TimeCompleted = DateTime.UtcNow;
-
-                                    ec.Exceptions = new List<Exception>();
-
-                                    SurgeBranchManager.SendMessage(ec, connection, this);
-
-                                    return;
-                                }
-
+                            lock (_Assigned)
                                 sandbox.AssignedInstructionSets.Add(m);
 
-                                if (sandbox.MessageConnection != null)
-                                    if (!sandbox.MessageConnection.Send(m))
-                                    {
+                            if (sandbox.MessageConnection != null)
+                                if (!sandbox.MessageConnection.Send(m))
+                                {
+                                    lock (_Assigned)
                                         sandbox.AssignedInstructionSets.Remove(m);
 
-                                        ExecutionCompleted ec = new ExecutionCompleted();
+                                    ExecutionCompleted ec = new ExecutionCompleted();
 
-                                        ec.InstructionSetID = m.InstructionSetID;
-                                        ec.DeploymentControllerID = m.DeploymentControllerID;
+                                    ec.InstructionSetID = m.InstructionSetID;
+                                    ec.DeploymentControllerID = m.DeploymentControllerID;
 
-                                        ec.InitiationSource = m.InitiationSource;
-                                        ec.TimeCompleted = DateTime.UtcNow;
+                                    ec.InitiationSource = m.InitiationSource;
+                                    ec.TimeCompleted = DateTime.UtcNow;
 
-                                        ec.Exceptions = new List<Exception>();
+                                    ec.Exceptions = new List<Exception>();
 
-                                        SurgeBranchManager.SendMessage(ec, connection, this);
-                                    }
-                            }
+                                    SurgeBranchManager.SendMessage(ec, connection, this);
+                                }
                         }
                     }
                     catch (Exception ex)
@@ -1726,23 +1832,29 @@ namespace STEM.Surge
                         }
                     }
 
-                    lock (_RunningSandboxes)
-                    {
-                        foreach (RunningSandbox s in _RunningSandboxes.Values.Where(i => i.VersionCacheSync == true).ToList())
-                            try
-                            {
-                                if (s.MessageConnection != null)
-                                    if (!s.MessageConnection.Send(message))
+                    List<RunningSandbox> sandboxes = null;
+                    while (true)
+                        try
+                        {
+                            sandboxes = _RunningSandboxes.Values.Where(i => i.VersionCacheSync == true).ToList();
+                            break;
+                        }
+                        catch { }
+
+                    foreach (RunningSandbox sandbox in sandboxes)
+                        try
+                        {
+                            if (sandbox.MessageConnection != null)
+                                if (!sandbox.MessageConnection.Send(message))
+                                {
+                                    try
                                     {
-                                        try
-                                        {
-                                            s.MessageConnection.Close();
-                                        }
-                                        catch { }
+                                        sandbox.MessageConnection.Close();
                                     }
-                            }
-                            catch { }
-                    }
+                                    catch { }
+                                }
+                        }
+                        catch { }
 
                     if (aList.Descriptions.Count == 0)
                     {
@@ -1762,23 +1874,29 @@ namespace STEM.Surge
                     {
                         m.Save();
 
-                        lock (_RunningSandboxes)
-                        {
-                            foreach (RunningSandbox s in _RunningSandboxes.Values.ToList())
-                                try
-                                {
-                                    if (s.MessageConnection != null)
-                                        if (!s.MessageConnection.Send(message))
+                        List<RunningSandbox> sandboxes = null;
+                        while (true)
+                            try
+                            {
+                                sandboxes = _RunningSandboxes.Values.ToList();
+                                break;
+                            }
+                            catch { }
+
+                        foreach (RunningSandbox sandbox in sandboxes)
+                            try
+                            {
+                                if (sandbox.MessageConnection != null)
+                                    if (!sandbox.MessageConnection.Send(message))
+                                    {
+                                        try
                                         {
-                                            try
-                                            {
-                                                s.MessageConnection.Close();
-                                            }
-                                            catch { }
+                                            sandbox.MessageConnection.Close();
                                         }
-                                }
-                                catch { }
-                        }
+                                        catch { }
+                                    }
+                            }
+                            catch { }
                     }
                     else if (m.DestinationFilename.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase) ||
                         m.DestinationFilename.EndsWith(".so", StringComparison.InvariantCultureIgnoreCase) ||
@@ -1787,23 +1905,29 @@ namespace STEM.Surge
                     {
                         _AsmPool.RunOnce(new System.Threading.ParameterizedThreadStart(LoadAsm), m);
 
-                        lock (_RunningSandboxes)
-                        {
-                            foreach (RunningSandbox s in _RunningSandboxes.Values.Where(i => i.VersionCacheSync == true).ToList())
-                                try
-                                {
-                                    if (s.MessageConnection != null)
-                                        if (!s.MessageConnection.Send(message))
+                        List<RunningSandbox> sandboxes = null;
+                        while (true)
+                            try
+                            {
+                                sandboxes = _RunningSandboxes.Values.Where(i => i.VersionCacheSync == true).ToList();
+                                break;
+                            }
+                            catch { }
+
+                        foreach (RunningSandbox sandbox in sandboxes)
+                            try
+                            {
+                                if (sandbox.MessageConnection != null)
+                                    if (!sandbox.MessageConnection.Send(message))
+                                    {
+                                        try
                                         {
-                                            try
-                                            {
-                                                s.MessageConnection.Close();
-                                            }
-                                            catch { }
+                                            sandbox.MessageConnection.Close();
                                         }
-                                }
-                                catch { }
-                        }
+                                        catch { }
+                                    }
+                            }
+                            catch { }
                     }
                 }
             }
@@ -1865,19 +1989,27 @@ namespace STEM.Surge
 
                 List<string> assignments = null;
                 List<string> statics = null;
+                List<RunningSandbox> sandboxes = null;
+
+                while (true)
+                    try
+                    {
+                        sandboxes = _RunningSandboxes.Values.ToList();
+                        break;
+                    }
+                    catch { }
 
                 lock (_Assigned)
-                    lock (_RunningSandboxes)
-                        try
-                        {
-                            assignments = _Assigned.Where(i => !i.IsStatic && i.MessageConnection.RemoteAddress == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()).ToList();
-                            
-                            foreach (RunningSandbox s in _RunningSandboxes.Values)
-                                assignments.AddRange(s.AssignedInstructionSets.Where(i => !i.IsStatic && i.DeploymentManagerIP == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()));
+                    try
+                    {
+                        assignments = _Assigned.Where(i => !i.IsStatic && i.MessageConnection.RemoteAddress == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()).ToList();
 
-                            statics = _Statics.Select(i => i.AssignInstructionSet.InitiationSource).ToList();
-                        }
-                        catch { return false; }
+                        foreach (RunningSandbox sandbox in sandboxes)
+                            assignments.AddRange(sandbox.AssignedInstructionSets.Where(i => !i.IsStatic && i.DeploymentManagerIP == connection.RemoteAddress).Select(i => i.InstructionSetID.ToString()));
+
+                        statics = _Statics.Select(i => i.AssignInstructionSet.InitiationSource).ToList();
+                    }
+                    catch { return false; }
                 
                 branchHealthDetails.Refresh(assignments, statics, ErrorDirectory);
                 branchHealthDetails.BranchState = _LastState;
@@ -1891,10 +2023,9 @@ namespace STEM.Surge
                         foreach (AssignInstructionSet x in _Assigned.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
                             _Assigned.Remove(x);
 
-                        lock (_RunningSandboxes)
-                            foreach (RunningSandbox s in _RunningSandboxes.Values)
-                                foreach (AssignInstructionSet x in s.AssignedInstructionSets.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
-                                    s.AssignedInstructionSets.Remove(x);
+                        foreach (RunningSandbox sandbox in sandboxes)
+                            foreach (AssignInstructionSet x in sandbox.AssignedInstructionSets.Where(i => i.ExecutionCompleted > DateTime.MinValue && assignments.Contains(i.InstructionSetID.ToString())).ToList())
+                                sandbox.AssignedInstructionSets.Remove(x);
                     }
 
                     return true;
@@ -2005,34 +2136,43 @@ namespace STEM.Surge
             if (iSet == null)
                 throw new ArgumentNullException(nameof(iSet));
 
+            int retry = 10;
             if (error)
+                while (retry-- > 0)
+                    try
+                    {
+                        if (File.Exists(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is")))
+                            File.Delete(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"));
+
+                        using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
+                        {
+                            fs.Write(iSet.Serialize());
+                        }
+
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (retry == 0)
+                            STEM.Sys.EventLog.WriteEntry("BranchManager.EndRun", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        else
+                            System.Threading.Thread.Sleep(10);
+                    }
+
+            retry = 10;
+            while (retry-- > 0)
                 try
                 {
-                    if (File.Exists(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is")))
-                        File.Delete(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"));
+                    if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
+                        File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
 
-                    using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(ErrorDirectory, iSet.ID.ToString() + ".is"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)))
-                    {
-                        fs.Write(iSet.Serialize());
-                    }
+                    if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
+                        using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
+                        {
+                            fs.Write(iSet.Serialize());
+                        }
                 }
-                catch (Exception ex)
-                {
-                    STEM.Sys.EventLog.WriteEntry("BranchManager.EndRun", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                }
-
-            try
-            {
-                if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
-                    File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
-
-                if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
-                    using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)))
-                    {
-                        fs.Write(iSet.Serialize());
-                    }
-            }
-            catch { }
+                catch { System.Threading.Thread.Sleep(10); }
         }
                 
         static Dictionary<string, List<Message>> _ManagerMessageReturns = new Dictionary<string, List<Message>>();
