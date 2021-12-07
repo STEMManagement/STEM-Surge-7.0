@@ -146,6 +146,7 @@ namespace STEM.Surge
         {
             string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
 
+            bool initialize = false;
             bool firstConnection = false;
 
             MessageConnection c = null;
@@ -158,13 +159,16 @@ namespace STEM.Surge
                 {
                     c = new MessageConnection(ipAddress, port, sslConnection, true, autoReconnect);
                     _MessageConnections.Add(c);
-
-                    c.onClosed += onClosed;
-                    c.onReceived += onReceived;
-                    c.onOpened += onOpened;
-
+                    initialize = true;
                     firstConnection = _MessageConnections.Count == 1;
                 }
+            }
+
+            if (initialize)
+            {
+                c.onClosed += onClosed;
+                c.onReceived += onReceived;
+                c.onOpened += onOpened;
             }
 
             if (firstConnection)
@@ -186,6 +190,7 @@ namespace STEM.Surge
         {
             string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
 
+            bool initialize = false;
             bool firstConnection = false;
 
             MessageConnection c = null;
@@ -198,13 +203,16 @@ namespace STEM.Surge
                 {
                     c = new MessageConnection(ipAddress, port, sslConnection, true, certificate, autoReconnect);
                     _MessageConnections.Add(c);
-
-                    c.onClosed += onClosed;
-                    c.onReceived += onReceived;
-                    c.onOpened += onOpened;
-
+                    initialize = true;
                     firstConnection = _MessageConnections.Count == 1;
                 }
+            }
+
+            if (initialize)
+            {
+                c.onClosed += onClosed;
+                c.onReceived += onReceived;
+                c.onOpened += onOpened;
             }
 
             if (firstConnection)
@@ -221,15 +229,16 @@ namespace STEM.Surge
         {
             string ipAddress = STEM.Sys.IO.Net.MachineAddress(address);
 
+            MessageConnection c = null;
             lock (ConnectionLock)
             {
-                MessageConnection c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
+                c = _MessageConnections.FirstOrDefault(i => i.RemoteAddress == ipAddress);
+            }
 
-                if (c != null)
-                {
-                    c.AutoReconnect = false;
-                    c.Close();
-                }
+            if (c != null)
+            {
+                c.AutoReconnect = false;
+                c.Close();
             }
         }
 
@@ -249,19 +258,21 @@ namespace STEM.Surge
         /// <param name="connection">The connection that opened</param>
         protected virtual void onOpened(Connection connection)
         {
+            MessageConnection c = connection as MessageConnection;
+            if (c == null)
+                return;
+
             lock (ConnectionLock)
             {
-                MessageConnection c = connection as MessageConnection;
-                if (c != null)
-                    if (!_MessageConnections.Contains(c))
-                    {
-                        _MessageConnections.Add(c);
-                    }
-
-                ConnectionType m = new ConnectionType { Type = ActorType() };
-                m.onHandshakeComplete += onHandshakeComplete;
-                m.PerformHandshake(c);
+                if (!_MessageConnections.Contains(c))
+                {
+                    _MessageConnections.Add(c);
+                }
             }
+
+            ConnectionType m = new ConnectionType { Type = ActorType() };
+            m.onHandshakeComplete += onHandshakeComplete;
+            m.PerformHandshake(c);
         }
 
         protected virtual ConnectionType.Types ActorType()
