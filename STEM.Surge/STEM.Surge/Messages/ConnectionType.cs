@@ -56,6 +56,10 @@ namespace STEM.Surge.Messages
                 if (connection.SessionID() != _ConnectionSessionID)
                 {
                     STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake Undeliverable to " + connection.RemoteAddress + ".", Sys.EventLog.EventLogEntryType.Information);
+
+                    if (onHandshakeComplete != null)
+                        connection.Close();
+
                     return;
                 }
 
@@ -72,10 +76,11 @@ namespace STEM.Surge.Messages
                     if (connection.SessionID() != _ConnectionSessionID)
                     {
                         STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake Undeliverable to " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
-                        return;
                     }
-
-                    STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake timeout with " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+                    else
+                    {
+                        STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake timeout with " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+                    }
 
                     if (onHandshakeComplete != null)
                         connection.Close();
@@ -86,6 +91,10 @@ namespace STEM.Surge.Messages
                 if (response is Undeliverable)
                 {
                     STEM.Sys.EventLog.WriteEntry("ConnectionType.Handshake", "Handshake Undeliverable to " + connection.RemoteAddress + ":" + port + ".", Sys.EventLog.EventLogEntryType.Information);
+
+                    if (onHandshakeComplete != null)
+                        connection.Close();
+                    
                     return;
                 }
 
