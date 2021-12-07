@@ -4,7 +4,7 @@
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <RetainVMGarbageCollection>true</RetainVMGarbageCollection>    
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <UserSecretsId>dotnet-STEM.SurgeService-A5C7871B-462F-4842-908B-2D5CABE5BB8B</UserSecretsId>
     <Copyright>Copyright © STEM Management 2019</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -14,6 +14,7 @@
     <ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
     <AssemblyName>STEM.SurgeService</AssemblyName>
     <RootNamespace>STEM.SurgeService</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
