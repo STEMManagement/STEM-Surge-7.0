@@ -118,16 +118,13 @@ namespace STEM.Surge.Azure
                         {
                             IAuthentication a = prop.GetValue(ins) as IAuthentication;
 
-                            if (a.VersionDescriptor.TypeName == "STEM.Surge.Azure.Authentication")
+                            PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "StorageConnectionString");
+                            if (i != null)
                             {
-                                PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "StorageConnectionString");
-                                if (i != null)
+                                string k = i.GetValue(a) as string;
+                                if (String.IsNullOrEmpty(k))
                                 {
-                                    string k = i.GetValue(a) as string;
-                                    if (String.IsNullOrEmpty(k))
-                                    {
-                                        i.SetValue(a, Authentication.StorageConnectionString);
-                                    }
+                                    i.SetValue(a, Authentication.StorageConnectionString);
                                 }
                             }
                         }

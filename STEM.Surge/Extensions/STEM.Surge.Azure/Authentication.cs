@@ -29,7 +29,7 @@ namespace STEM.Surge.Azure
 {
     public enum AzureListType { File, Directory, All }
 
-    public class Authentication : IAuthentication
+    public class Authentication : STEM.Surge.Azure.IAuthentication
     {
         [Category("Azure")]
         [DisplayName("Storage Connection String"), DescriptionAttribute("What is the Azure connection string?")]

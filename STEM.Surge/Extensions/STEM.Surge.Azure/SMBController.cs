@@ -44,20 +44,17 @@ namespace STEM.Surge.Azure
             {
                 foreach (Instruction ins in dd.ISet.Instructions)
                 {
-                    foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
+                    foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Surge.Azure.IAuthentication))))
                     {
-                        IAuthentication a = prop.GetValue(ins) as IAuthentication;
+                        STEM.Surge.Azure.IAuthentication a = prop.GetValue(ins) as STEM.Surge.Azure.IAuthentication;
 
-                        if (a.VersionDescriptor.TypeName == "STEM.Surge.Azure.Authentication")
+                        PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "StorageConnectionString");
+                        if (i != null)
                         {
-                            PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "StorageConnectionString");
-                            if (i != null)
+                            string k = i.GetValue(a) as string;
+                            if (String.IsNullOrEmpty(k))
                             {
-                                string k = i.GetValue(a) as string;
-                                if (String.IsNullOrEmpty(k))
-                                {
-                                    i.SetValue(a, Authentication.StorageConnectionString);
-                                }
+                                i.SetValue(a, Authentication.StorageConnectionString);
                             }
                         }
                     }
