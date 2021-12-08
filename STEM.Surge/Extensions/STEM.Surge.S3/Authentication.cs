@@ -30,7 +30,7 @@ namespace STEM.Surge.S3
 {
     public enum S3ListType { File, Directory, All }
 
-    public class Authentication : IAuthentication
+    public class Authentication : STEM.Surge.S3.IAuthentication
     {
         [Category("S3")]
         [DisplayName("Allow Bucket Control"), DescriptionAttribute("Is the user allowed to list, create, and delete Buckets?")]
