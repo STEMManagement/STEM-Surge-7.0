@@ -43,33 +43,40 @@ namespace STEM.Surge.S3
             {
                 foreach (Instruction ins in dd.ISet.Instructions)
                 {
-                    foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
+                    foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Surge.S3.IAuthentication))))
                     {
-                        IAuthentication a = prop.GetValue(ins) as IAuthentication;
+                        STEM.Surge.S3.IAuthentication a = prop.GetValue(ins) as STEM.Surge.S3.IAuthentication;
 
-                        if (a.VersionDescriptor.TypeName == "STEM.Surge.S3.Authentication")
+                        PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "AccessKey");
+                        if (i != null)
                         {
-                            PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "AccessKey");
-                            if (i != null)
-                            {
-                                string k = i.GetValue(a) as string;
-                                if (String.IsNullOrEmpty(k))
-                                {
-                                    i.SetValue(a, Authentication.AccessKey);
+                            string k = i.GetValue(a) as string;
+                            if (String.IsNullOrEmpty(k))
+                                i.SetValue(a, Authentication.AccessKey);
+                        }
 
-                                    i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SecretKey");
-                                    if (i != null)
-                                        i.SetValue(a, Authentication.SecretKey);
+                        i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SecretKey");
+                        if (i != null)
+                        {
+                            string k = i.GetValue(a) as string;
+                            if (String.IsNullOrEmpty(k))
+                                i.SetValue(a, Authentication.SecretKey);
+                        }
 
-                                    i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "Region");
-                                    if (i != null)
-                                        i.SetValue(a, Authentication.Region);
+                        i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "Region");
+                        if (i != null)
+                        {
+                            string k = i.GetValue(a) as string;
+                            if (String.IsNullOrEmpty(k))
+                                i.SetValue(a, Authentication.Region);
+                        }
 
-                                    i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "ServiceURL");
-                                    if (i != null)
-                                        i.SetValue(a, Authentication.ServiceURL);
-                                }
-                            }
+                        i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "ServiceURL");
+                        if (i != null)
+                        {
+                            string k = i.GetValue(a) as string;
+                            if (String.IsNullOrEmpty(k))
+                                i.SetValue(a, Authentication.ServiceURL);
                         }
                     }
                 }
