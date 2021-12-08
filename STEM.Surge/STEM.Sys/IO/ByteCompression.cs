@@ -270,7 +270,22 @@ namespace STEM.Sys.IO
 
                         using (GZipStream zs = new GZipStream(ms, CompressionMode.Decompress))
                         {
-                            zs.Read(ret, 0, length);
+                            int pos = 0;
+
+                            while (pos < length)
+                            {
+                                int read = zs.Read(ret, pos, length-pos);
+                                pos += read;
+
+                                if (read == 0)
+                                    break;
+                            }
+
+                            if (pos < length)
+                            {
+                                bytesReturned = 0;
+                                return null;
+                            }
                         }
 
                         break;
