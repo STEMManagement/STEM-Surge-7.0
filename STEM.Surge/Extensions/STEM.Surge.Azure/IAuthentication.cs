@@ -14,9 +14,11 @@
  * limitations under the License.
  * 
  */
+using System.Xml.Serialization;
 
 namespace STEM.Surge.Azure
 {
+    [XmlType(TypeName = "STEM.Surge.Azure.IAuthentication")]
     public class IAuthentication : STEM.Surge.IAuthentication
     {
     }
