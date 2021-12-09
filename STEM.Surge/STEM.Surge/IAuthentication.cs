@@ -17,6 +17,7 @@
  
 using System;
 using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace STEM.Surge
 {
@@ -24,6 +25,7 @@ namespace STEM.Surge
     /// This is used to identify classes wherein some sort of authentication is being configured so that the UI can present bulk reconfiguration options to users.
     /// </summary>
     [TypeConverter(typeof(ExpandableObjectConverter))]
+    [XmlType(TypeName = "STEM.Surge.IAuthentication")]
     public class IAuthentication : STEM.Sys.Serializable, IDisposable
     {
         public void Dispose()
