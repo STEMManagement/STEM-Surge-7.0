@@ -24,7 +24,7 @@ namespace STEM.Sys.IO
 {
     public static class Path
     {
-        static string SmbPathStart = "" + System.IO.Path.DirectorySeparatorChar + System.IO.Path.DirectorySeparatorChar;
+        public static string SmbPathStart = "" + System.IO.Path.DirectorySeparatorChar + System.IO.Path.DirectorySeparatorChar;
 
         /// <summary>
         /// Returns a clean, platform adjusted, directory (path without the last token, whether a filename or a subdirectory)
