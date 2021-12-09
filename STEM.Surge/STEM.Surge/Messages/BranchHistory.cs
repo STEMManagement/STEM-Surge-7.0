@@ -29,7 +29,8 @@ namespace STEM.Surge.Messages
     {
         public class Entry
         {
-            public string BranchP { get; set; }
+            public string BranchIP { get; set; }
+            public string BranchName { get; set; }
             public DateTime LastHeard { get; set; }
             public double ProcessorOverload { get; set; }
 
@@ -41,7 +42,9 @@ namespace STEM.Surge.Messages
 
             public void CopyFrom(Entry e)
             {
-                BranchP = e.BranchP;
+                BranchIP = e.BranchIP;
+                BranchName = e.BranchName;
+                ProcessorOverload = e.ProcessorOverload;
 
                 if (LastHeard < e.LastHeard)
                     LastHeard = e.LastHeard;
@@ -59,7 +62,7 @@ namespace STEM.Surge.Messages
         {
             foreach (Entry n in e.Entries)
             {
-                Entry o = Entries.FirstOrDefault(i => i.BranchP == n.BranchP);
+                Entry o = Entries.FirstOrDefault(i => i.BranchName == n.BranchName);
                 if (o != null)
                     o.CopyFrom(n);
                 else
