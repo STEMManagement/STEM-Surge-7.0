@@ -26,7 +26,7 @@ namespace STEM.Surge
     /// </summary>
     public class PollerEntry
     {
-        public PollerEntry()
+        public PollerEntry(string sourceIP)
         {
             PollTimeMilliseconds = 0;
 
@@ -36,6 +36,8 @@ namespace STEM.Surge
             SandboxID = "";
 
             Backlog = new Backlogs.Entry();
+
+            _SourceIP = sourceIP;
         }
         
         public double PollTimeMilliseconds { get; set; }
