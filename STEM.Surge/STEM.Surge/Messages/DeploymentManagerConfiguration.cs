@@ -131,6 +131,7 @@ namespace STEM.Surge.Messages
 
         public DateTime BuildDate { get; set; }
 
+        public List<FileDescription> AuthenticationConfigurations { get; set; }
         public List<FileDescription> DeploymentControllers { get; set; }
         public List<FileDescription> InstructionSetTemplates { get; set; }
         public List<FileDescription> AdHocInstructionSets { get; set; }
@@ -143,6 +144,7 @@ namespace STEM.Surge.Messages
 
         public DeploymentManagerConfiguration()
         {
+            AuthenticationConfigurations = new List<FileDescription>();
             DeploymentControllers = new List<FileDescription>();
             InstructionSetTemplates = new List<FileDescription>();
             AdHocInstructionSets = new List<FileDescription>();

@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Xml.Serialization;
 using STEM.Sys.Security;
 
 namespace STEM.Surge
@@ -58,20 +59,24 @@ namespace STEM.Surge
         [DisplayName("Recreate subdirectory from root of..."), DescriptionAttribute("From where should the directory tree recreation start?")]
         public string RecreateSubFromRootOf { get; set; }
 
+        [Category("Listing")]
+        [DisplayName("List Type"), DescriptionAttribute("Are you assigning files, directories, or both?")]
+        public STEM.Sys.IO.Listing.ListingType ListType { get; set; }
+
         public _FileDeploymentController()
         {
             SelectedOrigin = AgeOrigin.LastWriteTime;
             AgeTrigger = false;
             SecondsToAge = -1;
 
+            ListType = Sys.IO.Listing.ListingType.File;
+
             CheckTriggerExists = true;
             RequireTargetNameCoordination = false;
 
-            RecreateSubFromRootOf = "";
+            Authentication = null;
 
-            _ImpersonateUser = null;
-            _ImpersonationPassword = null;
-            _LocalUserImpersonation = true;
+            RecreateSubFromRootOf = "";
 
             TemplateKVP["[TargetPath]"] = "Reserved";
             TemplateKVP["[TargetName]"] = "Reserved";
@@ -184,10 +189,10 @@ namespace STEM.Surge
 
             if (getFileInfo)
             {
-                FDCFileInfo info = GetFileInfo(initiationSource);
+                STEM.Sys.IO.Listing.FileInfo info = GetFileInfo(initiationSource);
 
                 if (info == null)
-                    info = new FDCFileInfo { CreationTimeUtc = DateTime.MinValue, LastAccessTimeUtc = DateTime.MinValue, LastWriteTimeUtc = DateTime.MinValue, Size = 0 };
+                    info = new STEM.Sys.IO.Listing.FileInfo { CreationTimeUtc = DateTime.MinValue, LastAccessTimeUtc = DateTime.MinValue, LastWriteTimeUtc = DateTime.MinValue, Size = 0 };
 
                 foreach (string key in kvp.Keys.Where(i => i.Equals("[LastWriteTimeUtc]", StringComparison.InvariantCultureIgnoreCase)).ToList())
                     try
@@ -247,11 +252,17 @@ namespace STEM.Surge
         {
             try
             {
-                FDCFileInfo fi = GetFileInfo(targetSource);
+                STEM.Sys.IO.Listing.FileInfo fi = null;
+
+                try
+                {
+                    fi = GetFileInfo(targetSource);
+                }
+                catch { }
 
                 if (fi == null)
                 {
-                    FDCDirectoryInfo di = GetDirectoryInfo(targetSource);
+                    STEM.Sys.IO.Listing.DirectoryInfo di = GetDirectoryInfo(targetSource);
 
                     if (di == null)
                         return DateTime.MinValue;
@@ -313,71 +324,17 @@ namespace STEM.Surge
             return !AgeTrigger;
         }
 
-
-        internal string _ImpersonateUser;
-        internal string _ImpersonationPassword;
-        internal bool _LocalUserImpersonation;
-        
-        /// <summary>
-        /// Called with the parameters from the switchboard row for this source data
-        /// </summary>
-        /// <param name="impersonateUser"></param>
-        /// <param name="impersonationPassword"></param>
-        /// <param name="localUserImpersonation"></param>
-        public void UseImpersonation(string impersonateUser, string impersonationPassword, bool localUserImpersonation)
-        {
-            _ImpersonateUser = impersonateUser;
-            _ImpersonationPassword = impersonationPassword;
-            _LocalUserImpersonation = localUserImpersonation;
-        }
-        
         /// <summary>
         /// An impersonation safe way to get FileInfo for this DeploymentController.
         /// </summary>
         /// <param name="file">The file for which FileInfo is being requested</param>
         /// <returns>The FileInfo for the specified file</returns>
-        public virtual FDCFileInfo GetFileInfo(string file)
+        public virtual STEM.Sys.IO.Listing.FileInfo GetFileInfo(string file)
         {
-            return GetFileInfo(file, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
+            if (Authentication != null)
+                return Authentication.GetFileInfo(file);
 
-        /// <summary>
-        /// An impersonation safe way to get FileInfo for this DeploymentController.
-        /// </summary>
-        /// <param name="file">The file for which FileInfo is being requested</param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        /// <returns>The FileInfo for the specified file</returns>
-        public virtual FDCFileInfo GetFileInfo(string file, string user, string password, bool isLocal)
-        {
-            Impersonation impersonated = null;
-            FileInfo fi = null;
-            try
-            {
-                if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(password))
-                {
-                    impersonated = new Impersonation();
-                    impersonated.Impersonate(user, password, !isLocal);
-                }
-
-                if (File.Exists(file))
-                    fi = new FileInfo(file);
-            }
-            catch { }
-            finally
-            {
-                if (impersonated != null)
-                {
-                    impersonated.UnImpersonate();
-                    impersonated = null;
-                }
-            }
-
-            if (fi == null)
-                return null;
-
-            return new FDCFileInfo { CreationTimeUtc = fi.CreationTimeUtc, LastAccessTimeUtc = fi.LastAccessTimeUtc, LastWriteTimeUtc = fi.LastWriteTimeUtc, Size = fi.Length };
+            return null;
         }
                 
         /// <summary>
@@ -385,48 +342,12 @@ namespace STEM.Surge
         /// </summary>
         /// <param name="directory">The directory for which DirectoryInfo is being requested</param>
         /// <returns>The FileInfo for the specified file</returns>
-        public virtual FDCDirectoryInfo GetDirectoryInfo(string directory)
+        public virtual STEM.Sys.IO.Listing.DirectoryInfo GetDirectoryInfo(string directory)
         {
-            return GetDirectoryInfo(directory, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
+            if (Authentication != null)
+                return Authentication.GetDirectoryInfo(directory);
 
-        /// <summary>
-        /// An impersonation safe way to get DirectoryInfo for this DeploymentController.
-        /// </summary>
-        /// <param name="directory">The directory for which DirectoryInfo is being requested</param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        /// <returns>The FileInfo for the specified file</returns>
-        public virtual FDCDirectoryInfo GetDirectoryInfo(string directory, string user, string password, bool isLocal)
-        {
-            Impersonation impersonated = null;
-            DirectoryInfo di = null;
-            try
-            {
-                if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(password))
-                {
-                    impersonated = new Impersonation();
-                    impersonated.Impersonate(user, password, !isLocal);
-                }
-
-                if (Directory.Exists(directory))
-                    di = new DirectoryInfo(directory);
-            }
-            catch { }
-            finally
-            {
-                if (impersonated != null)
-                {
-                    impersonated.UnImpersonate();
-                    impersonated = null;
-                }
-            }
-
-            if (di == null)
-                return null;
-
-            return new FDCDirectoryInfo { CreationTimeUtc = di.CreationTimeUtc, LastAccessTimeUtc = di.LastAccessTimeUtc, LastWriteTimeUtc = di.LastWriteTimeUtc };
+            return null;
         }
 
         /// <summary>
@@ -436,44 +357,10 @@ namespace STEM.Surge
         /// <returns>True if the file can be found</returns>
         public virtual bool FileExists(string file)
         {
-            return FileExists(file, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
+            if (Authentication != null)
+                return Authentication.FileExists(file);
 
-        /// <summary>
-        /// An impersonation safe way to check file existence for this DeploymentController.
-        /// </summary>
-        /// <param name="file">The file for which an existence check is being requested</param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        /// <returns>True if the file can be found</returns>
-        public virtual bool FileExists(string file, string user, string password, bool isLocal)
-        {
-            Impersonation impersonated = null;
-            bool fileExists = false;
-            try
-            {
-                if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(_ImpersonationPassword))
-                {
-                    impersonated = new Impersonation();
-                    impersonated.Impersonate(user, _ImpersonationPassword, !isLocal);
-                }
-
-                fileExists = File.Exists(file);
-
-                if (!fileExists)
-                    fileExists = Directory.Exists(file);
-            }
-            finally
-            {
-                if (impersonated != null)
-                {
-                    impersonated.UnImpersonate();
-                    impersonated = null;
-                }
-            }
-
-            return fileExists;
+            return false;
         }
 
         /// <summary>
@@ -482,40 +369,8 @@ namespace STEM.Surge
         /// <param name="directory">The directory to be created</param>
         public virtual void CreateDirectory(string directory)
         {
-            CreateDirectory(directory, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
-
-        /// <summary>
-        /// An impersonation safe way to create a directory for this DeploymentController.
-        /// </summary>
-        /// <param name="directory">The directory to be created</param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        public virtual void CreateDirectory(string directory, string user, string password, bool isLocal)
-        {
-            if (!DirectoryExists(directory, user, password, isLocal))
-            {
-                Impersonation impersonated = null;
-                try
-                {
-                    if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(password))
-                    {
-                        impersonated = new Impersonation();
-                        impersonated.Impersonate(user, password, !isLocal);
-                    }
-
-                    Directory.CreateDirectory(directory);
-                }
-                finally
-                {
-                    if (impersonated != null)
-                    {
-                        impersonated.UnImpersonate();
-                        impersonated = null;
-                    }
-                }
-            }
+            if (Authentication != null)
+                Authentication.CreateDirectory(directory);
         }
 
         /// <summary>
@@ -528,48 +383,14 @@ namespace STEM.Surge
         /// <returns>The file list</returns>
         public List<string> ListFiles(string directory, string directoryFilter, string fileFilter, bool recurse)
         {
-            return ListFiles(directory, directoryFilter, fileFilter, recurse, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
-
-        /// <summary>
-        /// An impersonation safe way to get a file listing for this DeploymentController.
-        /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="directoryFilter"></param>
-        /// <param name="fileFilter"></param>
-        /// <param name="recurse"></param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        /// <returns>The file list</returns>
-        public List<string> ListFiles(string directory, string directoryFilter, string fileFilter, bool recurse, string user, string password, bool isLocal)
-        {
-            try
+            if (Authentication != null)
             {
-                if (DirectoryExists(directory, user, password, isLocal))
-                {
-                    Impersonation impersonated = null;
-                    try
-                    {
-                        if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(password))
-                        {
-                            impersonated = new Impersonation();
-                            impersonated.Impersonate(user, password, !isLocal);
-                        }
+                STEM.Sys.IO.Listing.IListingAgent agent = Authentication.ConstructListingAgent(Sys.IO.Listing.ListingType.File, directory, fileFilter, directoryFilter, recurse);
 
-                        return STEM.Sys.IO.Directory.STEM_GetFiles(directory, fileFilter, directoryFilter, recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, true);
-                    }
-                    finally
-                    {
-                        if (impersonated != null)
-                        {
-                            impersonated.UnImpersonate();
-                            impersonated = null;
-                        }
-                    }
-                }
+                STEM.Sys.IO.Listing.ListResult result = agent.GetListResult(Sys.IO.Listing.ListingElements.None);
+
+                return result.Entries.Select(i => i.Name).ToList();
             }
-            catch { }
 
             return new List<string>();
         }
@@ -583,47 +404,14 @@ namespace STEM.Surge
         /// <returns>The directory list</returns>
         public List<string> ListDirectories(string directory, string directoryFilter, bool recurse)
         {
-            return ListDirectories(directory, directoryFilter, recurse, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
-
-        /// <summary>
-        /// An impersonation safe way to get a directory listing for this DeploymentController.
-        /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="directoryFilter"></param>
-        /// <param name="recurse"></param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        /// <returns>The directory list</returns>
-        public List<string> ListDirectories(string directory, string directoryFilter, bool recurse, string user, string password, bool isLocal)
-        {
-            try
+            if (Authentication != null)
             {
-                if (DirectoryExists(directory, user, password, isLocal))
-                {
-                    Impersonation impersonated = null;
-                    try
-                    {
-                        if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(password))
-                        {
-                            impersonated = new Impersonation();
-                            impersonated.Impersonate(user, password, !isLocal);
-                        }
+                STEM.Sys.IO.Listing.IListingAgent agent = Authentication.ConstructListingAgent(Sys.IO.Listing.ListingType.Directory, directory, "*", directoryFilter, recurse);
 
-                        return STEM.Sys.IO.Directory.STEM_GetDirectories(directory, directoryFilter, recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, true);
-                    }
-                    finally
-                    {
-                        if (impersonated != null)
-                        {
-                            impersonated.UnImpersonate();
-                            impersonated = null;
-                        }
-                    }
-                }
+                STEM.Sys.IO.Listing.ListResult result = agent.GetListResult(Sys.IO.Listing.ListingElements.None);
+
+                return result.Entries.Select(i => i.Name).ToList();
             }
-            catch { }
 
             return new List<string>();
         }
@@ -635,44 +423,10 @@ namespace STEM.Surge
         /// <returns>True if the directory can be found</returns>
         public virtual bool DirectoryExists(string directory)
         {
-            return DirectoryExists(directory, _ImpersonateUser, _ImpersonationPassword, _LocalUserImpersonation);
-        }
+            if (Authentication != null)
+                return Authentication.DirectoryExists(directory);
 
-        /// <summary>
-        /// An impersonation safe way to check directory existence for this DeploymentController.
-        /// </summary>
-        /// <param name="directory">The directory for which an existence check is being requested</param>
-        /// <param name="user">The user to impersonate</param>
-        /// <param name="password">The impersonated user password</param>
-        /// <param name="isLocal">Whether the impersonated user is local to this server</param>
-        /// <returns>True if the directory can be found</returns>
-        public virtual bool DirectoryExists(string directory, string user, string password, bool isLocal)
-        {
-            Impersonation impersonated = null;
-            bool directoryExists = false;
-            try
-            {
-                if (!String.IsNullOrEmpty(user) && !String.IsNullOrEmpty(password))
-                {
-                    impersonated = new Impersonation();
-                    impersonated.Impersonate(user, password, !isLocal);
-                }
-
-                directoryExists = Directory.Exists(directory);
-
-                if (!directoryExists)
-                    directoryExists = File.Exists(directory);
-            }
-            finally
-            {
-                if (impersonated != null)
-                {
-                    impersonated.UnImpersonate();
-                    impersonated = null;
-                }
-            }
-
-            return directoryExists;
+            return false;
         }
     }
 }

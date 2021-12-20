@@ -69,9 +69,10 @@ namespace STEM.Surge.BasicControllers
         [DisplayName("Ping for destination existence"), DescriptionAttribute("Should the Controller verify the existence of the destination machine by pinging it?")]
         public bool DestinationPingable { get; set; }
 
+        [Category("Listing")]
         [DisplayName("Randomize List"), DescriptionAttribute("Should the Controller randomize the listing in ListPreprocess?")]
         public bool RandomizeList { get; set; }
-               
+
         public BasicFileController()
         {
             TemplateKVP["[DestinationPath]"] = "D:\\Data";
@@ -250,12 +251,8 @@ namespace STEM.Surge.BasicControllers
                     throw new Exception("No macro [DestinationPath] exists in this DeploymentController.");
 
                 TemplateKVP["[DestinationPath]"] = TemplateKVP[dp];
-                
-                InstructionSet clone = GetTemplateInstance(true);
 
-                CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
-
-                return new DeploymentDetails(clone, recommendedBranchIP);
+                ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);                
             }
             catch (Exception ex)
             {
@@ -285,13 +282,24 @@ namespace STEM.Surge.BasicControllers
 
                         if (!String.IsNullOrEmpty(DestinationPathUser) && !String.IsNullOrEmpty(DestinationPathPassword))
                         {
-                            if (DirectoryExists(dir, DestinationPathUser, DestinationPathPassword, DestinationPathImpersonationIsLocal))
+                            STEM.Sys.Security.Impersonation impersonation = new Impersonation();
+
+                            try
                             {
-                                _LastTouched[dir].Exists = true;
+                                impersonation.Impersonate(DestinationPathUser, DestinationPathPassword, DestinationPathImpersonationIsLocal);
+
+                                if (DirectoryExists(dir))
+                                {
+                                    _LastTouched[dir].Exists = true;
+                                }
+                                else
+                                {
+                                    _LastTouched[dir].Exists = false;
+                                }
                             }
-                            else
+                            finally
                             {
-                                _LastTouched[dir].Exists = false;
+                                impersonation.UnImpersonate();
                             }
                         }
                         else

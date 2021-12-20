@@ -107,7 +107,7 @@ namespace STEM.Surge.Kafka
                         c.Subscribe(Authentication.TopicName);
 
 
-                        ConsumeResult<Ignore, byte[]> msg = c.Consume(RetryDelaySeconds * 1000);
+                        ConsumeResult<Ignore, byte[]> msg = c.Consume(10);
 
                         if (msg != null && msg.Message != null)
                             _Data = msg.Message.Value;

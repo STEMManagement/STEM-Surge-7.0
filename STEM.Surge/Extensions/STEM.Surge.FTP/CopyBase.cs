@@ -21,6 +21,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using FluentFTP;
+using STEM.Listing.FTP;
 
 namespace STEM.Surge.FTP
 {
@@ -35,14 +36,6 @@ namespace STEM.Surge.FTP
         [Category("FTP Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Server Address"), DescriptionAttribute("What is the FTP Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Port"), DescriptionAttribute("What is the FTP Port?")]
-        public string Port { get; set; }
 
         [Category("Source")]
         [DisplayName("Source Path"), DescriptionAttribute("The location of the file(s) to be actioned.")]
@@ -115,8 +108,6 @@ namespace STEM.Surge.FTP
             : base()
         {
             Authentication = new Authentication();
-            ServerAddress = "[FtpServerAddress]";
-            Port = "[FtpServerPort]";
 
             ExistsAction = STEM.Sys.IO.FileExistsAction.MakeUnique;
             DestinationActionRule = DestinationRule.AllOrNone;
@@ -139,7 +130,6 @@ namespace STEM.Surge.FTP
         }
 
         Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
-        string _Address = null;
 
         protected override void _Rollback()
         {
@@ -149,14 +139,17 @@ namespace STEM.Surge.FTP
                 {
                     try
                     {
+                        if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".FtpClientAddress"))
+                            InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"]);
+                        else
+                            InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress(null);
+
                         string s = _FilesActioned[d];
 
                         if (Action == ActionType.Move)
                         {
                             if (Direction == FtpDirection.ToFtpServer)
                             {
-                                FtpClient conn = Authentication.OpenClient(_Address, Int32.Parse(Port));
-
                                 string tmp = "";
 
                                 try
@@ -168,22 +161,14 @@ namespace STEM.Surge.FTP
 
                                     tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(d));
 
-                                    using (System.IO.Stream sStream = conn.OpenRead(s, FtpDataType.Binary))
+                                    using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
                                     {
-                                        using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                        {
-                                            sStream.CopyTo(dStream);
-                                        }
+                                        Authentication.DownloadFile(s, dStream);
                                     }
-
-                                    FtpReply reply = conn.GetReply();
-
-                                    if (!reply.Success)
-                                        throw new Exception("There was an error reading from the FTP server: " + reply.Message);
 
                                     try
                                     {
-                                        File.SetLastWriteTimeUtc(tmp, conn.GetModifiedTime(s, FtpDate.UTC));
+                                        File.SetLastWriteTimeUtc(tmp, Authentication.GetFileInfo(s).LastWriteTimeUtc);
                                     }
                                     catch { }
 
@@ -197,66 +182,28 @@ namespace STEM.Surge.FTP
                                             File.Delete(tmp);
                                     }
                                     catch { }
-
-                                    Authentication.RecycleClient(conn);
                                 }
                             }
                             else
                             {
-                                FtpClient conn = Authentication.OpenClient(_Address, Int32.Parse(Port));
+                                DateTime mt = File.GetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(s));
+
+                                using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
+                                {
+                                    Authentication.UploadFile(sStream, d);
+                                }
 
                                 try
                                 {
-                                    DateTime mt = File.GetLastWriteTimeUtc(STEM.Sys.IO.Path.AdjustPath(s));
-
-                                    using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
-                                    {
-                                        using (System.IO.Stream dStream = conn.OpenWrite(d, FtpDataType.Binary))
-                                        {
-                                            sStream.CopyTo(dStream);
-                                        }
-
-                                        FtpReply reply = conn.GetReply();
-
-                                        if (!reply.Success)
-                                            throw new Exception("There was an error writing to the FTP server: " + reply.Message);
-                                    }
-
-                                    try
-                                    {
-                                        conn.SetModifiedTime(d, mt, FtpDate.UTC);
-
-                                        FtpReply reply = conn.GetReply();
-
-                                        if (!reply.Success)
-                                            throw new Exception("There was an error in SetModifiedTime on the FTP server: " + reply.Message);
-                                    }
-                                    catch { }
+                                    Authentication.SetLastWriteTimeUtc(d, mt);
                                 }
-                                finally
-                                {
-                                    Authentication.RecycleClient(conn);
-                                }
+                                catch { }
                             }
                         }
 
                         if (Direction == FtpDirection.ToFtpServer)
                         {
-                            FtpClient conn = Authentication.OpenClient(_Address, Int32.Parse(Port)); 
-                            
-                            try
-                            {
-                                conn.DeleteFile(s);
-
-                                FtpReply reply = conn.GetReply();
-
-                                if (!reply.Success)
-                                    throw new Exception("There was an error deleting a file from the FTP server: " + reply.Message);
-                            }
-                            finally
-                            {
-                                Authentication.RecycleClient(conn);
-                            }
+                            Authentication.DeleteFile(s);
                         }
                         else
                         {
@@ -268,27 +215,11 @@ namespace STEM.Surge.FTP
             }
             else
             {
-                int r = Retry;
-                while (r-- >= 0)
-                {
-                    _Address = Authentication.NextAddress(ServerAddress);
-
-                    if (_Address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return;
-                    }
-
-                    Exceptions.Clear();
-                    Message = "";
-                    bool success = Execute();
-                    if (success)
-                        return;
-
-                    System.Threading.Thread.Sleep(RetryDelaySeconds * 1000);
-                }
+                Exceptions.Clear();
+                Message = "";
+                bool success = Execute();
+                if (success)
+                    return;
             }
         }
 
@@ -299,16 +230,6 @@ namespace STEM.Surge.FTP
                 int r = Retry;
                 while (r-- >= 0)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
-
-                    if (_Address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
-                    }
-
                     Exceptions.Clear();
                     Message = "";
                     bool success = Execute();
@@ -328,6 +249,11 @@ namespace STEM.Surge.FTP
         {
             try
             {
+                if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".FtpClientAddress"))
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"]);
+                else
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress(null);
+
                 if (Direction == FtpDirection.ToFtpServer)
                     ExpandDestination = false;
                 else
@@ -357,262 +283,239 @@ namespace STEM.Surge.FTP
                 
                 int filesActioned = 0;
 
-                FtpClient conn = Authentication.OpenClient(_Address, Int32.Parse(Port));
-
-                try
+                foreach (string src in sources)
                 {
-                    foreach (string src in sources)
+                    List<FtpListItem> items = new List<FtpListItem>();
+
+                    if (Direction == FtpDirection.ToFtpServer)
                     {
-                        List<FtpListItem> items = new List<FtpListItem>();
+                        sourceFiles = STEM.Sys.IO.Directory.STEM_GetFiles(src, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false);
+                    }
+                    else
+                    {
+                        items = Authentication.ListDirectory(src, Sys.IO.Listing.ListingType.File, RecurseSource, DirectoryFilter, FileFilter);
+                        sourceFiles = items.Select(i => Authentication.ToString(i)).ToList();
+                    }
 
-                        if (Direction == FtpDirection.ToFtpServer)
+                    foreach (string s in sourceFiles)
+                    {
+                        try
                         {
-                            sourceFiles = STEM.Sys.IO.Directory.STEM_GetFiles(src, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false);
-                        }
-                        else
-                        {
-                            items = Authentication.ListDirectory(_Address, Int32.Parse(Port), src, FTPListType.File, RecurseSource, DirectoryFilter, FileFilter);
-                            sourceFiles = items.Select(i => i.FullName).ToList();
-                        }
+                            bool success = false;
 
-                        foreach (string s in sourceFiles)
-                        {
-                            try
+                            Exception lastEX = null;
+
+                            foreach (string d in destinations)
                             {
-                                bool success = false;
-
-                                Exception lastEX = null;
-
-                                foreach (string d in destinations)
+                                try
                                 {
+                                    string dFile = "";
+
                                     try
                                     {
-                                        string dFile = "";
-
-                                        try
-                                        {
-                                            if (PopulatePostMortemMeta)
-                                            {
-                                                if (Direction == FtpDirection.ToFtpServer)
-                                                {
-                                                    PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
-                                                    PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
-                                                    PostMortemMetaData["DestinationIP"] = _Address;
-                                                }
-                                                else
-                                                {
-                                                    PostMortemMetaData["SourceIP"] = _Address;
-                                                    PostMortemMetaData["FileSize"] = conn.GetFileSize(s).ToString();
-                                                    PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
-                                                }
-                                            }
-                                        }
-                                        catch { }
-
-                                        string dPath = STEM.Sys.IO.Path.AdjustPath(d);
-                                        if (RecurseSource && RecreateTree)
-                                        {
-                                            dPath = System.IO.Path.Combine(dPath, STEM.Sys.IO.Path.GetDirectoryName(s).Replace(STEM.Sys.IO.Path.AdjustPath(src), "").Trim(System.IO.Path.DirectorySeparatorChar));
-                                        }
-
-                                        dPath = System.IO.Path.Combine(dPath, DestinationFilename);
-
-                                        if (dPath.Contains("*.*"))
-                                            dPath = dPath.Replace("*.*", STEM.Sys.IO.Path.GetFileName(s));
-
-                                        if (dPath.Contains("*"))
-                                            dPath = dPath.Replace("*", STEM.Sys.IO.Path.GetFileNameWithoutExtension(s));
-
                                         if (Direction == FtpDirection.ToFtpServer)
                                         {
-                                            dPath = Authentication.AdjustPath(_Address, dPath);
-                                            string directory = Authentication.AdjustPath(_Address, STEM.Sys.IO.Path.GetDirectoryName(dPath));
-                                            
-                                            if (!conn.DirectoryExists(directory))
-                                                conn.CreateDirectory(directory);
-                                            
-                                            if (conn.FileExists(dPath))
-                                            {
-                                                switch (ExistsAction)
-                                                {
-                                                    case Sys.IO.FileExistsAction.Overwrite:
-                                                        conn.DeleteFile(dPath);
-                                                        dFile = dPath;
-                                                        break;
-
-                                                    case Sys.IO.FileExistsAction.OverwriteIfNewer:
-                                                        if (conn.GetModifiedTime(dPath, FtpDate.UTC) >= File.GetLastWriteTimeUtc(s))
-                                                            continue;
-
-                                                        conn.DeleteFile(dPath);
-                                                        dFile = dPath;
-                                                        break;
-
-                                                    case Sys.IO.FileExistsAction.Skip:
-                                                        continue;
-
-                                                    case Sys.IO.FileExistsAction.Throw:
-                                                        throw new IOException("Destination file exists. (" + dPath + ")");
-
-                                                    case Sys.IO.FileExistsAction.MakeUnique:
-                                                        dFile = Authentication.UniqueFilename(_Address, Int32.Parse(Port), dPath);
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                dFile = dPath;
-                                            }
-
-                                            DateTime mt = File.GetLastWriteTimeUtc(s);
-
-                                            using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
-                                            {
-                                                using (System.IO.Stream dStream = conn.OpenWrite(dFile, FtpDataType.Binary))
-                                                {
-                                                    sStream.CopyTo(dStream);
-                                                }
-
-                                                FtpReply reply = conn.GetReply();
-
-                                                if (!reply.Success)
-                                                    throw new Exception("There was an error writing to the FTP server: " + reply.Message);
-                                            }
-
-                                            try
-                                            {
-                                                conn.SetModifiedTime(dFile, mt, FtpDate.UTC);
-                                            }
-                                            catch { }
+                                            PostMortemMetaData["SourceIP"] = STEM.Sys.IO.Path.IPFromPath(s);
+                                            PostMortemMetaData["DestinationIP"] = Authentication.TargetAddress(null);
+                                            PostMortemMetaData["FileSize"] = new FileInfo(s).Length.ToString();
                                         }
                                         else
                                         {
-                                            if (File.Exists(dPath))
-                                            {
-                                                switch (ExistsAction)
-                                                {
-                                                    case Sys.IO.FileExistsAction.Overwrite:
-                                                        File.Delete(dPath);
-                                                        dFile = dPath;
-                                                        break;
-
-                                                    case Sys.IO.FileExistsAction.OverwriteIfNewer:
-                                                        if (File.GetLastWriteTimeUtc(dPath) >= conn.GetModifiedTime(s, FtpDate.UTC))
-                                                            continue;
-
-                                                        File.Delete(dPath);
-                                                        dFile = dPath;
-                                                        break;
-
-                                                    case Sys.IO.FileExistsAction.Skip:
-                                                        continue;
-
-                                                    case Sys.IO.FileExistsAction.Throw:
-                                                        throw new IOException("Destination file exists. (" + dPath + ")");
-
-                                                    case Sys.IO.FileExistsAction.MakeUnique:
-                                                        dFile = STEM.Sys.IO.File.UniqueFilename(dPath);
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                dFile = dPath;
-                                            }
-
-                                            if (!Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(dFile)))
-                                                Directory.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(dFile));
-
-                                            string tmp = "";
-
-                                            try
-                                            {
-                                                tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
-
-                                                if (!Directory.Exists(tmp))
-                                                    Directory.CreateDirectory(tmp);
-
-                                                tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
-
-                                                using (System.IO.Stream sStream = conn.OpenRead(s, FtpDataType.Binary))
-                                                {
-                                                    using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                                    {
-                                                        sStream.CopyTo(dStream);
-                                                    }
-                                                }
-
-                                                try
-                                                {
-                                                    File.SetLastWriteTimeUtc(tmp, conn.GetModifiedTime(s, FtpDate.UTC));
-                                                }
-                                                catch { }
-
-                                                File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
-                                            }
-                                            finally
-                                            {
-                                                try
-                                                {
-                                                    if (File.Exists(tmp))
-                                                        File.Delete(tmp);
-                                                }
-                                                catch { }
-                                            }
+                                            PostMortemMetaData["SourceIP"] = Authentication.TargetAddress(null);
+                                            PostMortemMetaData["DestinationIP"] = STEM.Sys.IO.Path.IPFromPath(d);
+                                            PostMortemMetaData["FileSize"] = Authentication.GetFileInfo(s).Size.ToString();
                                         }
-
-                                        if (!String.IsNullOrEmpty(dFile))
-                                        {
-                                            filesActioned++;
-
-                                            _FilesActioned[s] = dFile;
-
-                                            if (Action == ActionType.Move)
-                                                AppendToMessage(s + " moved to " + dFile);
-                                            else
-                                                AppendToMessage(s + " copied to " + dFile);
-                                        }
-
-                                        success = true;
-
-                                        if (DestinationActionRule == DestinationRule.FirstSuccess)
-                                            break;
                                     }
-                                    catch (Exception ex)
+                                    catch { }
+
+                                    string dPath = STEM.Sys.IO.Path.AdjustPath(d);
+                                    if (RecurseSource && RecreateTree)
                                     {
-                                        lastEX = ex;
-
-                                        if (DestinationActionRule == DestinationRule.AllOrNone)
-                                            throw ex;
+                                        dPath = System.IO.Path.Combine(dPath, STEM.Sys.IO.Path.GetDirectoryName(s).Replace(STEM.Sys.IO.Path.AdjustPath(src), "").Trim(System.IO.Path.DirectorySeparatorChar));
                                     }
-                                }
 
-                                if (!success)
-                                    throw new Exception("No successful actions taken for " + s, lastEX); // + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
+                                    dPath = System.IO.Path.Combine(dPath, DestinationFilename);
 
-                                if (Action == ActionType.Move)
-                                {
+                                    if (dPath.Contains("*.*"))
+                                        dPath = dPath.Replace("*.*", STEM.Sys.IO.Path.GetFileName(s));
+
+                                    if (dPath.Contains("*"))
+                                        dPath = dPath.Replace("*", STEM.Sys.IO.Path.GetFileNameWithoutExtension(s));
+
                                     if (Direction == FtpDirection.ToFtpServer)
                                     {
-                                        File.Delete(s);
+                                        string directory = STEM.Sys.IO.Path.GetDirectoryName(dPath);
+
+                                        if (!Authentication.DirectoryExists(directory))
+                                            Authentication.CreateDirectory(directory);
+
+                                        if (Authentication.FileExists(dPath))
+                                        {
+                                            switch (ExistsAction)
+                                            {
+                                                case Sys.IO.FileExistsAction.Overwrite:
+                                                    Authentication.DeleteFile(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (Authentication.GetFileInfo(dPath).LastWriteTimeUtc >= File.GetLastWriteTimeUtc(s))
+                                                        continue;
+
+                                                    Authentication.DeleteFile(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
+                                                case Sys.IO.FileExistsAction.Skip:
+                                                    continue;
+
+                                                case Sys.IO.FileExistsAction.Throw:
+                                                    throw new IOException("Destination file exists. (" + dPath + ")");
+
+                                                case Sys.IO.FileExistsAction.MakeUnique:
+                                                    dFile = Authentication.UniqueFilename(dPath);
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            dFile = dPath;
+                                        }
+
+                                        DateTime mt = File.GetLastWriteTimeUtc(s);
+
+                                        using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
+                                        {
+                                            Authentication.UploadFile(sStream, dFile);
+                                        }
+
+                                        try
+                                        {
+                                            Authentication.SetLastWriteTimeUtc(dFile, mt);
+                                        }
+                                        catch { }
                                     }
                                     else
                                     {
-                                        conn.DeleteFile(s);
+                                        if (File.Exists(dPath))
+                                        {
+                                            switch (ExistsAction)
+                                            {
+                                                case Sys.IO.FileExistsAction.Overwrite:
+                                                    File.Delete(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
+                                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
+
+                                                    if (File.GetLastWriteTimeUtc(dPath) >= Authentication.GetFileInfo(s).LastWriteTimeUtc)
+                                                        continue;
+
+                                                    File.Delete(dPath);
+                                                    dFile = dPath;
+                                                    break;
+
+                                                case Sys.IO.FileExistsAction.Skip:
+                                                    continue;
+
+                                                case Sys.IO.FileExistsAction.Throw:
+                                                    throw new IOException("Destination file exists. (" + dPath + ")");
+
+                                                case Sys.IO.FileExistsAction.MakeUnique:
+                                                    dFile = STEM.Sys.IO.File.UniqueFilename(dPath);
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            dFile = dPath;
+                                        }
+
+                                        if (!Directory.Exists(STEM.Sys.IO.Path.GetDirectoryName(dFile)))
+                                            Directory.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(dFile));
+
+                                        string tmp = "";
+                                        try
+                                        {
+                                            tmp = Path.Combine(STEM.Sys.IO.Path.GetDirectoryName(dFile), "TEMP");
+
+                                            if (!Directory.Exists(tmp))
+                                                Directory.CreateDirectory(tmp);
+
+                                            tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
+
+                                            using (System.IO.Stream dStream = System.IO.File.Open(tmp, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                            {
+                                                Authentication.DownloadFile(s, dStream);
+                                            }
+
+                                            try
+                                            {
+                                                File.SetLastWriteTimeUtc(tmp, Authentication.GetFileInfo(s).LastWriteTimeUtc);
+                                            }
+                                            catch { }
+
+                                            File.Move(tmp, STEM.Sys.IO.Path.AdjustPath(dFile));
+                                        }
+                                        finally
+                                        {
+                                            try
+                                            {
+                                                if (File.Exists(tmp))
+                                                    File.Delete(tmp);
+                                            }
+                                            catch { }
+                                        }
                                     }
+                                           
+                                    if (!String.IsNullOrEmpty(dFile))
+                                    {
+                                        filesActioned++;
+
+                                        _FilesActioned[s] = dFile;
+
+                                        if (Action == ActionType.Move)
+                                            AppendToMessage(s + " moved to " + dFile);
+                                        else
+                                            AppendToMessage(s + " copied to " + dFile);
+                                    }
+
+                                    success = true;
+
+                                    if (DestinationActionRule == DestinationRule.FirstSuccess)
+                                        break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    lastEX = ex;
+
+                                    if (DestinationActionRule == DestinationRule.AllOrNone)
+                                        throw ex;
                                 }
                             }
-                            catch (Exception ex)
+
+                            if (!success)
+                                throw new Exception("No successful actions taken for " + s, lastEX); // + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
+
+                            if (Action == ActionType.Move)
                             {
-                                AppendToMessage(ex.Message);
-                                Exceptions.Add(ex);
+                                if (Direction == FtpDirection.ToFtpServer)
+                                {
+                                    File.Delete(s);
+                                }
+                                else
+                                {
+                                    Authentication.DeleteFile(s);
+                                }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            AppendToMessage(ex.Message);
+                            Exceptions.Add(ex);
+                        }
                     }
-                }
-                finally
-                {
-                    Authentication.RecycleClient(conn);
                 }
 
                 if (PopulatePostMortemMeta)
@@ -654,13 +557,6 @@ namespace STEM.Surge.FTP
             }
 
             return Exceptions.Count == 0;
-        }
-
-        protected override void Dispose(bool dispose)
-        {
-            base.Dispose(dispose);
-
-            Authentication.Dispose();
         }
     }
 }

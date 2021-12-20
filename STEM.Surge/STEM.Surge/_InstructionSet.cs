@@ -566,7 +566,9 @@ namespace STEM.Surge
             _InstructionDocument = iSet._InstructionDocument;
             _SerializationSourceInstructionDocument = iSet._SerializationSourceInstructionDocument;
         }
-        
+
+        public abstract _InstructionSet Clone(_InstructionSet iSet);
+
         bool _Stop = false;
 
         /// <summary>

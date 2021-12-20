@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
+using STEM.Listing.SSH;
 
 namespace STEM.Surge.SSH
 {
@@ -31,14 +32,6 @@ namespace STEM.Surge.SSH
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Server Address"), DescriptionAttribute("What is the SSH Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Port"), DescriptionAttribute("What is the SSH Port?")]
-        public string Port { get; set; }
 
         [Category("Target")]
         [DisplayName("Source File"), DescriptionAttribute("The full path of the file to be renamed.")]
@@ -63,8 +56,6 @@ namespace STEM.Surge.SSH
         public Rename()
         {
             Authentication = new Authentication();
-            ServerAddress = "[SshServerAddress]";
-            Port = "[SshServerPort]";
 
             SourceFile = "[TargetPath]\\[TargetName]";
             NewFile = "[TargetPath]\\NewFileName.txt";
@@ -86,37 +77,17 @@ namespace STEM.Surge.SSH
             while (r-- >= 0 && !Stop)
                 try
                 {
-                    string address = null;
-                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
-                        address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
+                    if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".SshClientAddress"))
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"]);
+                    else
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
 
-                    if (address == null)
-                    {
-                        PostMortemMetaData["LastOperation"] = "NextAddress";
-
-                        address = Authentication.NextAddress(ServerAddress);
-
-                        if (address == null)
-                        {
-                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                            Exceptions.Add(ex);
-                            AppendToMessage(ex.Message);
-                            return false;
-                        }
-
-                        InstructionSet.InstructionSetContainer["ServerAddress"] = address;
-                    }
-
-                    PostMortemMetaData["LastOperation"] = "FileExists:SourceFile";
-
-                    if (!Authentication.FileExists(address, Int32.Parse(Port), SourceFile))
+                    if (!Authentication.FileExists(SourceFile))
                         throw new System.IO.IOException("The target file does not exist: (" + SourceFile + ")");
 
                     string dst = NewFile;
 
-                    PostMortemMetaData["LastOperation"] = "FileExists:DestinationFile";
-
-                    if (Authentication.FileExists(address, Int32.Parse(Port), dst))
+                    if (Authentication.FileExists(dst))
                         switch (FileExistsAction)
                         {
                             case STEM.Sys.IO.FileExistsAction.Skip:
@@ -128,24 +99,20 @@ namespace STEM.Surge.SSH
 
                             case STEM.Sys.IO.FileExistsAction.Overwrite:
                             case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
-                                Authentication.DeleteFile(address, Int32.Parse(Port), dst);
+                                Authentication.DeleteFile(dst);
                                 break;
 
                             case STEM.Sys.IO.FileExistsAction.MakeUnique:
-                                dst = Authentication.UniqueFilename(address, Int32.Parse(Port), dst);
+                                dst = Authentication.UniqueFilename(dst);
                                 break;
                         }
 
                     string directory = STEM.Sys.IO.Path.GetDirectoryName(dst);
                     
-                    PostMortemMetaData["LastOperation"] = "DirectoryExists:DestinationDirectory";
+                    if (!Authentication.DirectoryExists(directory))
+                        Authentication.CreateDirectory(directory);
 
-                    if (!Authentication.DirectoryExists(address, Int32.Parse(Port), directory))
-                        Authentication.CreateDirectory(address, Int32.Parse(Port), directory);
-
-                    PostMortemMetaData["LastOperation"] = "RenameFile";
-
-                    Authentication.RenameFile(address, Int32.Parse(Port), SourceFile, dst);
+                    Authentication.RenameFile(SourceFile, dst);
 
                     AppendToMessage(SourceFile + " renamed to " + dst);
 

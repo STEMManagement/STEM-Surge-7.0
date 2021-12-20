@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
+		<Authors>Brendan Richards</Authors>
+		<Copyright>Copyright © STEM Management 2022</Copyright>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<Company>STEM Management</Company>
+		<Version>7.5.0</Version>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<RootNamespace>STEM.Listing.GCS</RootNamespace>
+	</PropertyGroup>
+
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="md &quot;$(SolutionDir)Binaries\Extensions\&quot;&#xD;&#xA;copy &quot;$(TargetDir)*.dll&quot; &quot;$(SolutionDir)Binaries\Extensions&quot;" />
+	</Target>
+
+
+	<ItemGroup>
+	  <PackageReference Include="Google.Cloud.Storage.V1" Version="3.6.0" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<Reference Include="STEM.Sys.7.0.0.0">
+			<HintPath>..\..\RequiredDlls\STEM.Sys.7.0.0.0.dll</HintPath>
+		</Reference>
+		<Reference Include="STEM.Sys.Internal.7.0.0.0">
+			<HintPath>..\..\RequiredDlls\STEM.Sys.Internal.7.0.0.0.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+</Project>

@@ -24,6 +24,7 @@ using System.ComponentModel;
 using STEM.Surge;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
+using STEM.Listing.SSH;
 
 namespace STEM.Surge.SSH
 {
@@ -35,14 +36,6 @@ namespace STEM.Surge.SSH
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Server Address"), DescriptionAttribute("What is the SSH Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Port"), DescriptionAttribute("What is the SSH Port?")]
-        public string Port { get; set; }
 
         [Category("File Fisher")]
         [DisplayName("File Presence (Minutes)")]
@@ -77,8 +70,6 @@ namespace STEM.Surge.SSH
         public FileFisher() : base()
         {
             Authentication = new Authentication();
-            ServerAddress = "[SshServerAddress]";
-            Port = "[SshServerPort]";
 
             TargetPath = "[TargetPath]";
             FileFilter = "*";
@@ -117,7 +108,7 @@ namespace STEM.Surge.SSH
 
                 DateTime epoch = DateTime.UtcNow;
 
-                List<SftpFile> files = Authentication.ListDirectory(ServerAddress, Int32.Parse(Port), TargetPath, SSHListType.File, Recurse, DirectoryFilter, FileFilter);
+                List<SftpFile> files = Authentication.ListDirectory(TargetPath, Sys.IO.Listing.ListingType.File, Recurse, DirectoryFilter, FileFilter);
 
                 lock (dict)
                 {
@@ -133,7 +124,7 @@ namespace STEM.Surge.SSH
                     {
                         try
                         {
-                            if (!Authentication.FileExists(ServerAddress, Int32.Parse(Port), file))
+                            if (!Authentication.FileExists(file))
                             {
                                 dict.Remove(file);
                                 modified = true;
@@ -152,63 +143,32 @@ namespace STEM.Surge.SSH
 
                                 if (errDir.ToLower().Contains(STEM.Sys.IO.Path.AdjustPath("/dev/null")))
                                 {
-                                    Authentication.DeleteFile(ServerAddress, Int32.Parse(Port), Authentication.AdjustPath(ServerAddress, file));
+                                    Authentication.DeleteFile(file);
                                 }
                                 else
                                 {
-                                    SftpClient client = null;
+                                    string errFile = STEM.Sys.IO.Path.AdjustPath(Path.Combine(errDir, Path.GetFileName(file)));
 
                                     try
                                     {
-                                        client = Authentication.OpenSftpClient(ServerAddress, Int32.Parse(Port));
-
-                                        if (client != null)
-                                            try
-                                            {
-                                                string errFile = STEM.Sys.IO.Path.AdjustPath(Path.Combine(errDir, Path.GetFileName(file)));
-
-                                                try
-                                                {
-                                                    using (System.IO.Stream dStream = System.IO.File.Open(errFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
-                                                    {
-                                                        client.DownloadFile(Authentication.AdjustPath(ServerAddress, file), dStream);
-                                                    }
-                                                }
-                                                catch
-                                                {
-                                                    try
-                                                    {
-                                                        if (File.Exists(errFile))
-                                                            File.Delete(errFile);
-                                                    }
-                                                    catch { }
-
-                                                    throw;
-                                                }
-
-                                                Authentication.DeleteFile(ServerAddress, Int32.Parse(Port), Authentication.AdjustPath(ServerAddress, file));
-                                            }
-                                            finally
-                                            {
-                                                Authentication.RecycleClient(client);
-                                                client = null;
-                                            }
+                                        using (System.IO.Stream dStream = System.IO.File.Open(errFile, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None))
+                                        {
+                                            Authentication.DownloadFile(file, dStream);
+                                        }
                                     }
                                     catch
                                     {
                                         try
                                         {
-                                            client.Disconnect();
-                                        }
-                                        catch { }
-                                        try
-                                        {
-                                            client.Dispose();
+                                            if (File.Exists(errFile))
+                                                File.Delete(errFile);
                                         }
                                         catch { }
 
                                         throw;
                                     }
+
+                                    Authentication.DeleteFile(file);
                                 }
                              
                                 dict.Remove(file);

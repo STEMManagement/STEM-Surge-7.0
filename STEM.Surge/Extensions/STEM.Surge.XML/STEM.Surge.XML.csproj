@@ -4,10 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
     <Authors>Brendan Richards</Authors>
-    <Copyright>Copyright © STEM Management 2019</Copyright>
+    <Copyright>Copyright © STEM Management 2022</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Company>STEM Management</Company>
-    <Version>7.0.4</Version>
+	<Version>7.5.0</Version>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 

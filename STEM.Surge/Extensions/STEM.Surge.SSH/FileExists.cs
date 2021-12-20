@@ -20,6 +20,7 @@ using System.ComponentModel;
 using System.IO;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
+using STEM.Listing.SSH;
 
 namespace STEM.Surge.SSH
 {
@@ -31,14 +32,6 @@ namespace STEM.Surge.SSH
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Server Address"), DescriptionAttribute("What is the SSH Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Port"), DescriptionAttribute("What is the SSH Port?")]
-        public string Port { get; set; }
 
         [DisplayName("FileName")]
         [Description("The file to be evaluated")]
@@ -60,8 +53,6 @@ namespace STEM.Surge.SSH
             : base()
         {
             Authentication = new Authentication();
-            ServerAddress = "[SshServerAddress]";
-            Port = "[SshServerPort]";
             FileName = "[TargetPath]\\[TargetName]";
             TargetLabel = "";
         }
@@ -70,30 +61,14 @@ namespace STEM.Surge.SSH
         {
             try
             {
-                string address = null;
-                if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
-                    address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
-
-                if (address == null)
-                {
-                    PostMortemMetaData["LastOperation"] = "NextAddress";
-                    address = Authentication.NextAddress(ServerAddress);
-
-                    if (address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
-                    }
-
-                    InstructionSet.InstructionSetContainer["ServerAddress"] = address;
-                }
+                if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".SshClientAddress"))
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"]);
+                else
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
 
                 Surge.FailureAction tgtAction = FileNotExistsAction;
 
-                PostMortemMetaData["LastOperation"] = "FileExists";
-                if (Authentication.FileExists(address, Int32.Parse(Port), FileName))
+                if (Authentication.FileExists(FileName))
                     tgtAction = FileExistsAction;
 
                 switch (tgtAction)

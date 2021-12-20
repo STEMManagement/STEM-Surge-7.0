@@ -90,14 +90,12 @@ namespace STEM.Surge.BasicControllers
             {
                 int iter = _ListMap[initiationSource];
 
-                InstructionSet clone = GetTemplateInstance(true);
+                ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
 
-                CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
-
-                iSetID = clone.ID;
+                iSetID = ret.ISet.ID;
 
                 List<List<string>> iSetLists = new List<List<string>>();
-                foreach (Instruction i in clone.Instructions)
+                foreach (Instruction i in ret.ISet.Instructions)
                 {
                     foreach (PropertyInfo pi in i.GetType().GetProperties())
                     {
@@ -135,11 +133,11 @@ namespace STEM.Surge.BasicControllers
 
                 if (locks.Count == 0)
                     return null;
-
-                ret = new DeploymentDetails(clone, recommendedBranchIP);
             }
             catch (Exception ex)
             {
+                ret = null;
+
                 STEM.Sys.EventLog.WriteEntry("GroupingController.GenerateDeploymentDetails", new Exception(InstructionSetTemplate + ": " + initiationSource, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
 
                 foreach (string s in locks)

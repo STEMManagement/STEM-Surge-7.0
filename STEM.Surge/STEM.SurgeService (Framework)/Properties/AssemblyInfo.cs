@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("STEM Management")]
 [assembly: AssemblyProduct("STEM.SurgeService")]
-[assembly: AssemblyCopyright("Copyright © STEM Management 2019")]
+[assembly: AssemblyCopyright("Copyright © STEM Management 2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

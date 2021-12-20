@@ -46,12 +46,8 @@ namespace STEM.Surge
         public bool AllowCrossBranchAssignment { get; set; }
 
         [XmlIgnore]
-        public string ImpersonationUser { get; set; }
-        [XmlIgnore]
-        public string ImpersonationPassword { get; set; }
-        [XmlIgnore]
-        public bool LocalUserImpersonation { get; set; }
-        
+        public string AuthenticationConfiguration { get; set; }
+                
         public string SourceDirectory { get; set; }
 
 

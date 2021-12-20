@@ -21,6 +21,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Microsoft.Azure.Storage.Blob;
+using STEM.Listing.Azure;
 
 namespace STEM.Surge.Azure
 {
@@ -275,7 +276,7 @@ namespace STEM.Surge.Azure
                         string container = Authentication.ContainerFromPath(src);
                         string prefix = Authentication.PrefixFromPath(src);
 
-                        items = Authentication.ListObjects(container, prefix, AzureListType.File, RecurseSource, DirectoryFilter, FileFilter);
+                        items = Authentication.ListObjects(container, prefix, Sys.IO.Listing.ListingType.File, RecurseSource, DirectoryFilter, FileFilter);
 
                         sourceFiles = items.Select(i => Authentication.ToString(i)).ToList();
                     }
@@ -564,13 +565,6 @@ namespace STEM.Surge.Azure
             }
 
             return Exceptions.Count == 0;
-        }
-
-        protected override void Dispose(bool dispose)
-        {
-            base.Dispose(dispose);
-
-            Authentication.Dispose();
         }
     }
 }

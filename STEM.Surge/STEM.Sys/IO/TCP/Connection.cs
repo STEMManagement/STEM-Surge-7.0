@@ -206,15 +206,13 @@ namespace STEM.Sys.IO.TCP
                 {
                     if (!IsConnected())
                     {
-                        if (_Open) // Can't re-open until the close was fully broadcast
+                        if (_BelievedState == BelievedState.Open) // Can't re-open until the close was fully broadcast
                             return;
 
                         TcpClient client = null;
 
                         try
                         {
-                            _TcpClient = null;
-
                             string address = STEM.Sys.IO.Net.MachineAddress(RemoteAddress);
 
                             if (address == null || System.Net.IPAddress.None.ToString() == address)
@@ -256,6 +254,8 @@ namespace STEM.Sys.IO.TCP
 
                             _TcpClient = client;
 
+                            _CloseBroadcast = false;
+
                             if (!IsConnected())
                                 throw new IOException();
                         }
@@ -281,9 +281,7 @@ namespace STEM.Sys.IO.TCP
                                 }
                                 catch { }
                             }
-
-                            _TcpClient = null;
-                            _SslStream = null;
+                            
                             return;
                         }
                     }
@@ -311,15 +309,12 @@ namespace STEM.Sys.IO.TCP
 
                     RemoteAddress = ((System.Net.IPEndPoint)_TcpClient.Client.RemoteEndPoint).Address.ToString();
 
-
                     if (RemoteAddress == STEM.Sys.IO.Net.EmptyAddress)
                         throw new Exception("Attempt to connect to the EmptyAddress");
 
                     RemotePort = ((System.Net.IPEndPoint)_TcpClient.Client.RemoteEndPoint).Port;
                     LocalAddress = ((System.Net.IPEndPoint)_TcpClient.Client.LocalEndPoint).Address.ToString();
                     LocalPort = ((System.Net.IPEndPoint)_TcpClient.Client.LocalEndPoint).Port;
-
-                    _CloseBroadcast = false;
 
                     if (_Receiver == null)
                     {
@@ -377,7 +372,10 @@ namespace STEM.Sys.IO.TCP
 
                     if (receive)
                     {
-                        if (!_Open)
+                        lock (_AccessMutex)
+                            receive = _BelievedState == BelievedState.Open;
+
+                        if (!receive)
                         {
                             System.Threading.Thread.Sleep(10);
                             continue;
@@ -470,7 +468,7 @@ namespace STEM.Sys.IO.TCP
                     }
                     else
                     {
-                        if (!IsConnected() && ConnectionRole == TCP.Role.Server)
+                        if (ConnectionRole == TCP.Role.Server && !IsConnected())
                             return;
 
                         System.Threading.Thread.Sleep(10);
@@ -685,10 +683,12 @@ namespace STEM.Sys.IO.TCP
             }
         }
 
-        bool _Open = false;
+        enum BelievedState { Open, Closed }
+        BelievedState _BelievedState = BelievedState.Closed;
         void _Opened(Connection connection)
         {
-            _Open = true;
+            lock (_AccessMutex)
+                _BelievedState = BelievedState.Open;
 
             try
             {
@@ -699,7 +699,8 @@ namespace STEM.Sys.IO.TCP
 
         void _Closed(Connection connection)
         {
-            _Open = false;
+            lock (_AccessMutex)
+                _BelievedState = BelievedState.Closed;
 
             try
             {
@@ -720,8 +721,8 @@ namespace STEM.Sys.IO.TCP
             if (ConnectionRole == TCP.Role.Server)
                 throw new Exception("Cannot reconnect from server.");
 
-            if (_Open == true)
-                lock (_AccessMutex)
+            lock (_AccessMutex)
+                if (_BelievedState == BelievedState.Open)
                     return !_CloseBroadcast;
 
             while (true)

@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using STEM.Listing.S3;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
@@ -180,7 +181,7 @@ namespace STEM.Surge.S3
                                 string bucket = Authentication.BucketFromPath(s);
                                 string prefix = Authentication.PrefixFromPath(s);
 
-                                FDCFileInfo fi = Authentication.GetFileInfo(s);
+                                STEM.Sys.IO.Listing.FileInfo fi = Authentication.GetFileInfo(s);
 
                                 if (fi != null)
                                 {
@@ -306,7 +307,7 @@ namespace STEM.Surge.S3
                             PostMortemMetaData["Prefix"] = prefix;
                         }
 
-                        items = Authentication.ListObjects(bucket, prefix, S3ListType.File, RecurseSource, DirectoryFilter, FileFilter);
+                        items = Authentication.ListObjects(bucket, prefix, STEM.Sys.IO.Listing.ListingType.File, RecurseSource, DirectoryFilter, FileFilter);
 
                         sourceFiles = items.Select(i => Authentication.ToString(i)).ToList();
                     }
@@ -468,7 +469,7 @@ namespace STEM.Surge.S3
                                             PostMortemMetaData["Prefix"] = prefix;
                                         }
 
-                                        FDCFileInfo fi = Authentication.GetFileInfo(s);
+                                        STEM.Sys.IO.Listing.FileInfo fi = Authentication.GetFileInfo(s);
 
                                         if (fi != null)
                                         {
@@ -689,13 +690,6 @@ namespace STEM.Surge.S3
 			}
 
 			ftu.UploadAsync(request).Wait();
-        }
-
-        protected override void Dispose(bool dispose)
-        {
-            base.Dispose(dispose);
-
-            Authentication.Dispose();
         }
     }
 }

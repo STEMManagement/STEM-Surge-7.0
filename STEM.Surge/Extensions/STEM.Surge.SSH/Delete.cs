@@ -19,8 +19,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.ComponentModel;
-using Renci.SshNet;
+using System.Linq;
 using Renci.SshNet.Sftp;
+using STEM.Listing.SSH;
 
 namespace STEM.Surge.SSH
 {
@@ -32,14 +33,6 @@ namespace STEM.Surge.SSH
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Server Address"), DescriptionAttribute("What is the SSH Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Port"), DescriptionAttribute("What is the SSH Port?")]
-        public string Port { get; set; }
 
         [Category("Retry")]
         [DisplayName("Number of retries"), DescriptionAttribute("How many times should each operation be attempted?")]
@@ -82,8 +75,6 @@ namespace STEM.Surge.SSH
             : base()
         {
             Authentication = new Authentication();
-            ServerAddress = "[SshServerAddress]";
-            Port = "[SshServerPort]";
 
             Retry = 1;
             RetryDelaySeconds = 2;
@@ -96,8 +87,6 @@ namespace STEM.Surge.SSH
             ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
-        string _Address = null;
-
         protected override bool _Run()
         {
             if (ExecutionMode == ExecuteOn.ForwardExecution)
@@ -105,27 +94,6 @@ namespace STEM.Surge.SSH
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
                 {
-                    _Address = null;
-                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
-                        _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
-
-                    if (_Address == null)
-                    {
-                        PostMortemMetaData["LastOperation"] = "NextAddress";
-
-                        _Address = Authentication.NextAddress(ServerAddress);
-
-                        if (_Address == null)
-                        {
-                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                            Exceptions.Add(ex);
-                            AppendToMessage(ex.Message);
-                            return false;
-                        }
-
-                        InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
-                    }
-
                     Exceptions.Clear();
                     Message = "";
                     bool success = Execute();
@@ -148,27 +116,6 @@ namespace STEM.Surge.SSH
                 int r = Retry;
                 while (r-- >= 0 && !Stop)
                 {
-                    _Address = null;
-                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
-                        _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
-
-                    if (_Address == null)
-                    {
-                        PostMortemMetaData["LastOperation"] = "NextAddress";
-
-                        _Address = Authentication.NextAddress(ServerAddress);
-
-                        if (_Address == null)
-                        {
-                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                            Exceptions.Add(ex);
-                            AppendToMessage(ex.Message);
-                            return;
-                        }
-
-                        InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
-                    }
-
                     Exceptions.Clear();
                     Message = "";
                     bool success = Execute();
@@ -184,70 +131,56 @@ namespace STEM.Surge.SSH
         {
             try
             {
-                PostMortemMetaData["LastOperation"] = "ListDirectory";
+                if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".SshClientAddress"))
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"]);
+                else
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
 
-                List<SftpFile> items = Authentication.ListDirectory(_Address, Int32.Parse(Port), SourcePath, SSHListType.All, RecurseSource, DirectoryFilter, FileFilter);
+                List<string> files = null;
 
-                foreach (SftpFile i in items)
+                if (!ExpandSource && !RecurseSource && !FileFilter.Contains("|") && !FileFilter.Contains("!") && !FileFilter.Contains("<>") && !FileFilter.Contains("?") && !FileFilter.Contains("*"))
                 {
-                    if (i.IsRegularFile)
+                    files = new List<string>();
+                    files.Add(Path.Combine(SourcePath, FileFilter));
+                }
+                else
+                {
+                    files = Authentication.ListDirectory(SourcePath, Sys.IO.Listing.ListingType.File, RecurseSource, DirectoryFilter, FileFilter).Select(i => Authentication.ToString(i)).ToList();
+                }
+
+                foreach (string file in files)
+                {
+                    try
                     {
-                        try
-                        {
-                            PostMortemMetaData["LastOperation"] = "DeleteFile";
-                            Authentication.DeleteFile(_Address, Int32.Parse(Port), i.FullName);
-                            AppendToMessage(i.FullName + " deleted");
-                        }
-                        catch (Exception ex)
-                        {
-                            AppendToMessage(ex.ToString());
-                            Exceptions.Add(ex);
-                        }
+                        Authentication.DeleteFile(file);
+                        AppendToMessage(file + " deleted");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendToMessage(ex.ToString());
+                        Exceptions.Add(ex);
                     }
                 }
 
                 if (DeleteEmptyDirectories)
                 {
-                    List<SftpFile> remaining;
-
                     if (RecurseSource)
                     {
-                        foreach (SftpFile i in items)
+                        foreach (SftpFile dir in Authentication.ListDirectory(SourcePath, Sys.IO.Listing.ListingType.Directory, true, DirectoryFilter, "*"))
                         {
-                            if (i.IsDirectory)
+                            try
                             {
-                                try
-                                {
-                                    PostMortemMetaData["LastOperation"] = "ListDirectory";
-                                    remaining = Authentication.ListDirectory(_Address, Int32.Parse(Port),
-                                                                       i.FullName, SSHListType.All, false, "*", "*");
-
-                                    if (remaining.Count == 0)
-                                    {
-                                        PostMortemMetaData["LastOperation"] = "DeleteDirectory";
-                                        Authentication.DeleteDirectory(_Address, Int32.Parse(Port), i.FullName);
-                                        AppendToMessage(i.FullName + " deleted");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    AppendToMessage(ex.ToString());
-                                    Exceptions.Add(ex);
-                                }
+                                Authentication.DeleteDirectory(Authentication.ToString(dir), true, false);
                             }
+                            catch { }
                         }
                     }
 
-                    PostMortemMetaData["LastOperation"] = "ListDirectory";
-                    remaining = Authentication.ListDirectory(_Address, Int32.Parse(Port),
-                                                       SourcePath, SSHListType.All, false, "*", "*");
-
-                    if (remaining.Count == 0)
+                    try
                     {
-                        PostMortemMetaData["LastOperation"] = "DeleteDirectory";
-                        Authentication.DeleteDirectory(_Address, Int32.Parse(Port), SourcePath);
-                        AppendToMessage(SourcePath + " deleted");
+                        Authentication.DeleteDirectory(SourcePath, true, false);
                     }
+                    catch { }
                 }
             }
             catch (Exception ex)

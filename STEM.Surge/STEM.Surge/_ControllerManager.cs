@@ -50,6 +50,11 @@ namespace STEM.Surge
         public abstract string DeploymentControllerID { get; }
 
         /// <summary>
+        /// The name of this Authentication Configuration
+        /// </summary>
+        public abstract string AuthenticationConfiguration { get; }
+
+        /// <summary>
         /// The name of this Deployment Controller
         /// </summary>
         public abstract string DeploymentController { get; }
@@ -68,6 +73,11 @@ namespace STEM.Surge
         /// The CoordinatedKeyManager used to obtain locks for this assignment
         /// </summary>
         public abstract CoordinatedKeyManager KeyManager { get; }
+
+        /// <summary>
+        /// The IAuthentication instance being used in active listings
+        /// </summary>
+        public abstract STEM.Sys.IO.Listing.IAuthentication ValidatedAuth { get; }
 
         /// <summary>
         /// The DeploymentController instance being used in active deployment

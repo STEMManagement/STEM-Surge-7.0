@@ -18,16 +18,16 @@
 using System;
 using System.IO;
 using System.Xml.Serialization;
-using System.Xml.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using STEM.Sys.Security;
 using MySql.Data;
 
 namespace STEM.Surge.MySQL
 {
-    public class Authentication : IAuthentication
+    public class Authentication : Sys.Security.IAuthentication
     {
         [Category("MySQL Connection String")]
         [DisplayName("MySQL Server Connection String"), DescriptionAttribute("What is the database Connection String (Leave out Password)?")]
@@ -72,6 +72,32 @@ namespace STEM.Surge.MySQL
                 {
                     return SqlConnectionString;
                 }
+            }
+        }
+
+        public override void PopulateFrom(Sys.Security.IAuthentication source)
+        {
+            if (source.VersionDescriptor.TypeName == VersionDescriptor.TypeName)
+            {
+                PropertyInfo i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlConnectionString");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SqlConnectionString))
+                        SqlConnectionString = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlPassword");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SqlPassword))
+                        SqlPassword = k;
+                }
+            }
+            else
+            {
+                throw new Exception("IAuthentication Type mismatch.");
             }
         }
     }

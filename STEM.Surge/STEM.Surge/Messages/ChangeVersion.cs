@@ -25,7 +25,7 @@ namespace STEM.Surge.Messages
     /// </summary>
     public class ChangeVersion : STEM.Sys.Messaging.Message
     {
-        public enum TargetType { InstructionSetTemplate, DeploymentController, Static, All }
+        public enum TargetType { AuthenticationConfiguration, InstructionSetTemplate, DeploymentController, Static, All }
 
         public string TypeName { get; set; }
         public string OldVersion { get; set; }

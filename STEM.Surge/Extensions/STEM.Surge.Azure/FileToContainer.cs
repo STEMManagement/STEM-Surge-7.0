@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Microsoft.Azure.Storage.Blob;
+using STEM.Listing.Azure;
 
 namespace STEM.Surge.Azure
 {

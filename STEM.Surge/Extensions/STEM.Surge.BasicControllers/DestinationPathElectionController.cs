@@ -191,7 +191,13 @@ namespace STEM.Surge.BasicControllers
                             {
                                 if (!String.IsNullOrEmpty(DestinationPathUser) && !String.IsNullOrEmpty(DestinationPathPassword))
                                 {
-                                    CreateDirectory(absDest, DestinationPathUser, DestinationPathPassword, DestinationPathImpersonationIsLocal);
+                                    STEM.Sys.Security.Impersonation impersonation = new STEM.Sys.Security.Impersonation();
+                                    try
+                                    {
+                                        impersonation.Impersonate(DestinationPathUser, DestinationPathPassword, DestinationPathImpersonationIsLocal);
+                                        CreateDirectory(absDest);
+                                    }
+                                    finally { impersonation.UnImpersonate(); }
                                 }
                                 else
                                 {
@@ -201,11 +207,17 @@ namespace STEM.Surge.BasicControllers
 
                             if (!String.IsNullOrEmpty(DestinationPathUser) && !String.IsNullOrEmpty(DestinationPathPassword))
                             {
-                                me.LastFileCount = ListFiles(absDest, "*", "*", false, DestinationPathUser, DestinationPathPassword, DestinationPathImpersonationIsLocal).Count;
+                                STEM.Sys.Security.Impersonation impersonation = new STEM.Sys.Security.Impersonation();
+                                try
+                                {
+                                    impersonation.Impersonate(DestinationPathUser, DestinationPathPassword, DestinationPathImpersonationIsLocal);
+                                    me.LastFileCount = STEM.Sys.IO.Directory.STEM_GetFiles(absDest, "*", "*", SearchOption.TopDirectoryOnly, false).Count;
+                                }
+                                finally { impersonation.UnImpersonate(); }
                             }
                             else
                             {
-                                me.LastFileCount = ListFiles(absDest, "*", "*", false).Count;
+                                me.LastFileCount = STEM.Sys.IO.Directory.STEM_GetFiles(absDest, "*", "*", SearchOption.TopDirectoryOnly, false).Count;
                             }
 
                             me.LastRealPoll = DateTime.UtcNow;

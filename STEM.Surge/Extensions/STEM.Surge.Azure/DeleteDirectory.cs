@@ -20,6 +20,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Microsoft.Azure.Storage.Blob;
+using STEM.Listing.Azure;
 
 namespace STEM.Surge.Azure
 {
@@ -101,7 +102,7 @@ namespace STEM.Surge.Azure
                 string container = Authentication.ContainerFromPath(SourcePath);
                 string prefix = Authentication.PrefixFromPath(SourcePath);
 
-                List<IListBlobItem> items = Authentication.ListObjects(container, prefix, AzureListType.Directory, RecurseSource, DirectoryFilter, "*");
+                List<IListBlobItem> items = Authentication.ListObjects(container, prefix, Sys.IO.Listing.ListingType.Directory, RecurseSource, DirectoryFilter, "*");
 
                 foreach (IListBlobItem i in items)
                 {
@@ -109,13 +110,13 @@ namespace STEM.Surge.Azure
                     {
                         string p = Authentication.ToString(i);
 
-                        List<IListBlobItem> remaining = Authentication.ListObjects(Authentication.ContainerFromPath(p), Authentication.PrefixFromPath(p), AzureListType.All, true, "*", "*");
+                        List<IListBlobItem> remaining = Authentication.ListObjects(Authentication.ContainerFromPath(p), Authentication.PrefixFromPath(p), Sys.IO.Listing.ListingType.All, true, "*", "*");
 
                         if (DeleteEmptyDirectoriesOnly)
                         {
                             if (remaining.Count == 0)
                             {
-                                Authentication.DeleteDirectory(p);
+                                Authentication.DeleteDirectory(p, false, false);
                                 AppendToMessage(p + " deleted");
                             }
                         }
@@ -127,7 +128,7 @@ namespace STEM.Surge.Azure
                                     Authentication.DeleteFile(Authentication.ToString(del));
                             }
 
-                            Authentication.DeleteDirectory(p);
+                            Authentication.DeleteDirectory(p, false, false);
                             AppendToMessage(p + " deleted");
                         }
                     }

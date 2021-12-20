@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using STEM.Sys.State;
@@ -73,6 +74,11 @@ namespace STEM.Surge
             TemplateKVP["[PollerDirectoryFilter]"] = "Reserved";
             TemplateKVP["[UtcNow]"] = "yyyy-MM-dd HH.mm.ss.fff";
         }
+
+
+        [XmlIgnore]
+        [Browsable(false)]
+        public STEM.Sys.IO.Listing.IAuthentication Authentication { get; set; }
 
         /// <summary>
         /// An internal ID unique to this instance of a DeploymentController
@@ -560,6 +566,103 @@ namespace STEM.Surge
             }
         }
 
+
+        static Dictionary<string, _InstructionSet> _InstructionSet = new Dictionary<string, _InstructionSet>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, string> _FileContent = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, DateTime> _LastWriteTime = new Dictionary<string, DateTime>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, DateTime> _LastWriteTimeCheck = new Dictionary<string, DateTime>(StringComparer.InvariantCultureIgnoreCase);
+
+        public static string GetFileText(string filename)
+        {
+            lock (_FileContent)
+                foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(filename, STEM.Sys.IO.Net.MachineIP()))
+                {
+                    string content = null;
+                    if (_FileContent.ContainsKey(t))
+                    {
+                        content = _FileContent[t];
+                    }
+
+                    if (!System.IO.File.Exists(t) && content == null)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("DeploymentController.GetFileText", "File does not exist: " + t, STEM.Sys.EventLog.EventLogEntryType.Error);
+                        continue;
+                    }
+                    else if (System.IO.File.Exists(t))
+                    {
+                        if (_LastWriteTimeCheck.ContainsKey(t))
+                        {
+                            if (content == null || (DateTime.UtcNow - _LastWriteTimeCheck[t]).TotalSeconds > 15)
+                            {
+                                DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
+
+                                if (_LastWriteTime[t] != lwt || content == null)
+                                {
+                                    content = System.IO.File.ReadAllText(t);
+
+                                    _FileContent[t] = content;
+
+                                    try
+                                    {
+                                        _InstructionSet[t] = (_InstructionSet)STEM.Sys.Serializable.Deserialize(content);
+                                    }
+                                    catch { }
+
+                                    _LastWriteTime[t] = lwt;
+                                    _LastWriteTimeCheck[t] = DateTime.UtcNow;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
+
+                            content = System.IO.File.ReadAllText(t);
+
+                            _FileContent[t] = content;
+
+                            try
+                            {
+                                _InstructionSet[t] = (_InstructionSet)STEM.Sys.Serializable.Deserialize(content);
+                            }
+                            catch { }
+
+                            _LastWriteTime[t] = lwt;
+                            _LastWriteTimeCheck[t] = DateTime.UtcNow;
+                        }
+                    }
+
+                    if (content != null)
+                        return content;
+                }
+
+            return null;
+        }
+
+        protected virtual _InstructionSet GetTemplateInstance(bool cloneTemplate = false)
+        {
+            return GetTemplateInstance(InstructionSetTemplate, cloneTemplate);
+        }
+
+        protected virtual _InstructionSet GetTemplateInstance(string templateName, bool cloneTemplate = false)
+        {
+            foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(templateName, STEM.Sys.IO.Net.MachineIP()))
+            {
+                string c = GetFileText(t);
+                if (c != null && _InstructionSet.ContainsKey(t))
+                {
+                    _InstructionSet iSet = _InstructionSet[t];
+
+                    if (cloneTemplate)
+                        return iSet.Clone(iSet);
+
+                    return iSet;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// This method generates InstructionSets upon request. When called, GenerateDeploymentDetails is assured that tainitiationSourcergetSource is
         /// exclusively "locked" for assignment at that time.
@@ -569,7 +672,54 @@ namespace STEM.Surge
         /// <param name="recommendedBranchIP">The Branch IP that is preferred for this assignment</param>
         /// <param name="limitedToBranches">The Branch IPs that this assignment is limited to in case you choose to override recommendedBranchIP</param>
         /// <returns>The DeploymentDetails instance containing the InstructionSet to be assigned, or null if no assignment should be made at this time</returns>
-        public abstract DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches);
+        public virtual DeploymentDetails GenerateDeploymentDetails(IReadOnlyList<string> listPreprocessResult, string initiationSource, string recommendedBranchIP, IReadOnlyList<string> limitedToBranches)
+        {
+            DeploymentDetails ret = null;
+            try
+            {
+                _InstructionSet clone = GetTemplateInstance(true);
+
+                CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
+
+                bool updated = false;
+                foreach (Instruction ins in clone.Instructions)
+                {
+                    try
+                    {
+                        foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Sys.Security.IAuthentication))))
+                        {
+                            try
+                            {
+                                STEM.Sys.Security.IAuthentication a = prop.GetValue(ins) as STEM.Sys.Security.IAuthentication;
+                                STEM.Sys.Security.IAuthentication b = GetAuthentication(a.ConfigurationName);
+
+                                if (b != null)
+                                {
+                                    a.PopulateFrom(b);
+                                    updated = true;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
+
+                if (updated)
+                    CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
+
+                return new DeploymentDetails(clone, recommendedBranchIP);
+            }
+            catch (Exception ex)
+            {
+                STEM.Sys.EventLog.WriteEntry("DeploymentController.GenerateDeploymentDetails", new Exception(InstructionSetTemplate + ": " + initiationSource, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+            }
+
+            return ret;
+        }
+
+        protected abstract STEM.Sys.Security.IAuthentication GetAuthentication(string configurationName);
+
     }
 }
 

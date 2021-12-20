@@ -17,6 +17,7 @@
 
 using System;
 using System.ComponentModel;
+using STEM.Listing.GCS;
 
 namespace STEM.Surge.GCS
 {

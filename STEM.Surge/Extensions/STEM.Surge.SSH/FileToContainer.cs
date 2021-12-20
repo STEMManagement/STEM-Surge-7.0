@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
+using STEM.Listing.SSH;
 
 namespace STEM.Surge.SSH
 {
@@ -31,14 +32,6 @@ namespace STEM.Surge.SSH
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Server Address"), DescriptionAttribute("What is the SSH Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Port"), DescriptionAttribute("What is the SSH Port?")]
-        public string Port { get; set; }
 
         [DisplayName("Source File")]
         [Description("The file data to be loaded into the container.")]
@@ -67,8 +60,6 @@ namespace STEM.Surge.SSH
         public FileToContainer()
         {
             Authentication = new Authentication();
-            ServerAddress = "[SshServerAddress]";
-            Port = "[SshServerPort]";
 
             SourceFile = "[TargetPath]\\[TargetName]";
             ContainerDataKey = "[TargetNameWithoutExt]";
@@ -107,76 +98,25 @@ namespace STEM.Surge.SSH
             while (r-- >= 0 && !Stop)
                 try
                 {
-                    string address = null;
-                    if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
-                        address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
-
-                    if (address == null)
-                    {
-                        PostMortemMetaData["LastOperation"] = "NextAddress";
-
-                        address = Authentication.NextAddress(ServerAddress);
-
-                        if (address == null)
-                        {
-                            Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                            Exceptions.Add(ex);
-                            AppendToMessage(ex.Message);
-                            return false;
-                        }
-
-                        InstructionSet.InstructionSetContainer["ServerAddress"] = address;
-                    }
+                    if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".SshClientAddress"))
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"]);
+                    else
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
 
                     string sData = null;
                     byte[] bData = null;
 
-                    string sFile = Authentication.AdjustPath(address, SourceFile);
-
-                    PostMortemMetaData["LastOperation"] = "OpenSftpClient";
-                    SftpClient client = null;
-
-                    try
+                    using (System.IO.MemoryStream s = new System.IO.MemoryStream())
                     {
-                        client = Authentication.OpenSftpClient(address, Int32.Parse(Port));
+                        Authentication.DownloadFile(SourceFile, s);
 
-                        try
-                        {
-                            PostMortemMetaData["LastOperation"] = "DownloadFile";
-                            using (System.IO.MemoryStream s = new System.IO.MemoryStream())
-                            {
-                                client.DownloadFile(sFile, s);
+                        bData = s.ToArray();
 
-                                bData = s.ToArray();
-
-                                if (FileType == DataType.String)
-                                {
-                                    sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
-                                    bData = null;
-                                }
-                            }
-                        }
-                        finally
+                        if (FileType == DataType.String)
                         {
-                            PostMortemMetaData["LastOperation"] = "RecycleClient";
-                            Authentication.RecycleClient(client);
-                            client = null;
+                            sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
+                            bData = null;
                         }
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            client.Disconnect();
-                        }
-                        catch { }
-                        try
-                        {
-                            client.Dispose();
-                        }
-                        catch { }
-
-                        throw;
                     }
 
                     switch (TargetContainer)

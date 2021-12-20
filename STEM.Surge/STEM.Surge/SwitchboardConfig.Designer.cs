@@ -761,12 +761,6 @@ namespace STEM.Surge {
             
             private global::System.Data.DataColumn columnIpLooselyBound;
             
-            private global::System.Data.DataColumn columnImpersonateUser;
-            
-            private global::System.Data.DataColumn columnImpersonationPassword;
-            
-            private global::System.Data.DataColumn columnLocalUserImpersonation;
-            
             private global::System.Data.DataColumn columnCoordinatedManagerIPs;
             
             private global::System.Data.DataColumn columnLimitToBranchIPs;
@@ -774,6 +768,8 @@ namespace STEM.Surge {
             private global::System.Data.DataColumn columnSandbox;
             
             private global::System.Data.DataColumn columnUseAltAssembliesOnly;
+            
+            private global::System.Data.DataColumn columnAuthenticationFilename;
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
@@ -890,30 +886,6 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public global::System.Data.DataColumn ImpersonateUserColumn {
-                get {
-                    return this.columnImpersonateUser;
-                }
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public global::System.Data.DataColumn ImpersonationPasswordColumn {
-                get {
-                    return this.columnImpersonationPassword;
-                }
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public global::System.Data.DataColumn LocalUserImpersonationColumn {
-                get {
-                    return this.columnLocalUserImpersonation;
-                }
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public global::System.Data.DataColumn CoordinatedManagerIPsColumn {
                 get {
                     return this.columnCoordinatedManagerIPs;
@@ -941,6 +913,14 @@ namespace STEM.Surge {
             public global::System.Data.DataColumn UseAltAssembliesOnlyColumn {
                 get {
                     return this.columnUseAltAssembliesOnly;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn AuthenticationFilenameColumn {
+                get {
+                    return this.columnAuthenticationFilename;
                 }
             }
             
@@ -981,24 +961,7 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public FileSourcesRow AddFileSourcesRow(
-                        bool Enable, 
-                        string SourceDirectory, 
-                        string DirectoryFilter, 
-                        string FileFilter, 
-                        bool Recurse, 
-                        int ScanDelaySeconds, 
-                        string ControllerFilename, 
-                        int MaxBranchLoad, 
-                        bool PingOnPoll, 
-                        bool IpLooselyBound, 
-                        string ImpersonateUser, 
-                        string ImpersonationPassword, 
-                        bool LocalUserImpersonation, 
-                        string CoordinatedManagerIPs, 
-                        string LimitToBranchIPs, 
-                        bool Sandbox, 
-                        bool UseAltAssembliesOnly) {
+            public FileSourcesRow AddFileSourcesRow(bool Enable, string SourceDirectory, string DirectoryFilter, string FileFilter, bool Recurse, int ScanDelaySeconds, string ControllerFilename, int MaxBranchLoad, bool PingOnPoll, bool IpLooselyBound, string CoordinatedManagerIPs, string LimitToBranchIPs, bool Sandbox, bool UseAltAssembliesOnly, string AuthenticationFilename) {
                 FileSourcesRow rowFileSourcesRow = ((FileSourcesRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Enable,
@@ -1011,13 +974,11 @@ namespace STEM.Surge {
                         MaxBranchLoad,
                         PingOnPoll,
                         IpLooselyBound,
-                        ImpersonateUser,
-                        ImpersonationPassword,
-                        LocalUserImpersonation,
                         CoordinatedManagerIPs,
                         LimitToBranchIPs,
                         Sandbox,
-                        UseAltAssembliesOnly};
+                        UseAltAssembliesOnly,
+                        AuthenticationFilename};
                 rowFileSourcesRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowFileSourcesRow);
                 return rowFileSourcesRow;
@@ -1059,13 +1020,11 @@ namespace STEM.Surge {
                 this.columnMaxBranchLoad = base.Columns["MaxBranchLoad"];
                 this.columnPingOnPoll = base.Columns["PingOnPoll"];
                 this.columnIpLooselyBound = base.Columns["IpLooselyBound"];
-                this.columnImpersonateUser = base.Columns["ImpersonateUser"];
-                this.columnImpersonationPassword = base.Columns["ImpersonationPassword"];
-                this.columnLocalUserImpersonation = base.Columns["LocalUserImpersonation"];
                 this.columnCoordinatedManagerIPs = base.Columns["CoordinatedManagerIPs"];
                 this.columnLimitToBranchIPs = base.Columns["LimitToBranchIPs"];
                 this.columnSandbox = base.Columns["Sandbox"];
                 this.columnUseAltAssembliesOnly = base.Columns["UseAltAssembliesOnly"];
+                this.columnAuthenticationFilename = base.Columns["AuthenticationFilename"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1091,12 +1050,6 @@ namespace STEM.Surge {
                 base.Columns.Add(this.columnPingOnPoll);
                 this.columnIpLooselyBound = new global::System.Data.DataColumn("IpLooselyBound", typeof(bool), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnIpLooselyBound);
-                this.columnImpersonateUser = new global::System.Data.DataColumn("ImpersonateUser", typeof(string), null, global::System.Data.MappingType.Element);
-                base.Columns.Add(this.columnImpersonateUser);
-                this.columnImpersonationPassword = new global::System.Data.DataColumn("ImpersonationPassword", typeof(string), null, global::System.Data.MappingType.Element);
-                base.Columns.Add(this.columnImpersonationPassword);
-                this.columnLocalUserImpersonation = new global::System.Data.DataColumn("LocalUserImpersonation", typeof(bool), null, global::System.Data.MappingType.Element);
-                base.Columns.Add(this.columnLocalUserImpersonation);
                 this.columnCoordinatedManagerIPs = new global::System.Data.DataColumn("CoordinatedManagerIPs", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnCoordinatedManagerIPs);
                 this.columnLimitToBranchIPs = new global::System.Data.DataColumn("LimitToBranchIPs", typeof(string), null, global::System.Data.MappingType.Element);
@@ -1105,6 +1058,8 @@ namespace STEM.Surge {
                 base.Columns.Add(this.columnSandbox);
                 this.columnUseAltAssembliesOnly = new global::System.Data.DataColumn("UseAltAssembliesOnly", typeof(bool), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnUseAltAssembliesOnly);
+                this.columnAuthenticationFilename = new global::System.Data.DataColumn("AuthenticationFilename", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnAuthenticationFilename);
                 this.Constraints.Add(new global::System.Data.UniqueConstraint("FileSourcesKey1", new global::System.Data.DataColumn[] {
                                 this.columnSourceDirectory,
                                 this.columnDirectoryFilter,
@@ -1122,7 +1077,6 @@ namespace STEM.Surge {
                 this.columnPingOnPoll.DefaultValue = ((bool)(false));
                 this.columnIpLooselyBound.AllowDBNull = false;
                 this.columnIpLooselyBound.DefaultValue = ((bool)(false));
-                this.columnLocalUserImpersonation.DefaultValue = ((bool)(true));
                 this.columnCoordinatedManagerIPs.DefaultValue = ((string)("[MANAGERS]"));
                 this.columnLimitToBranchIPs.DefaultValue = ((string)("[BRANCHES]"));
                 this.columnSandbox.AllowDBNull = false;
@@ -2554,54 +2508,6 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public string ImpersonateUser {
-                get {
-                    if (this.IsImpersonateUserNull()) {
-                        return "<DBNull>";
-                    }
-                    else {
-                        return ((string)(this[this.tableFileSources.ImpersonateUserColumn]));
-                    }
-                }
-                set {
-                    this[this.tableFileSources.ImpersonateUserColumn] = value;
-                }
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public string ImpersonationPassword {
-                get {
-                    if (this.IsImpersonationPasswordNull()) {
-                        return "<DBNull>";
-                    }
-                    else {
-                        return ((string)(this[this.tableFileSources.ImpersonationPasswordColumn]));
-                    }
-                }
-                set {
-                    this[this.tableFileSources.ImpersonationPasswordColumn] = value;
-                }
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public bool LocalUserImpersonation {
-                get {
-                    if (this.IsLocalUserImpersonationNull()) {
-                        return true;
-                    }
-                    else {
-                        return ((bool)(this[this.tableFileSources.LocalUserImpersonationColumn]));
-                    }
-                }
-                set {
-                    this[this.tableFileSources.LocalUserImpersonationColumn] = value;
-                }
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public string CoordinatedManagerIPs {
                 get {
                     if (this.IsCoordinatedManagerIPsNull()) {
@@ -2651,6 +2557,22 @@ namespace STEM.Surge {
                 }
                 set {
                     this[this.tableFileSources.UseAltAssembliesOnlyColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string AuthenticationFilename {
+                get {
+                    try {
+                        return ((string)(this[this.tableFileSources.AuthenticationFilenameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'AuthenticationFilename\' in table \'FileSources\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableFileSources.AuthenticationFilenameColumn] = value;
                 }
             }
             
@@ -2728,42 +2650,6 @@ namespace STEM.Surge {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public bool IsImpersonateUserNull() {
-                return this.IsNull(this.tableFileSources.ImpersonateUserColumn);
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public void SetImpersonateUserNull() {
-                this[this.tableFileSources.ImpersonateUserColumn] = global::System.Convert.DBNull;
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public bool IsImpersonationPasswordNull() {
-                return this.IsNull(this.tableFileSources.ImpersonationPasswordColumn);
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public void SetImpersonationPasswordNull() {
-                this[this.tableFileSources.ImpersonationPasswordColumn] = global::System.Convert.DBNull;
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public bool IsLocalUserImpersonationNull() {
-                return this.IsNull(this.tableFileSources.LocalUserImpersonationColumn);
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public void SetLocalUserImpersonationNull() {
-                this[this.tableFileSources.LocalUserImpersonationColumn] = global::System.Convert.DBNull;
-            }
-            
-            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsCoordinatedManagerIPsNull() {
                 return this.IsNull(this.tableFileSources.CoordinatedManagerIPsColumn);
             }
@@ -2784,6 +2670,18 @@ namespace STEM.Surge {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetLimitToBranchIPsNull() {
                 this[this.tableFileSources.LimitToBranchIPsColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsAuthenticationFilenameNull() {
+                return this.IsNull(this.tableFileSources.AuthenticationFilenameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetAuthenticationFilenameNull() {
+                this[this.tableFileSources.AuthenticationFilenameColumn] = global::System.Convert.DBNull;
             }
         }
         

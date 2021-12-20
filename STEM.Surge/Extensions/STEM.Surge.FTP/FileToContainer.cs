@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using FluentFTP;
+using STEM.Listing.FTP;
 
 namespace STEM.Surge.FTP
 {
@@ -30,14 +31,6 @@ namespace STEM.Surge.FTP
         [Category("FTP Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Server Address"), DescriptionAttribute("What is the FTP Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Port"), DescriptionAttribute("What is the FTP Port?")]
-        public string Port { get; set; }
 
         [DisplayName("Source File")]
         [Description("The file data to be loaded into the container.")]
@@ -66,8 +59,6 @@ namespace STEM.Surge.FTP
         public FileToContainer()
         {
             Authentication = new Authentication();
-            ServerAddress = "[FtpServerAddress]";
-            Port = "[FtpServerPort]";
 
             SourceFile = "[TargetPath]\\[TargetName]";
             ContainerDataKey = "[TargetNameWithoutExt]";
@@ -106,95 +97,55 @@ namespace STEM.Surge.FTP
             while (r-- >= 0)
                 try
                 {
-                    string address = Authentication.NextAddress(ServerAddress);
+                    if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".FtpClientAddress"))
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"]);
+                    else
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress(null);
 
-                    if (address == null)
+                    string sData = null;
+                    byte[] bData = null;
+
+                    using (System.IO.MemoryStream s = new System.IO.MemoryStream())
                     {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
-                    }
+                        Authentication.DownloadFile(SourceFile, s);
 
-                    FtpClient conn = Authentication.OpenClient(address, Int32.Parse(Port));
+                        bData = s.ToArray();
 
-                    try
-                    {
-                        string file = Authentication.AdjustPath(address, SourceFile);
-
-                        if (!conn.FileExists(file))
-                            throw new System.IO.IOException("File does not exist.");
-                        
-                        string sData = null;
-                        byte[] bData = null;
-                        FtpReply reply;
-
-                        switch (FileType)
+                        if (FileType == DataType.String)
                         {
-                            case DataType.Binary:
-                                using (System.IO.Stream s = conn.OpenRead(file, FtpDataType.Binary))
-                                {
-                                    bData = new byte[s.Length];
-                                    s.Read(bData, 0, bData.Length);
-                                }
-
-                                reply = conn.GetReply();
-
-                                if (!reply.Success)
-                                    throw new Exception("There was an error reading from the FTP server: " + reply.Message);
-
-                                break;
-
-                            case DataType.String:
-                                using (System.IO.Stream s = conn.OpenRead(file, FtpDataType.Binary))
-                                {
-                                    bData = new byte[s.Length];
-                                    s.Read(bData, 0, bData.Length);
-                                }
-
-                                reply = conn.GetReply();
-
-                                if (!reply.Success)
-                                    throw new Exception("There was an error reading from the FTP server: " + reply.Message);
-
-                                sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
-                                bData = null;
-                                break;
-                        }
-
-                        switch (TargetContainer)
-                        {
-                            case ContainerType.InstructionSetContainer:
-
-                                if (bData != null)
-                                    InstructionSet.InstructionSetContainer[ContainerDataKey] = bData;
-                                else
-                                    InstructionSet.InstructionSetContainer[ContainerDataKey] = sData;
-
-                                break;
-
-                            case ContainerType.Session:
-
-                                if (bData != null)
-                                    STEM.Sys.State.Containers.Session[ContainerDataKey] = bData;
-                                else
-                                    STEM.Sys.State.Containers.Session[ContainerDataKey] = sData;
-
-                                break;
-
-                            case ContainerType.Cache:
-
-                                if (bData != null)
-                                    STEM.Sys.State.Containers.Cache[ContainerDataKey] = bData;
-                                else
-                                    STEM.Sys.State.Containers.Cache[ContainerDataKey] = sData;
-
-                                break;
+                            sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
+                            bData = null;
                         }
                     }
-                    finally
+
+                    switch (TargetContainer)
                     {
-                        Authentication.RecycleClient(conn);
+                        case ContainerType.InstructionSetContainer:
+
+                            if (bData != null)
+                                InstructionSet.InstructionSetContainer[ContainerDataKey] = bData;
+                            else
+                                InstructionSet.InstructionSetContainer[ContainerDataKey] = sData;
+
+                            break;
+
+                        case ContainerType.Session:
+
+                            if (bData != null)
+                                STEM.Sys.State.Containers.Session[ContainerDataKey] = bData;
+                            else
+                                STEM.Sys.State.Containers.Session[ContainerDataKey] = sData;
+
+                            break;
+
+                        case ContainerType.Cache:
+
+                            if (bData != null)
+                                STEM.Sys.State.Containers.Cache[ContainerDataKey] = bData;
+                            else
+                                STEM.Sys.State.Containers.Cache[ContainerDataKey] = sData;
+
+                            break;
                     }
 
                     break;

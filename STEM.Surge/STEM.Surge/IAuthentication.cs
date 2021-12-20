@@ -14,36 +14,19 @@
  * limitations under the License.
  * 
  */
- 
+
 using System;
 using System.ComponentModel;
 using System.Xml.Serialization;
 
 namespace STEM.Surge
 {
-    /// <summary>
-    /// This is used to identify classes wherein some sort of authentication is being configured so that the UI can present bulk reconfiguration options to users.
-    /// </summary>
+    // STUB FOR BACKWARD COMPAT
+    // PLEASE USE STEM.Sys.Security.IAuthentication instead
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [XmlType(TypeName = "STEM.Surge.IAuthentication")]
-    public class IAuthentication : STEM.Sys.Serializable, IDisposable
+    public class IAuthentication : STEM.Sys.Serializable
     {
-        public void Dispose()
-        {
-            try
-            {
-                Dispose(true);
-            }
-            catch (Exception ex)
-            {
-                STEM.Sys.EventLog.WriteEntry("IAuthentication.Dispose", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-            }
 
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool dispose)
-        {
-        }
     }
 }

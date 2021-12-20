@@ -16,7 +16,7 @@
  */
 
 using System;
-using System.IO;
+using STEM.Listing.S3;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Amazon.S3;
@@ -107,7 +107,7 @@ namespace STEM.Surge.S3
                     PostMortemMetaData["Prefix"] = prefix;
                 }
 
-                List<S3Object> items = Authentication.ListObjects(bucket, prefix, S3ListType.Directory, RecurseSource, DirectoryFilter, "*");
+                List<S3Object> items = Authentication.ListObjects(bucket, prefix, STEM.Sys.IO.Listing.ListingType.Directory, RecurseSource, DirectoryFilter, "*");
 
                 foreach (S3Object i in items)
                 {
@@ -115,13 +115,13 @@ namespace STEM.Surge.S3
                     {
                         string directory = Authentication.ToString(i);
 
-                        List<S3Object> remaining = Authentication.ListObjects(i.BucketName, i.Key, S3ListType.All, true, "*", "*");
+                        List<S3Object> remaining = Authentication.ListObjects(i.BucketName, i.Key, STEM.Sys.IO.Listing.ListingType.All, true, "*", "*");
 
                         if (DeleteEmptyDirectoriesOnly)
                         {
                             if (remaining.Count == 0)
                             {
-                                Authentication.DeleteDirectory(directory);
+                                Authentication.DeleteDirectory(directory, false, false);
                                 AppendToMessage(directory + " deleted");
                             }
                         }
@@ -136,10 +136,10 @@ namespace STEM.Surge.S3
                             foreach (S3Object del in remaining)
                             {
                                 if (del.Key.EndsWith("/"))
-                                    Authentication.DeleteDirectory(Authentication.ToString(del));
+                                    Authentication.DeleteDirectory(Authentication.ToString(del), false, false);
                             }
 
-                            Authentication.DeleteDirectory(directory);
+                            Authentication.DeleteDirectory(directory, false, false);
                             AppendToMessage(directory + " deleted");
                         }
                     }

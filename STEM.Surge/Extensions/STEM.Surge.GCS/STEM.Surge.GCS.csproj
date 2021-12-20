@@ -4,15 +4,15 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
 		<Authors>Brendan Richards</Authors>
-		<Copyright>Copyright © STEM Management 2019</Copyright>
+		<Copyright>Copyright © STEM Management 2022</Copyright>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<Company>STEM Management</Company>
-		<Version>7.0.3</Version>
+		<Version>7.5.0</Version>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Google.Cloud.Storage.V1" Version="3.2.0" />
+	  <PackageReference Include="Google.Cloud.Storage.V1" Version="3.6.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -20,6 +20,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Reference Include="STEM.Listing.GCS">
+	    <HintPath>..\..\Binaries\Extensions\STEM.Surge.Extensions\STEM.Listing.GCS.dll</HintPath>
+	  </Reference>
 	  <Reference Include="STEM.Surge.7.0.0.0">
 	    <HintPath>..\..\RequiredDlls\STEM.Surge.7.0.0.0.dll</HintPath>
 	  </Reference>

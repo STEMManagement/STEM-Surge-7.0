@@ -33,7 +33,7 @@ namespace STEM.Surge.PostGreSQL
     {
         [Category("PostGres Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
-        public Authentication Authentication { get; set; }
+        public new Authentication Authentication { get; set; }
 
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will feed the assignment chain."), Category("PostGres Controller")]
         public List<string> Sql { get; set; }
@@ -135,57 +135,11 @@ namespace STEM.Surge.PostGreSQL
                     foreach (string k in v.Keys)
                         kvp[k] = v[k];
 
-                    InstructionSet clone = GetTemplateInstance(true);
+                    DeploymentDetails ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
 
-                    CustomizeInstructionSet(clone, kvp, recommendedBranchIP, initiationSource, false);
+                    CustomizeInstructionSet(ret.ISet, kvp, ret.BranchIP, initiationSource, false);
 
-                    DeploymentDetails dd = new DeploymentDetails(clone, recommendedBranchIP);
-
-                    if (dd != null)
-                    {
-                        foreach (Instruction ins in dd.ISet.Instructions)
-                        {
-                            foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
-                            {
-                                IAuthentication a = prop.GetValue(ins) as IAuthentication;
-
-                                if (a.VersionDescriptor.TypeName == "STEM.Surge.PostGreSQL.Authentication")
-                                {
-                                    PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabaseAddress");
-                                    if (i != null)
-                                    {
-                                        string k = i.GetValue(a) as string;
-                                        if (String.IsNullOrEmpty(k))
-                                        {
-                                            i.SetValue(a, Authentication.PostGresDatabaseAddress);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabasePort");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.PostGresDatabasePort);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabaseName");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.PostGresDatabaseName);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresUser");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.PostGresUser);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresPassword");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.PostGresPassword);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "UseIntegratedSecurity");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.UseIntegratedSecurity);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return dd;
+                    return ret;                    
                 }
             }
             catch (Exception ex)

@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Microsoft.Azure.Storage.Blob;
+using STEM.Listing.Azure;
 
 namespace STEM.Surge.Azure
 {
@@ -101,7 +102,7 @@ namespace STEM.Surge.Azure
                 string container = Authentication.ContainerFromPath(SourcePath);
                 string prefix = Authentication.PrefixFromPath(SourcePath);
 
-                List<IListBlobItem> items = Authentication.ListObjects(container, prefix, AzureListType.File, RecurseSource, DirectoryFilter, FileFilter);
+                List<IListBlobItem> items = Authentication.ListObjects(container, prefix, Sys.IO.Listing.ListingType.File, RecurseSource, DirectoryFilter, FileFilter);
                                 
                 foreach (IListBlobItem i in items)
                 {

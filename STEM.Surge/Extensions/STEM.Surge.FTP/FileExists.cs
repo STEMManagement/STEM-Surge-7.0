@@ -17,7 +17,7 @@
 
 using System;
 using System.ComponentModel;
-using System.IO;
+using STEM.Listing.FTP;
 using FluentFTP;
 
 namespace STEM.Surge.FTP
@@ -30,14 +30,6 @@ namespace STEM.Surge.FTP
         [Category("FTP Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Server Address"), DescriptionAttribute("What is the FTP Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Port"), DescriptionAttribute("What is the FTP Port?")]
-        public string Port { get; set; }
 
         [DisplayName("FileName")]
         [Description("The file to be evaluated")]
@@ -59,8 +51,6 @@ namespace STEM.Surge.FTP
             : base()
         {
             Authentication = new Authentication();
-            ServerAddress = "[FtpServerAddress]";
-            Port = "[FtpServerPort]";
             FileName = "[TargetPath]\\[TargetName]";
             TargetLabel = "";
         }
@@ -69,55 +59,41 @@ namespace STEM.Surge.FTP
         {
             try
             {
-                string address = Authentication.NextAddress(ServerAddress);
-
-                if (address == null)
-                {
-                    Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                    Exceptions.Add(ex);
-                    AppendToMessage(ex.Message);
-                    return false;
-                }
+                if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".FtpClientAddress"))
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"]);
+                else
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress(null);
 
                 Surge.FailureAction tgtAction = FileNotExistsAction;
 
-                FtpClient conn = Authentication.OpenClient(address, Int32.Parse(Port));
+                if (Authentication.FileExists(FileName))
+                    tgtAction = FileExistsAction;
 
-                try
+                switch (tgtAction)
                 {
-                    if (conn.FileExists(Authentication.AdjustPath(address, FileName)))
-                        tgtAction = FileExistsAction;
+                    case Surge.FailureAction.SkipRemaining:
 
-                    switch (tgtAction)
-                    {
-                        case Surge.FailureAction.SkipRemaining:
+                        SkipRemaining();
+                        break;
 
-                            SkipRemaining();
-                            break;
+                    case Surge.FailureAction.SkipNext:
 
-                        case Surge.FailureAction.SkipNext:
+                        SkipNext();
+                        break;
 
-                            SkipNext();
-                            break;
+                    case Surge.FailureAction.Rollback:
 
-                        case Surge.FailureAction.Rollback:
+                        RollbackAllPreceedingAndSkipRemaining();
+                        break;
 
-                            RollbackAllPreceedingAndSkipRemaining();
-                            break;
+                    case Surge.FailureAction.Continue:
 
-                        case Surge.FailureAction.Continue:
+                        break;
 
-                            break;
+                    case Surge.FailureAction.SkipToLabel:
 
-                        case Surge.FailureAction.SkipToLabel:
-
-                            SkipForwardToFlowControlLabel(TargetLabel);
-                            break;
-                    }
-                }
-                finally
-                {
-                    Authentication.RecycleClient(conn);
+                        SkipForwardToFlowControlLabel(TargetLabel);
+                        break;
                 }
             }
             catch (Exception ex)

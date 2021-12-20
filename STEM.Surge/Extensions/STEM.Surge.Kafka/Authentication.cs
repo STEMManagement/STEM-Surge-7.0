@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.ComponentModel;
 using System.Xml.Serialization;
@@ -26,7 +27,7 @@ using Confluent.Kafka;
 
 namespace STEM.Surge.Kafka
 {
-    public class Authentication : IAuthentication
+    public class Authentication : Sys.Security.IAuthentication
     {
         [Category("Kafka Server")]
         [DisplayName("Server Address"), DescriptionAttribute("What is the Server Address?")]
@@ -145,6 +146,76 @@ namespace STEM.Surge.Kafka
             SaslMechanism = SaslMechanism.ScramSha256;
             SaslUsername = "";
             SaslPassword = "";
+        }
+
+        public override void PopulateFrom(Sys.Security.IAuthentication source)
+        {
+            if (source.VersionDescriptor.TypeName == VersionDescriptor.TypeName)
+            {
+                PropertyInfo i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "ServerAddress");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(ServerAddress))
+                        ServerAddress = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "Port");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(Port))
+                        Port = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "TopicName");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(TopicName))
+                        TopicName = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SslCaLocation");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SslCaLocation))
+                        SslCaLocation = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SaslUsername");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SaslUsername))
+                        SaslUsername = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SaslPassword");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SaslPassword))
+                        SaslPassword = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SecurityProtocol");
+                if (i != null)
+                {
+                    SecurityProtocol = (SecurityProtocol)i.GetValue(source);
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SaslMechanism");
+                if (i != null)
+                {
+                    SaslMechanism = (SaslMechanism)i.GetValue(source);
+                }
+            }
+            else
+            {
+                throw new Exception("IAuthentication Type mismatch.");
+            }
         }
 
         [XmlIgnore]

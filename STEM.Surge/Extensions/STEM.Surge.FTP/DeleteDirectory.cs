@@ -20,6 +20,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using FluentFTP;
+using STEM.Listing.FTP;
 
 namespace STEM.Surge.FTP
 {
@@ -31,14 +32,6 @@ namespace STEM.Surge.FTP
         [Category("FTP Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Server Address"), DescriptionAttribute("What is the FTP Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Port"), DescriptionAttribute("What is the FTP Port?")]
-        public string Port { get; set; }
 
         [Category("Retry")]
         [DisplayName("Number of retries"), DescriptionAttribute("How many times should each operation be attempted?")]
@@ -77,8 +70,6 @@ namespace STEM.Surge.FTP
             : base()
         {
             Authentication = new Authentication();
-            ServerAddress = "[FtpServerAddress]";
-            Port = "[FtpServerPort]";
 
             Retry = 1;
             RetryDelaySeconds = 2;
@@ -90,8 +81,6 @@ namespace STEM.Surge.FTP
             ExecutionMode = ExecuteOn.ForwardExecution;
         }
 
-        string _Address = null;
-
         protected override bool _Run()
         {
             if (ExecutionMode == ExecuteOn.ForwardExecution)
@@ -99,16 +88,6 @@ namespace STEM.Surge.FTP
                 int r = Retry;
                 while (r-- >= 0)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
-
-                    if (_Address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
-                    }
-
                     Exceptions.Clear();
                     Message = "";
                     bool success = Execute();
@@ -131,16 +110,6 @@ namespace STEM.Surge.FTP
                 int r = Retry;
                 while (r-- >= 0)
                 {
-                    _Address = Authentication.NextAddress(ServerAddress);
-
-                    if (_Address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return;
-                    }
-
                     Exceptions.Clear();
                     Message = "";
                     bool success = Execute();
@@ -156,55 +125,25 @@ namespace STEM.Surge.FTP
         {
             try
             {
-                FtpClient conn = Authentication.OpenClient(_Address, Int32.Parse(Port));
+                if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".FtpClientAddress"))
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"]);
+                else
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress(null);
 
-                try
+                List<FtpListItem> items = Authentication.ListDirectory(SourcePath, Sys.IO.Listing.ListingType.Directory, RecurseSource, DirectoryFilter, "*");
+
+                foreach (FtpListItem i in items)
                 {
-                    List<FtpListItem> items = Authentication.ListDirectory(_Address, Int32.Parse(Port), SourcePath, FTPListType.Directory, RecurseSource, DirectoryFilter, "*");
-
-                    foreach (FtpListItem i in items)
+                    try
                     {
-                        try
-                        {
-                            List<FtpListItem> remaining = Authentication.ListDirectory(_Address, Int32.Parse(Port), i.FullName, FTPListType.All, true, "*", "*");
-
-                            if (DeleteEmptyDirectoriesOnly)
-                            {
-                                if (remaining.Count == 0)
-                                {
-                                    conn.DeleteDirectory(i.FullName);
-                                    AppendToMessage(i.FullName + " deleted");
-                                }
-                            }
-                            else
-                            {
-                                foreach (FtpListItem del in remaining)
-                                {
-                                    if (del.Type == FtpFileSystemObjectType.File)
-                                        conn.DeleteFile(del.FullName);
-                                }
-
-                                foreach (FtpListItem del in remaining)
-                                {
-                                    if (del.Type == FtpFileSystemObjectType.Directory)
-                                        if (conn.DirectoryExists(del.FullName))
-                                            conn.DeleteDirectory(del.FullName);
-                                }
-
-                                conn.DeleteDirectory(i.FullName);
-                                AppendToMessage(i.FullName + " deleted");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            AppendToMessage(ex.ToString());
-                            Exceptions.Add(ex);
-                        }
+                        Authentication.DeleteDirectory(Authentication.ToString(i), true, !DeleteEmptyDirectoriesOnly);
+                        AppendToMessage(Authentication.ToString(i) + " deleted");
                     }
-                }
-                finally
-                {
-                    Authentication.RecycleClient(conn);
+                    catch (Exception ex)
+                    {
+                        AppendToMessage(ex.ToString());
+                        Exceptions.Add(ex);
+                    }
                 }
             }
             catch (Exception ex)
@@ -217,4 +156,3 @@ namespace STEM.Surge.FTP
         }
     }
 }
-

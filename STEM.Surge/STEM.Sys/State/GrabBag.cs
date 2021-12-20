@@ -75,5 +75,17 @@ namespace STEM.Sys.State
                 }
             }
         }
+
+        public int Size()
+        {
+            lock (_Items)
+                return _Items.Count;
+        }
+
+        public int Available()
+        {
+            lock (_Items)
+                return _Items.Except(_Suspended).Count();
+        }
     }
 }

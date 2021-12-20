@@ -33,7 +33,7 @@ namespace STEM.Surge.MySQL
     {
         [Category("MySQL Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
-        public Authentication Authentication { get; set; }
+        public new Authentication Authentication { get; set; }
 
         [Category("MySQL Controller")]
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will feed the assignment chain.")]
@@ -138,41 +138,11 @@ namespace STEM.Surge.MySQL
                     foreach (string k in v.Keys)
                         kvp[k] = v[k];
 
-                    InstructionSet clone = GetTemplateInstance(true);
+                    DeploymentDetails ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
 
-                    CustomizeInstructionSet(clone, kvp, recommendedBranchIP, initiationSource, false);
+                    CustomizeInstructionSet(ret.ISet, kvp, ret.BranchIP, initiationSource, false);
 
-                    DeploymentDetails dd = new DeploymentDetails(clone, recommendedBranchIP);
-
-                    if (dd != null)
-                    {
-                        foreach (Instruction ins in dd.ISet.Instructions)
-                        {
-                            foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
-                            {
-                                IAuthentication a = prop.GetValue(ins) as IAuthentication;
-
-                                if (a.VersionDescriptor.TypeName == "STEM.Surge.MySQL.Authentication")
-                                {
-                                    PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "ConnectionString");
-                                    if (i != null)
-                                    {
-                                        string k = i.GetValue(a) as string;
-                                        if (String.IsNullOrEmpty(k))
-                                        {
-                                            i.SetValue(a, Authentication.ConnectionString);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlPassword");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.SqlPassword);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return dd;
+                    return ret;
                 }
             }
             catch (Exception ex)

@@ -136,10 +136,18 @@ namespace STEM.SurgeService
                 hostBuilder.Build().Run();
             }
         }
-        
+
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            System.Diagnostics.EventLog.WriteEntry("STEM.SurgeService", ((Exception)e.ExceptionObject).ToString(), System.Diagnostics.EventLogEntryType.Error);
+            bool isWindows = false;
+            try
+            {
+                isWindows = System.Runtime.InteropServices.RuntimeInformation.OSDescription.StartsWith("Microsoft Windows", StringComparison.InvariantCultureIgnoreCase);
+            }
+            catch { }
+
+            if (isWindows)
+                System.Diagnostics.EventLog.WriteEntry("STEM.SurgeService", ((Exception)e.ExceptionObject).ToString(), System.Diagnostics.EventLogEntryType.Error);
         }
     }
 }

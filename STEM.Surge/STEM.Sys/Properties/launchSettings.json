@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "STEM.Sys": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

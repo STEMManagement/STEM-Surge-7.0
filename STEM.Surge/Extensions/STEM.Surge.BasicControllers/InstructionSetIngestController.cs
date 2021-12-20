@@ -18,7 +18,10 @@
 using System;
 using System.IO;
 using System.ComponentModel;
+using System.Reflection;
+using System.Linq;
 using System.Collections.Generic;
+
 namespace STEM.Surge.BasicControllers
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
@@ -40,6 +43,26 @@ namespace STEM.Surge.BasicControllers
                 InstructionSet iSet = (InstructionSet)InstructionSet.Deserialize(xml);
                 
                 CustomizeInstructionSet(iSet, TemplateKVP, recommendedBranchIP, initiationSource, true);
+
+                foreach (Instruction ins in iSet.Instructions)
+                {
+                    try
+                    {
+                        foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Sys.Security.IAuthentication))))
+                        {
+                            try
+                            {
+                                STEM.Sys.Security.IAuthentication a = prop.GetValue(ins) as STEM.Sys.Security.IAuthentication;
+                                STEM.Sys.Security.IAuthentication b = GetAuthentication(a.ConfigurationName);
+
+                                if (b != null)
+                                    a.PopulateFrom(b);
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
 
                 File.Delete(initiationSource);
 

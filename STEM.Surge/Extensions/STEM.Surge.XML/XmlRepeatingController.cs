@@ -191,16 +191,14 @@ namespace STEM.Surge.XML
                         kvp[e.Name.LocalName] = e.Value;
                 }
 
-                InstructionSet clone = GetTemplateInstance(true);
+                DeploymentDetails ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
 
-                CustomizeInstructionSet(clone, kvp, recommendedBranchIP, initiationSource, false);
-
-                DeploymentDetails dd = new DeploymentDetails(clone, recommendedBranchIP);
+                CustomizeInstructionSet(ret.ISet, kvp, ret.BranchIP, initiationSource, false);
 
                 lock (_Assignments)
-                    _Assignments[dd.ISet.ID] = doc;
+                    _Assignments[ret.ISet.ID] = doc;
 
-                return dd;
+                return ret;
             }
             catch (Exception ex)
             {

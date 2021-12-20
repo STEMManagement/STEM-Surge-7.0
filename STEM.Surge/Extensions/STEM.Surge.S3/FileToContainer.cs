@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using STEM.Listing.S3;
 using Amazon.S3;
 using Amazon.S3.Model;
 

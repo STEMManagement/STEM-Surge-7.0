@@ -18,7 +18,7 @@
 using System;
 using System.IO;
 using System.Xml.Serialization;
-using System.Xml.Linq;
+using System.Reflection;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -27,7 +27,7 @@ using STEM.Sys.Security;
 
 namespace STEM.Surge.SQLServer
 {
-    public class Authentication : IAuthentication
+    public class Authentication : Sys.Security.IAuthentication
     {
         [Category("SQL Server")]
         [DisplayName("SQL Server Address"), DescriptionAttribute("What is the database address?")]
@@ -96,6 +96,54 @@ namespace STEM.Surge.SQLServer
                 }
 
                 return connectionString.ConnectionString;
+            }
+        }
+
+        public override void PopulateFrom(Sys.Security.IAuthentication source)
+        {
+            if (source.VersionDescriptor.TypeName == VersionDescriptor.TypeName)
+            {
+                PropertyInfo i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlDatabaseAddress");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SqlDatabaseAddress))
+                        SqlDatabaseAddress = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlDatabaseName");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SqlDatabaseName))
+                        SqlDatabaseName = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlUser");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SqlUser))
+                        SqlUser = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlPassword");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(SqlPassword))
+                        SqlPassword = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "UseIntegratedSecurity");
+                if (i != null)
+                {
+                    UseIntegratedSecurity = (bool)i.GetValue(source);
+                }
+            }
+            else
+            {
+                throw new Exception("IAuthentication Type mismatch.");
             }
         }
     }

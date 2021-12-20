@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Google.Cloud.Storage.V1;
+using STEM.Listing.GCS;
 
 namespace STEM.Surge.GCS
 {

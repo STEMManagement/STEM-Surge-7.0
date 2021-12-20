@@ -4,24 +4,25 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <ApplicationIcon>SurgeLogoFull.ico</ApplicationIcon>
     <Authors>Brendan Richards</Authors>
-    <Copyright>Copyright © STEM Management 2019</Copyright>
+    <Copyright>Copyright © STEM Management 2022</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Company>STEM Management</Company>
-    <Version>7.0.14</Version>    
+	<Version>7.5.0</Version>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.2" />
-    <PackageReference Include="Microsoft.Azure.Storage.Queue" Version="11.1.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\STEM.Surge.BasicControllers\STEM.Surge.BasicControllers.csproj" />
-    <ProjectReference Include="..\STEM.Surge.SMB\STEM.Surge.SMB.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="STEM.Listing.Azure">
+      <HintPath>..\..\Binaries\Extensions\STEM.Surge.Extensions\STEM.Listing.Azure.dll</HintPath>
+    </Reference>
     <Reference Include="STEM.Surge.7.0.0.0">
       <HintPath>..\..\RequiredDlls\STEM.Surge.7.0.0.0.dll</HintPath>
     </Reference>

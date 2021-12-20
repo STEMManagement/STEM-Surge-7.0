@@ -20,6 +20,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Google.Cloud.Storage.V1;
+using STEM.Listing.GCS;
 
 namespace STEM.Surge.GCS
 {
@@ -101,7 +102,7 @@ namespace STEM.Surge.GCS
                 string container = Authentication.ContainerFromPath(SourcePath);
                 string prefix = Authentication.PrefixFromPath(SourcePath);
 
-                List<Google.Apis.Storage.v1.Data.Object> items = Authentication.ListObjects(container, prefix, GcsListType.Directory, RecurseSource, DirectoryFilter, "*");
+                List<Google.Apis.Storage.v1.Data.Object> items = Authentication.ListObjects(container, prefix, Sys.IO.Listing.ListingType.Directory, RecurseSource, DirectoryFilter, "*");
 
                 foreach (Google.Apis.Storage.v1.Data.Object i in items)
                 {
@@ -109,13 +110,13 @@ namespace STEM.Surge.GCS
                     {
                         string p = Authentication.ToString(i);
 
-                        List<Google.Apis.Storage.v1.Data.Object> remaining = Authentication.ListObjects(Authentication.ContainerFromPath(p), Authentication.PrefixFromPath(p), GcsListType.All, true, "*", "*");
+                        List<Google.Apis.Storage.v1.Data.Object> remaining = Authentication.ListObjects(Authentication.ContainerFromPath(p), Authentication.PrefixFromPath(p), Sys.IO.Listing.ListingType.All, true, "*", "*");
 
                         if (DeleteEmptyDirectoriesOnly)
                         {
                             if (remaining.Count == 0)
                             {
-                                Authentication.DeleteDirectory(p);
+                                Authentication.DeleteDirectory(p, false, false);
                                 AppendToMessage(p + " deleted");
                             }
                         }
@@ -127,7 +128,7 @@ namespace STEM.Surge.GCS
                                     Authentication.DeleteFile(Authentication.ToString(del));
                             }
 
-                            Authentication.DeleteDirectory(p);
+                            Authentication.DeleteDirectory(p, false, false);
                             AppendToMessage(p + " deleted");
                         }
                     }

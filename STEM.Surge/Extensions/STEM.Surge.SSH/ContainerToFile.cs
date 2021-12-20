@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
+using STEM.Listing.SSH;
 
 namespace STEM.Surge.SSH
 {
@@ -31,14 +32,6 @@ namespace STEM.Surge.SSH
         [Category("SSH Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Server Address"), DescriptionAttribute("What is the SSH Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("SSH Server")]
-        [DisplayName("SSH Port"), DescriptionAttribute("What is the SSH Port?")]
-        public string Port { get; set; }
 
         [DisplayName("Destination File")]
         [Description("The file to which the data is to be saved.")]
@@ -71,8 +64,6 @@ namespace STEM.Surge.SSH
         public ContainerToFile()
         {
             Authentication = new Authentication();
-            ServerAddress = "[SshServerAddress]";
-            Port = "[SshServerPort]";
 
             DestinationFile = "[DestinationPath]\\[TargetName]";
             ContainerDataKey = "[TargetNameWithoutExt]";
@@ -90,11 +81,15 @@ namespace STEM.Surge.SSH
 
             while (r-- >= 0 && !Stop)
             {
+                if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".SshClientAddress"))
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"]);
+                else
+                    InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
+
                 if (_SavedFile != null)
                     try
                     {
-                        PostMortemMetaData["LastOperation"] = "DeleteFile";
-                        Authentication.DeleteFile(_Address, Int32.Parse(Port), _SavedFile);
+                        Authentication.DeleteFile(_SavedFile);
                         break;
                     }
                     catch (Exception ex)
@@ -114,37 +109,19 @@ namespace STEM.Surge.SSH
 
         string _SavedFile = null;
 
-        string _Address = null;
-
         protected override bool _Run()
         {
             int r = Retry;
 
             while (r-- >= 0 && !Stop)
             {
-                _Address = null;
-                if (InstructionSet.InstructionSetContainer.ContainsKey("ServerAddress"))
-                    _Address = InstructionSet.InstructionSetContainer["ServerAddress"] as string;
-
-                if (_Address == null)
-                {
-                    PostMortemMetaData["LastOperation"] = "NextAddress";
-
-                    _Address = Authentication.NextAddress(ServerAddress);
-
-                    if (_Address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
-                    }
-
-                    InstructionSet.InstructionSetContainer["ServerAddress"] = _Address;
-                }
-
                 try
                 {
+                    if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".SshClientAddress"))
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"]);
+                    else
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
+
                     string sData = null;
                     byte[] bData = null;
 
@@ -183,8 +160,7 @@ namespace STEM.Surge.SSH
 
                     string dFile = DestinationFile;
 
-                    PostMortemMetaData["LastOperation"] = "FileExists";
-                    if (Authentication.FileExists(_Address, Int32.Parse(Port), DestinationFile))
+                    if (Authentication.FileExists(DestinationFile))
                         switch (FileExistsAction)
                         {
                             case STEM.Sys.IO.FileExistsAction.Skip:
@@ -196,23 +172,13 @@ namespace STEM.Surge.SSH
 
                             case STEM.Sys.IO.FileExistsAction.Overwrite:
                             case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
-                                Authentication.DeleteFile(_Address, Int32.Parse(Port), DestinationFile);
+                                Authentication.DeleteFile(DestinationFile);
                                 break;
 
                             case STEM.Sys.IO.FileExistsAction.MakeUnique:
-                                DestinationFile = Authentication.UniqueFilename(_Address, Int32.Parse(Port), DestinationFile);
+                                DestinationFile = Authentication.UniqueFilename(DestinationFile);
                                 break;
                         }
-
-                    dFile = Authentication.AdjustPath(_Address, dFile);
-                    string directory = Authentication.AdjustPath(_Address, STEM.Sys.IO.Path.GetDirectoryName(dFile));
-                    
-                    PostMortemMetaData["LastOperation"] = "DirectoryExists";
-                    if (!Authentication.DirectoryExists(_Address, Int32.Parse(Port), directory))
-                    {
-                        PostMortemMetaData["LastOperation"] = "CreateDirectory";
-                        Authentication.CreateDirectory(_Address, Int32.Parse(Port), directory);
-                    }
 
                     byte[] data = null;
 
@@ -224,48 +190,21 @@ namespace STEM.Surge.SSH
                             data = System.Text.Encoding.UTF8.GetBytes(sData);
 
                     if (data == null && CreateEmptyFiles)
-                        data = new byte[1];
+                        data = new byte[0];
 
                     if (data != null)
                     {
-                        PostMortemMetaData["LastOperation"] = "OpenSftpClient";
-                        SftpClient client = null;
+                        string directory = STEM.Sys.IO.Path.GetDirectoryName(dFile);
 
-                        try
+                        if (!Authentication.DirectoryExists(directory))
                         {
-                            client = Authentication.OpenSftpClient(_Address, Int32.Parse(Port));
-
-                            try
-                            {
-                                PostMortemMetaData["LastOperation"] = "UploadFile";
-                                using (System.IO.MemoryStream s = new System.IO.MemoryStream(data))
-                                {
-                                    client.UploadFile(s, dFile);
-
-                                    _SavedFile = dFile;
-                                }
-                            }
-                            finally
-                            {
-                                PostMortemMetaData["LastOperation"] = "RecycleClient";
-                                Authentication.RecycleClient(client);
-                                client = null;
-                            }
+                            Authentication.CreateDirectory(directory);
                         }
-                        catch
-                        {
-                            try
-                            {
-                                client.Disconnect();
-                            }
-                            catch { }
-                            try
-                            {
-                                client.Dispose();
-                            }
-                            catch { }
 
-                            throw;
+                        using (System.IO.MemoryStream s = new System.IO.MemoryStream(data))
+                        {
+                            Authentication.UploadFile(s, dFile);
+                            _SavedFile = dFile;
                         }
                     }
 

@@ -34,7 +34,7 @@ namespace STEM.Surge.SQLServer
     {
         [Category("SQL Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
-        public Authentication Authentication { get; set; }
+        public new Authentication Authentication { get; set; }
 
         [Category("SQL Controller")]
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will feed the assignment chain.")]
@@ -139,53 +139,11 @@ namespace STEM.Surge.SQLServer
                     foreach (string k in v.Keys)
                         kvp[k] = v[k];
 
-                    InstructionSet clone = GetTemplateInstance(true);
+                    DeploymentDetails ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
 
-                    CustomizeInstructionSet(clone, kvp, recommendedBranchIP, initiationSource, false);
+                    CustomizeInstructionSet(ret.ISet, kvp, ret.BranchIP, initiationSource, false);
 
-                    DeploymentDetails dd = new DeploymentDetails(clone, recommendedBranchIP);
-
-                    if (dd != null)
-                    {
-                        foreach (Instruction ins in dd.ISet.Instructions)
-                        {
-                            foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(IAuthentication))))
-                            {
-                                IAuthentication a = prop.GetValue(ins) as IAuthentication;
-
-                                if (a.VersionDescriptor.TypeName == "STEM.Surge.SQLServer.Authentication")
-                                {
-                                    PropertyInfo i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlDatabaseAddress");
-                                    if (i != null)
-                                    {
-                                        string k = i.GetValue(a) as string;
-                                        if (String.IsNullOrEmpty(k))
-                                        {
-                                            i.SetValue(a, Authentication.SqlDatabaseAddress);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlUser");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.SqlUser);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlPassword");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.SqlPassword);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "SqlDatabaseName");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.SqlDatabaseName);
-
-                                            i = a.GetType().GetProperties().FirstOrDefault(p => p.Name == "UseIntegratedSecurity");
-                                            if (i != null)
-                                                i.SetValue(a, Authentication.UseIntegratedSecurity);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return dd;
+                    return ret;
                 }
             }
             catch (Exception ex)

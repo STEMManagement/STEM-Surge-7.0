@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Google.Cloud.Storage.V1;
+using STEM.Listing.GCS;
 
 namespace STEM.Surge.GCS
 {
@@ -101,7 +102,7 @@ namespace STEM.Surge.GCS
                 string container = Authentication.ContainerFromPath(SourcePath);
                 string prefix = Authentication.PrefixFromPath(SourcePath);
 
-                List<Google.Apis.Storage.v1.Data.Object> items = Authentication.ListObjects(container, prefix, GcsListType.File, RecurseSource, DirectoryFilter, FileFilter);
+                List<Google.Apis.Storage.v1.Data.Object> items = Authentication.ListObjects(container, prefix, Sys.IO.Listing.ListingType.File, RecurseSource, DirectoryFilter, FileFilter);
                                 
                 foreach (Google.Apis.Storage.v1.Data.Object i in items)
                 {

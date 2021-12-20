@@ -20,14 +20,14 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
+using System.Reflection;
 using System.Linq;
 using Npgsql;
 using STEM.Sys.Security;
 
 namespace STEM.Surge.PostGreSQL
 {
-    public class Authentication : IAuthentication
+    public class Authentication : Sys.Security.IAuthentication
     {
         [DisplayName("PostGres Server Address"), DescriptionAttribute("What is the database address?"), Category("PostGres Server")]
         public string PostGresDatabaseAddress { get; set; }
@@ -97,6 +97,60 @@ namespace STEM.Surge.PostGreSQL
                 }
 
                 return connectionString.ConnectionString;
+            }
+        }
+
+        public override void PopulateFrom(Sys.Security.IAuthentication source)
+        {
+            if (source.VersionDescriptor.TypeName == VersionDescriptor.TypeName)
+            {
+                PropertyInfo i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabaseAddress");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(PostGresDatabaseAddress))
+                        PostGresDatabaseAddress = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabasePort");
+                if (i != null)
+                {
+                    PostGresDatabasePort = (int)i.GetValue(source);
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresDatabaseName");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(PostGresDatabaseName))
+                        PostGresDatabaseName = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresUser");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(PostGresUser))
+                        PostGresUser = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "PostGresPassword");
+                if (i != null)
+                {
+                    string k = i.GetValue(source) as string;
+                    if (!String.IsNullOrEmpty(k) && String.IsNullOrEmpty(PostGresPassword))
+                        PostGresPassword = k;
+                }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "UseIntegratedSecurity");
+                if (i != null)
+                {
+                    UseIntegratedSecurity = (bool)i.GetValue(source);
+                }
+            }
+            else
+            {
+                throw new Exception("IAuthentication Type mismatch.");
             }
         }
     }

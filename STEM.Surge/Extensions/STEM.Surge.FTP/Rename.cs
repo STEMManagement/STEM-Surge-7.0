@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using FluentFTP;
+using STEM.Listing.FTP;
 
 namespace STEM.Surge.FTP
 {
@@ -30,14 +31,6 @@ namespace STEM.Surge.FTP
         [Category("FTP Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
         public Authentication Authentication { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Server Address"), DescriptionAttribute("What is the FTP Server Address?")]
-        public string ServerAddress { get; set; }
-
-        [Category("FTP Server")]
-        [DisplayName("FTP Port"), DescriptionAttribute("What is the FTP Port?")]
-        public string Port { get; set; }
 
         [Category("Target")]
         [DisplayName("Source File"), DescriptionAttribute("The full path of the file to be renamed.")]
@@ -62,8 +55,6 @@ namespace STEM.Surge.FTP
         public Rename()
         {
             Authentication = new Authentication();
-            ServerAddress = "[FtpServerAddress]";
-            Port = "[FtpServerPort]";
 
             SourceFile = "[TargetPath]\\[TargetName]";
             NewFile = "[TargetPath]\\NewFileName.txt";
@@ -82,62 +73,47 @@ namespace STEM.Surge.FTP
         {
             int r = Retry;
 
-            while (r-- >= 0)
+            while (r-- >= 0 && !Stop)
                 try
                 {
-                    string address = Authentication.NextAddress(ServerAddress);
+                    if (InstructionSet.InstructionSetContainer.ContainsKey(Authentication.ConfigurationName + ".FtpClientAddress"))
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress((string)InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"]);
+                    else
+                        InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".FtpClientAddress"] = Authentication.TargetAddress(null);
 
-                    if (address == null)
-                    {
-                        Exception ex = new Exception("No valid address. (" + ServerAddress + ")");
-                        Exceptions.Add(ex);
-                        AppendToMessage(ex.Message);
-                        return false;
-                    }
+                    if (!Authentication.FileExists(SourceFile))
+                        throw new System.IO.IOException("The target file does not exist: (" + SourceFile + ")");
 
-                    FtpClient conn = Authentication.OpenClient(address, Int32.Parse(Port));
+                    string dst = NewFile;
 
-                    try
-                    {
-                        string file = Authentication.AdjustPath(address, SourceFile);
-                        string directory = Authentication.AdjustPath(address, STEM.Sys.IO.Path.GetDirectoryName(NewFile));
-                        
-                        if (!conn.FileExists(file))
-                            throw new System.IO.IOException("The target file does not exist: (" + SourceFile + ")");
+                    if (Authentication.FileExists(dst))
+                        switch (FileExistsAction)
+                        {
+                            case STEM.Sys.IO.FileExistsAction.Skip:
+                                return true;
 
-                        string dst = System.IO.Path.Combine(directory, NewFile);
-                                                
-                        if (conn.FileExists(dst))
-                            switch (FileExistsAction)
-                            {
-                                case STEM.Sys.IO.FileExistsAction.Skip:
-                                    return true;
+                            case STEM.Sys.IO.FileExistsAction.Throw:
+                                r = -1;
+                                throw new System.IO.IOException("Destination file exists. (" + dst + ")");
 
-                                case STEM.Sys.IO.FileExistsAction.Throw:
-                                    r = -1;
-                                    throw new System.IO.IOException("Destination file exists. (" + dst + ")");
+                            case STEM.Sys.IO.FileExistsAction.Overwrite:
+                            case STEM.Sys.IO.FileExistsAction.OverwriteIfNewer:
+                                Authentication.DeleteFile(dst);
+                                break;
 
-                                case STEM.Sys.IO.FileExistsAction.Overwrite:
-                                case Sys.IO.FileExistsAction.OverwriteIfNewer:
-                                    conn.DeleteFile(dst);
-                                    break;
+                            case STEM.Sys.IO.FileExistsAction.MakeUnique:
+                                dst = Authentication.UniqueFilename(dst);
+                                break;
+                        }
 
-                                case STEM.Sys.IO.FileExistsAction.MakeUnique:
-                                    dst = Authentication.UniqueFilename(address, Int32.Parse(Port), dst);
-                                    break;
-                            }
-                        
-                        if (!conn.DirectoryExists(directory))
-                            conn.CreateDirectory(directory);
+                    string directory = STEM.Sys.IO.Path.GetDirectoryName(dst);
 
-                        conn.Rename(file, dst);
+                    if (!Authentication.DirectoryExists(directory))
+                        Authentication.CreateDirectory(directory);
 
-                        AppendToMessage(file + " renamed to " + dst);
-                    }
-                    finally
-                    {
-                        Authentication.RecycleClient(conn);
-                    }
+                    Authentication.RenameFile(SourceFile, dst);
+
+                    AppendToMessage(SourceFile + " renamed to " + dst);
 
                     break;
                 }

@@ -24,8 +24,6 @@ using System.Linq;
 
 namespace STEM.Surge.SMB
 {
-    public enum SMBListType { File, Directory, All }
-
     [Serializable()]
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("SMBController")]
@@ -34,66 +32,5 @@ namespace STEM.Surge.SMB
         "Files from this controller are addressed in alphabetical order unless 'Randomize List' is set to true.")]
     public class SMBController : STEM.Surge.BasicControllers.BasicFileController
     {
-        [Category("SMB")]
-        [DisplayName("List Type"), DescriptionAttribute("Are you assigning files or folders?")]
-        public SMBListType ListType { get; set; }
-
-        public SMBController()
-        {
-            ListType = SMBListType.File;
-        }
-
-        public override bool PreprocessPerformsDiscovery
-        {
-            get
-            {
-                return (ListType == SMBListType.Directory);
-            }
-
-            set
-            {
-            }
-        }
-
-        public override List<string> ListPreprocess(IReadOnlyList<string> list)
-        {
-            List<string> returnList = new List<string>();
-            try
-            {
-                if (ListType == SMBListType.Directory)
-                {
-                    returnList = STEM.Sys.IO.Directory.STEM_GetDirectories(PollerSourceString, PollerDirectoryFilter, PollerRecurseSetting ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, false);
-                }
-                else
-                {
-                    if (ListType == SMBListType.Directory || ListType == SMBListType.All)
-                        returnList = list.Select(i => STEM.Sys.IO.Path.GetDirectoryName(i)).Distinct().ToList();
-
-                    if (ListType != SMBListType.Directory)
-                        returnList.AddRange(list);
-                }
-
-                if (RandomizeList)
-                {
-                    Random rnd = new Random();
-                    returnList = returnList.OrderBy(i => rnd.Next()).ToList();
-                }
-                else
-                {
-                    returnList.Sort();
-                }
-
-                if (HonorPriorityFilters)
-                    returnList = ApplyPriorityFilterOrdering(returnList);
-
-                PollError = "";
-            }
-            catch (Exception ex)
-            {
-                STEM.Sys.EventLog.WriteEntry("SMBController.ListPreprocess", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-            }
-
-            return returnList;
-        }
     }
 }
