@@ -9,6 +9,7 @@ _ReSharper.*
 bin
 obj
 packages
+Installer
 STEM.LicenseGenerator
 STEM.Surge.ControlPanel
 STEM.Sys.Internal
