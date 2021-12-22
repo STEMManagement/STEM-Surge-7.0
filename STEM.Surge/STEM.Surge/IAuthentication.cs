@@ -21,12 +21,15 @@ using System.Xml.Serialization;
 
 namespace STEM.Surge
 {
-    // STUB FOR BACKWARD COMPAT
+    // STUB for backward compatibility
     // PLEASE USE STEM.Sys.Security.IAuthentication instead
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [XmlType(TypeName = "STEM.Surge.IAuthentication")]
-    public class IAuthentication : STEM.Sys.Serializable
+    [Obsolete("STUB for backward compatibility. Please use STEM.Sys.Security.IAuthentication instead.", true)]
+    public class IAuthentication : STEM.Sys.Security.IAuthentication
     {
-
+        public override void PopulateFrom(Sys.Security.IAuthentication source)
+        {
+        }
     }
 }
