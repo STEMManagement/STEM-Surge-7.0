@@ -992,6 +992,9 @@ namespace STEM.Sys.Serialization
 
                         try
                         {
+                            if (xform != null && xform.StartsWith("System.", StringComparison.OrdinalIgnoreCase))
+                                throw new Exception(file + " will not be loaded.");
+
                             Assembly asm = VersionManagerALC.LoadFromFile(vcFile, xform, null);
 
                             if (asm == null)
