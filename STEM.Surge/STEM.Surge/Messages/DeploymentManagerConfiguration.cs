@@ -46,6 +46,7 @@ namespace STEM.Surge.Messages
                     DeploymentManagerConfiguration test = DeploymentManagerConfiguration.Deserialize(orig) as DeploymentManagerConfiguration;
 
                     test.SwitchboardConfigurationDescription = candidate.SwitchboardConfigurationDescription;
+                    test.AuthenticationConfigurations = candidate.AuthenticationConfigurations;
                     test.DeploymentControllers = candidate.DeploymentControllers;
                     test.InstructionSetTemplates = candidate.InstructionSetTemplates;
                     test.AdHocInstructionSets = candidate.AdHocInstructionSets;
@@ -57,6 +58,9 @@ namespace STEM.Surge.Messages
                     STEM.Sys.EventLog.WriteEntry("DeploymentManagerConfiguration.Update", "Update applied.", STEM.Sys.EventLog.EventLogEntryType.Information);
                     
                     SwitchboardConfigurationDescription = candidate.SwitchboardConfigurationDescription;
+
+                    AuthenticationConfigurations.Clear();
+                    AuthenticationConfigurations.AddRange(candidate.AuthenticationConfigurations);
 
                     DeploymentControllers.Clear();
                     DeploymentControllers.AddRange(candidate.DeploymentControllers);
