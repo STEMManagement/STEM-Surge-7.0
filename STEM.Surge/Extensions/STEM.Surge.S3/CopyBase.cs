@@ -129,6 +129,10 @@ namespace STEM.Surge.S3
         [DisplayName("Maximum Number Of Parts"), Description("When uploading a file, should 'Minimum Part Size' be modified to limit to a 'Maximum Number Of Parts'?")]
         public int MaximumNumberOfParts { get; set; }
 
+        [Category("Use Chunk Encoding")]
+        [DisplayName("Use Chunk Encoding"), Description("When uploading a file, some service providers don't support chunk encoding (GCS for example), should it be disabled?")]
+        public bool UseChunkEncoding { get; set; }
+
         public CopyBase()
             : base()
         {
@@ -159,6 +163,8 @@ namespace STEM.Surge.S3
 
             MinimumPartSize = 10485760;
             MaximumNumberOfParts = 1000;
+
+            UseChunkEncoding = true;
         }
 
         Dictionary<string, int> _PartSize = new Dictionary<string, int>();
@@ -632,64 +638,123 @@ namespace STEM.Surge.S3
         //pathkey should be the same as sourcepath except during rollback
         protected void TransferUtilityUpload(string bucket, string prefix, string sourcepath, string pathkey)
 		{
-			TransferUtility ftu = new TransferUtility(Authentication.Client);
+            if (UseChunkEncoding)
+            {
+                TransferUtility ftu = new TransferUtility(Authentication.Client);
 
-			TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
-			{
-                BucketName = bucket,
-                Key = prefix,
-                FilePath = STEM.Sys.IO.Path.AdjustPath(sourcepath),
-                PartSize = _PartSize[pathkey]
-			};
+                TransferUtilityUploadRequest request = new TransferUtilityUploadRequest
+                {
+                    BucketName = bucket,
+                    Key = prefix,
+                    FilePath = STEM.Sys.IO.Path.AdjustPath(sourcepath),
+                    PartSize = _PartSize[pathkey]
+                };
 
-			switch (EncryptionMethod)
-			{
-                case S3EncryptionMethod.AES256:
-                    request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
-                    break;
+                switch (EncryptionMethod)
+                {
+                    case S3EncryptionMethod.AES256:
+                        request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
+                        break;
 
-                case S3EncryptionMethod.AWSKMS:
-                    request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
-                    request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
-                    break;
-			}
+                    case S3EncryptionMethod.AWSKMS:
+                        request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
+                        request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
+                        break;
+                }
 
-			switch (ACL)
-			{
-                case S3ACL.AuthenticatedRead:
-                    request.CannedACL = S3CannedACL.AuthenticatedRead;
-                    break;
+                switch (ACL)
+                {
+                    case S3ACL.AuthenticatedRead:
+                        request.CannedACL = S3CannedACL.AuthenticatedRead;
+                        break;
 
-                case S3ACL.AWSExecRead:
-                    request.CannedACL = S3CannedACL.AWSExecRead;
-                    break;
+                    case S3ACL.AWSExecRead:
+                        request.CannedACL = S3CannedACL.AWSExecRead;
+                        break;
 
-                case S3ACL.BucketOwnerFullControl:
-                    request.CannedACL = S3CannedACL.BucketOwnerFullControl;
-                    break;
+                    case S3ACL.BucketOwnerFullControl:
+                        request.CannedACL = S3CannedACL.BucketOwnerFullControl;
+                        break;
 
-                case S3ACL.BucketOwnerRead:
-                    request.CannedACL = S3CannedACL.BucketOwnerRead;
-                    break;
+                    case S3ACL.BucketOwnerRead:
+                        request.CannedACL = S3CannedACL.BucketOwnerRead;
+                        break;
 
-                case S3ACL.LogDeliveryWrite:
-                    request.CannedACL = S3CannedACL.LogDeliveryWrite;
-                    break;
+                    case S3ACL.LogDeliveryWrite:
+                        request.CannedACL = S3CannedACL.LogDeliveryWrite;
+                        break;
 
-                case S3ACL.Private:
-                    request.CannedACL = S3CannedACL.Private;
-                    break;
+                    case S3ACL.Private:
+                        request.CannedACL = S3CannedACL.Private;
+                        break;
 
-                case S3ACL.PublicRead:
-                    request.CannedACL = S3CannedACL.PublicRead;
-                    break;
+                    case S3ACL.PublicRead:
+                        request.CannedACL = S3CannedACL.PublicRead;
+                        break;
 
-                case S3ACL.PublicReadWrite:
-                    request.CannedACL = S3CannedACL.PublicReadWrite;
-                    break;
-			}
+                    case S3ACL.PublicReadWrite:
+                        request.CannedACL = S3CannedACL.PublicReadWrite;
+                        break;
+                }
 
-			ftu.UploadAsync(request).Wait();
+                ftu.UploadAsync(request).Wait();
+            }
+            else
+            {
+                using (System.IO.Stream s = File.Open(STEM.Sys.IO.Path.AdjustPath(sourcepath), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    PutObjectRequest request = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, UseChunkEncoding = false, InputStream = s };
+
+                    switch (EncryptionMethod)
+                    {
+                        case S3EncryptionMethod.AES256:
+                            request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256;
+                            break;
+
+                        case S3EncryptionMethod.AWSKMS:
+                            request.ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS;
+                            request.ServerSideEncryptionKeyManagementServiceKeyId = KMS_Key_ID;
+                            break;
+                    }
+
+                    switch (ACL)
+                    {
+                        case S3ACL.AuthenticatedRead:
+                            request.CannedACL = S3CannedACL.AuthenticatedRead;
+                            break;
+
+                        case S3ACL.AWSExecRead:
+                            request.CannedACL = S3CannedACL.AWSExecRead;
+                            break;
+
+                        case S3ACL.BucketOwnerFullControl:
+                            request.CannedACL = S3CannedACL.BucketOwnerFullControl;
+                            break;
+
+                        case S3ACL.BucketOwnerRead:
+                            request.CannedACL = S3CannedACL.BucketOwnerRead;
+                            break;
+
+                        case S3ACL.LogDeliveryWrite:
+                            request.CannedACL = S3CannedACL.LogDeliveryWrite;
+                            break;
+
+                        case S3ACL.Private:
+                            request.CannedACL = S3CannedACL.Private;
+                            break;
+
+                        case S3ACL.PublicRead:
+                            request.CannedACL = S3CannedACL.PublicRead;
+                            break;
+
+                        case S3ACL.PublicReadWrite:
+                            request.CannedACL = S3CannedACL.PublicReadWrite;
+                            break;
+                    }
+
+                    Authentication.Client.PutObjectAsync(request).Wait();
+                }
+            }
         }
     }
 }

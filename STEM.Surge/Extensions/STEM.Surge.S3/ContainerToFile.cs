@@ -166,7 +166,7 @@ namespace STEM.Surge.S3
                 {
                     using (System.IO.Stream s = new System.IO.MemoryStream(data))
                     {
-                        PutObjectRequest req = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, InputStream = s };
+                        PutObjectRequest req = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, UseChunkEncoding = false, InputStream = s };
                         Authentication.Client.PutObjectAsync(req).Wait();
                     }
 
@@ -176,7 +176,7 @@ namespace STEM.Surge.S3
                 {
                     using (System.IO.Stream s = new System.IO.MemoryStream())
                     {
-                        PutObjectRequest req = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, InputStream = s };
+                        PutObjectRequest req = new PutObjectRequest { BucketName = bucket, AutoCloseStream = false, Key = prefix, UseChunkEncoding = false, InputStream = s };
                         Authentication.Client.PutObjectAsync(req).Wait();
                     }
 
