@@ -362,10 +362,10 @@ namespace STEM.Listing.S3
             folders = folders.Distinct().ToList();
 
             if (inclusiveDirFilter != null)
-                folders = folders.Where(i => inclusiveDirFilter.IsMatch(i.ToUpper())).ToList();
+                folders = folders.Where(i => inclusiveDirFilter.IsMatch(i.TrimEnd('/').ToUpper())).ToList();
 
             if (exclusiveDirFilter != null)
-                folders = folders.Where(i => !exclusiveDirFilter.IsMatch(i.ToUpper())).ToList();
+                folders = folders.Where(i => !exclusiveDirFilter.IsMatch(i.TrimEnd('/').ToUpper())).ToList();
 
             if (!recurse)
             {
