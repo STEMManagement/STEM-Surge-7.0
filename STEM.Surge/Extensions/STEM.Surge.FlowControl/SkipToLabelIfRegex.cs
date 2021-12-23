@@ -23,16 +23,16 @@ namespace STEM.Surge.FlowControl
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
     [DisplayName("SkipToLabelIfRegex")]
-    [Description("Skip to the next labeled Instruction in the InstructionSet if the file specified in Filename matches the RegEx filter specified in RegEx Filter.")]
+    [Description("Skip to the next labeled Instruction in the InstructionSet if the string specified in Test String matches the RegEx filter specified in RegEx Filter.")]
     public class SkipToLabelIfRegex : Instruction
     {
         [Category("Flow")]
-        [DisplayName("Test against")]
+        [DisplayName("Test String")]
         [Description("The string to be evaluated")]
         public string TestString { get; set; }
 
         [Category("Flow")]
-        [DisplayName("RegEx Filter"), DescriptionAttribute("The filter used against Filename.")]
+        [DisplayName("RegEx Filter"), DescriptionAttribute("The filter used against Test String.")]
         public string RegexFilter { get; set; }
 
         [Category("Flow")]
