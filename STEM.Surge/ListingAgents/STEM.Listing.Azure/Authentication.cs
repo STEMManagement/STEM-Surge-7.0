@@ -179,15 +179,62 @@ namespace STEM.Listing.Azure
             return null;
         }
 
+        static Dictionary<string, Regex> _InclusiveDirFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Regex> _ExclusiveDirFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Regex> _InclusiveFileFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Regex> _ExclusiveFileFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+
         public List<IListBlobItem> ListObjects(string containerName, string directory, Sys.IO.Listing.ListingType listType, bool recurse, string directoryFilter, string fileFilter)
         {
             List<IListBlobItem> ret = new List<IListBlobItem>();
 
-            Regex inclusiveDirFilter = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
-            Regex exclusiveDirFilter = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
+            Regex inclusiveDirFilter = null;
+            if (_InclusiveDirFilter.ContainsKey(directoryFilter))
+            {
+                inclusiveDirFilter = _InclusiveDirFilter[directoryFilter];
+            }
+            else
+            {
+                inclusiveDirFilter = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
+                if (inclusiveDirFilter != null)
+                    _InclusiveDirFilter[directoryFilter] = inclusiveDirFilter;
+            }
 
-            Regex inclusiveFileFilter = STEM.Sys.IO.Path.BuildInclusiveFilter(fileFilter);
-            Regex exclusiveFileFilter = STEM.Sys.IO.Path.BuildExclusiveFilter(fileFilter);
+            Regex exclusiveDirFilter = null;
+            if (_ExclusiveDirFilter.ContainsKey(directoryFilter))
+            {
+                exclusiveDirFilter = _ExclusiveDirFilter[directoryFilter];
+            }
+            else
+            {
+                exclusiveDirFilter = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
+                if (exclusiveDirFilter != null)
+                    _ExclusiveDirFilter[directoryFilter] = exclusiveDirFilter;
+            }
+
+            Regex inclusiveFileFilter = null;
+            if (_InclusiveFileFilter.ContainsKey(fileFilter))
+            {
+                inclusiveFileFilter = _InclusiveFileFilter[fileFilter];
+            }
+            else
+            {
+                inclusiveFileFilter = STEM.Sys.IO.Path.BuildInclusiveFilter(fileFilter);
+                if (inclusiveFileFilter != null)
+                    _InclusiveFileFilter[fileFilter] = inclusiveFileFilter;
+            }
+
+            Regex exclusiveFileFilter = null;
+            if (_ExclusiveFileFilter.ContainsKey(fileFilter))
+            {
+                exclusiveFileFilter = _ExclusiveFileFilter[fileFilter];
+            }
+            else
+            {
+                exclusiveFileFilter = STEM.Sys.IO.Path.BuildExclusiveFilter(fileFilter);
+                if (exclusiveFileFilter != null)
+                    _ExclusiveFileFilter[fileFilter] = exclusiveFileFilter;
+            }
 
             if (String.IsNullOrEmpty(containerName))
             {

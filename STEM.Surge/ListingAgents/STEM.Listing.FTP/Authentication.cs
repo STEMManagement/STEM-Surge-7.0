@@ -438,6 +438,11 @@ namespace STEM.Listing.FTP
             return  '/' + _SelectedAddress + '/' + item.Name.Replace('\\', '/');
         }
 
+        static Dictionary<string, Regex> _InclusiveDirFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Regex> _ExclusiveDirFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Regex> _InclusiveFileFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+        static Dictionary<string, Regex> _ExclusiveFileFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
+
         /// <summary>
         /// 
         /// </summary>
@@ -452,10 +457,53 @@ namespace STEM.Listing.FTP
             List<FtpListItem> ret = new List<FtpListItem>();
             List<string> directoriesListed = new List<string>();
 
-            Regex exclusiveFileFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(fileFilter);
-            Regex inclusiveFileFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(fileFilter);
-            Regex exclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
-            Regex inclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
+            Regex inclusiveDirectoryFilters = null;
+            if (_InclusiveDirFilter.ContainsKey(directoryFilter))
+            {
+                inclusiveDirectoryFilters = _InclusiveDirFilter[directoryFilter];
+            }
+            else
+            {
+                inclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(directoryFilter);
+                if (inclusiveDirectoryFilters != null)
+                    _InclusiveDirFilter[directoryFilter] = inclusiveDirectoryFilters;
+            }
+
+            Regex exclusiveDirectoryFilters = null;
+            if (_ExclusiveDirFilter.ContainsKey(directoryFilter))
+            {
+                exclusiveDirectoryFilters = _ExclusiveDirFilter[directoryFilter];
+            }
+            else
+            {
+                exclusiveDirectoryFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(directoryFilter);
+                if (exclusiveDirectoryFilters != null)
+                    _ExclusiveDirFilter[directoryFilter] = exclusiveDirectoryFilters;
+            }
+
+            Regex inclusiveFileFilters = null;
+            if (_InclusiveFileFilter.ContainsKey(fileFilter))
+            {
+                inclusiveFileFilters = _InclusiveFileFilter[fileFilter];
+            }
+            else
+            {
+                inclusiveFileFilters = STEM.Sys.IO.Path.BuildInclusiveFilter(fileFilter);
+                if (inclusiveFileFilters != null)
+                    _InclusiveFileFilter[fileFilter] = inclusiveFileFilters;
+            }
+
+            Regex exclusiveFileFilters = null;
+            if (_ExclusiveFileFilter.ContainsKey(fileFilter))
+            {
+                exclusiveFileFilters = _ExclusiveFileFilter[fileFilter];
+            }
+            else
+            {
+                exclusiveFileFilters = STEM.Sys.IO.Path.BuildExclusiveFilter(fileFilter);
+                if (exclusiveFileFilters != null)
+                    _ExclusiveFileFilter[fileFilter] = exclusiveFileFilters;
+            }
 
             ListDirectory(ret, directoriesListed,
                 directory, listType, recurse,
