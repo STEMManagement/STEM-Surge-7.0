@@ -566,77 +566,12 @@ namespace STEM.Surge
             }
         }
 
-
         static Dictionary<string, _InstructionSet> _InstructionSet = new Dictionary<string, _InstructionSet>(StringComparer.InvariantCultureIgnoreCase);
-        static Dictionary<string, string> _FileContent = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         static Dictionary<string, DateTime> _LastWriteTime = new Dictionary<string, DateTime>(StringComparer.InvariantCultureIgnoreCase);
-        static Dictionary<string, DateTime> _LastWriteTimeCheck = new Dictionary<string, DateTime>(StringComparer.InvariantCultureIgnoreCase);
 
         public static string GetFileText(string filename)
         {
-            lock (_FileContent)
-                foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(filename, STEM.Sys.IO.Net.MachineIP()))
-                {
-                    string content = null;
-                    if (_FileContent.ContainsKey(t))
-                    {
-                        content = _FileContent[t];
-                    }
-
-                    if (!System.IO.File.Exists(t) && content == null)
-                    {
-                        STEM.Sys.EventLog.WriteEntry("DeploymentController.GetFileText", "File does not exist: " + t, STEM.Sys.EventLog.EventLogEntryType.Error);
-                        continue;
-                    }
-                    else if (System.IO.File.Exists(t))
-                    {
-                        if (_LastWriteTimeCheck.ContainsKey(t))
-                        {
-                            if (content == null || (DateTime.UtcNow - _LastWriteTimeCheck[t]).TotalSeconds > 15)
-                            {
-                                DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
-
-                                if (_LastWriteTime[t] != lwt || content == null)
-                                {
-                                    content = System.IO.File.ReadAllText(t);
-
-                                    _FileContent[t] = content;
-
-                                    try
-                                    {
-                                        _InstructionSet[t] = (_InstructionSet)STEM.Sys.Serializable.Deserialize(content);
-                                    }
-                                    catch { }
-
-                                    _LastWriteTime[t] = lwt;
-                                    _LastWriteTimeCheck[t] = DateTime.UtcNow;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
-
-                            content = System.IO.File.ReadAllText(t);
-
-                            _FileContent[t] = content;
-
-                            try
-                            {
-                                _InstructionSet[t] = (_InstructionSet)STEM.Sys.Serializable.Deserialize(content);
-                            }
-                            catch { }
-
-                            _LastWriteTime[t] = lwt;
-                            _LastWriteTimeCheck[t] = DateTime.UtcNow;
-                        }
-                    }
-
-                    if (content != null)
-                        return content;
-                }
-
-            return null;
+            return STEM.Sys.IO.TextFileManager.GetFileText(filename);
         }
 
         protected virtual _InstructionSet GetTemplateInstance(bool cloneTemplate = false)
@@ -646,18 +581,26 @@ namespace STEM.Surge
 
         protected virtual _InstructionSet GetTemplateInstance(string templateName, bool cloneTemplate = false)
         {
-            foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(templateName, STEM.Sys.IO.Net.MachineIP()))
+            string txt = STEM.Sys.IO.TextFileManager.GetFileText(templateName);
+            DateTime lwt = STEM.Sys.IO.TextFileManager.GetFileLastWriteTime(templateName);
+            if (!_LastWriteTime.ContainsKey(templateName) || lwt > _LastWriteTime[templateName])
             {
-                string c = GetFileText(t);
-                if (c != null && _InstructionSet.ContainsKey(t))
+                try
                 {
-                    _InstructionSet iSet = _InstructionSet[t];
-
-                    if (cloneTemplate)
-                        return iSet.Clone(iSet);
-
-                    return iSet;
+                    _InstructionSet[templateName] = STEM.Sys.Serializable.Deserialize(txt) as _InstructionSet;
+                    _LastWriteTime[templateName] = lwt;
                 }
+                catch { }
+            }
+
+            if (_InstructionSet.ContainsKey(templateName))
+            {
+                _InstructionSet iSet = _InstructionSet[templateName];
+
+                if (cloneTemplate)
+                    return iSet.Clone(iSet);
+
+                return iSet;
             }
 
             return null;
@@ -681,29 +624,7 @@ namespace STEM.Surge
 
                 CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
 
-                bool updated = false;
-                foreach (Instruction ins in clone.Instructions)
-                {
-                    try
-                    {
-                        foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Sys.Security.IAuthentication))))
-                        {
-                            try
-                            {
-                                STEM.Sys.Security.IAuthentication a = prop.GetValue(ins) as STEM.Sys.Security.IAuthentication;
-                                STEM.Sys.Security.IAuthentication b = GetAuthentication(a.ConfigurationName);
-
-                                if (b != null)
-                                {
-                                    a.PopulateFrom(b);
-                                    updated = true;
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
-                }
+                bool updated = clone.PopulateAuthenticationDetails(GetAuthenticationStore());
 
                 if (updated)
                     CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
@@ -718,7 +639,7 @@ namespace STEM.Surge
             return ret;
         }
 
-        protected abstract STEM.Sys.Security.IAuthentication GetAuthentication(string configurationName);
+        protected abstract string GetAuthenticationStore();
 
     }
 }

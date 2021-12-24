@@ -938,6 +938,8 @@ namespace STEM.Surge
 
             InstructionSetContainer.Clear();
         }
+
+        public abstract bool PopulateAuthenticationDetails(string authStore);
     }
 }
 
