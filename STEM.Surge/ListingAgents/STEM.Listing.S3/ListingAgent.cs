@@ -30,7 +30,7 @@ namespace STEM.Listing.S3
                 bucket = S3.Authentication.BucketFromPath(Path);
                 string prefix = S3.Authentication.PrefixFromPath(Path);
 
-                List<S3Object> files = _Auth.ListObjects(bucket, prefix, ListingType.File, Recurse, SubpathFilter, FileFilter);
+                List<S3Object> files = _Auth.ListObjects(bucket, prefix, ListingType.File, Recurse, SubpathFilter, FileFilter, _Auth.LimitListResults);
 
                 List<string> folders = files.Select(i => STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') + '/').Distinct().ToList();
 

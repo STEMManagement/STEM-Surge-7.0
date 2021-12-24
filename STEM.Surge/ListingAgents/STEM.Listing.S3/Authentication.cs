@@ -45,22 +45,7 @@ namespace STEM.Listing.S3
 
         [Category("S3")]
         [DisplayName("Access Key"), DescriptionAttribute("What is the S3 Access Key?")]
-        [XmlIgnore]
-        [PasswordPropertyText(true)]
         public string AccessKey { get; set; }
-        [Browsable(false)]
-        public string AccessKeyEncoded
-        {
-            get
-            {
-                return this.Entangle(AccessKey);
-            }
-
-            set
-            {
-                AccessKey = this.Detangle(value);
-            }
-        }
 
         [Category("S3")]
         [DisplayName("Secret Key"), DescriptionAttribute("What is the S3 Secret Key?")]
@@ -81,11 +66,15 @@ namespace STEM.Listing.S3
             }
         }
 
-        [Category("S3 Role")]
+        [Category("S3")]
+        [DisplayName("Limit List Results"), DescriptionAttribute("What is the maximum list result length permitted?")]
+        public int LimitListResults { get; set; }
+
+        [Category("S3")]
         [DisplayName("Role Name"), DescriptionAttribute("Is this session to assume an AWS Role?")]
         public string RoleName { get; set; }
 
-        [Category("S3 Role")]
+        [Category("S3")]
         [DisplayName("Role Session Name"), DescriptionAttribute("When this session assumes an AWS Role, what is the session name to be?")]
         public string RoleSessionName { get; set; }
 
@@ -96,6 +85,7 @@ namespace STEM.Listing.S3
             ServiceURL = "";
             AccessKey = "";
             SecretKey = "";
+            LimitListResults = Int32.MaxValue;
             RoleName = "";
             RoleSessionName = "";
         }
@@ -145,6 +135,10 @@ namespace STEM.Listing.S3
                             AllowBucketControl = (bool)i.GetValue(source);
                     }
                 }
+
+                i = source.GetType().GetProperties().FirstOrDefault(p => p.Name == "LimitListResults");
+                if (i != null)
+                    LimitListResults = (int)i.GetValue(source);
             }
             else
             {
@@ -262,11 +256,11 @@ namespace STEM.Listing.S3
             return listResponse.Result.Buckets;
         }
 
-        public List<S3Object> ListObjects(string bucketName)
+        public List<S3Object> ListObjects(string bucketName, int maxResults = Int32.MaxValue)
         {
             List<S3Object> ret = new List<S3Object>();
 
-            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName };
+            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, MaxKeys = maxResults };
 
             System.Threading.Tasks.Task<ListObjectsResponse> listResponse;
             do
@@ -284,11 +278,11 @@ namespace STEM.Listing.S3
             return ret;
         }
 
-        public List<S3Object> ListObjects(string bucketName, string prefix)
+        public List<S3Object> ListObjects(string bucketName, string prefix, int maxResults = Int32.MaxValue)
         {
             List<S3Object> ret = new List<S3Object>();
 
-            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, Prefix = prefix };
+            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, Prefix = prefix, MaxKeys = maxResults };
 
             System.Threading.Tasks.Task<ListObjectsResponse> listResponse;
             do
@@ -306,7 +300,7 @@ namespace STEM.Listing.S3
             return ret;
         }
 
-        public List<S3Object> ListObjects(string bucketName, string prefix, ListingType listType, bool recurse, string directoryFilter, string fileFilter)
+        public List<S3Object> ListObjects(string bucketName, string prefix, ListingType listType, bool recurse, string directoryFilter, string fileFilter, int maxResults = Int32.MaxValue)
         {
             List<S3Object> ret = new List<S3Object>();
 
@@ -347,13 +341,13 @@ namespace STEM.Listing.S3
                 if (recurse)
                 {
                     foreach (S3Object i in buckets)
-                        ret.AddRange(ListObjects(i.BucketName, "", listType, recurse, directoryFilter, fileFilter));
+                        ret.AddRange(ListObjects(i.BucketName, "", listType, recurse, directoryFilter, fileFilter, maxResults));
                 }
 
                 return ret;
             }
 
-            List<S3Object> fullList = ListObjects(bucketName, prefix);
+            List<S3Object> fullList = ListObjects(bucketName, prefix, maxResults);
 
             List<string> folders = fullList.Where(i => !i.Key.EndsWith("/") && STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') != prefix).Select(i => STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') + '/').ToList();
             
@@ -552,10 +546,33 @@ namespace STEM.Listing.S3
         {
             try
             {
-                DirectoryInfo di = GetDirectoryInfo(directory);
+                string bucket = BucketFromPath(directory);
+                string prefix = PrefixFromPath(directory);
 
-                if (di != null)
-                    return true;
+                if (prefix != "")
+                {
+                    prefix = prefix + "/";
+
+                    List<S3Object> objs = ListObjects(bucket, prefix, 1);
+
+                    if (objs != null && objs.Count > 0)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (!AllowBucketControl)
+                        return true; // Assume it exists?
+
+                    foreach (S3Bucket b in ListBuckets())
+                    {
+                        if (b.BucketName.Equals(bucket, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                }
             }
             catch
             {
@@ -591,15 +608,17 @@ namespace STEM.Listing.S3
                 {
                     prefix = prefix + "/";
 
-                    System.Threading.Tasks.Task<GetObjectMetadataResponse> r = Client.GetObjectMetadataAsync(bucket, prefix);
-                    r.Wait();
+                    List<S3Object> objs = ListObjects(bucket, prefix);
 
-                    return new DirectoryInfo
+                    if (objs != null && objs.Count > 0)
                     {
-                        CreationTimeUtc = r.Result.LastModified,
-                        LastAccessTimeUtc = DateTime.UtcNow,
-                        LastWriteTimeUtc = r.Result.LastModified
-                    };
+                        return new DirectoryInfo
+                        {
+                            CreationTimeUtc = objs.Select(i => i.LastModified).Min(),
+                            LastAccessTimeUtc = DateTime.UtcNow,
+                            LastWriteTimeUtc = objs.Select(i => i.LastModified).Max()
+                        };
+                    }
                 }
                 else
                 {
