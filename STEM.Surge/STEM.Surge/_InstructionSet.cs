@@ -439,6 +439,52 @@ namespace STEM.Surge
         }
 
         /// <summary>
+        /// A method to set Instruction Guid IDs to Empty without Deserializing the collection if possible
+        /// </summary>
+        public void ClearInstructionIDs()
+        {
+            lock (this)
+            {
+                if (_Instructions != null)
+                    foreach (Instruction i in _Instructions)
+                        i.ID = Guid.Empty;
+
+                if (_InstructionDocument != null)
+                {
+                    foreach (XElement n in _InstructionDocument.Root.Elements())
+                    {
+                        n.Elements().FirstOrDefault(i => i.Name.LocalName == "ID").Value = Guid.Empty.ToString();
+                    }
+                }
+
+                if (_SerializationSourceInstructionDocument != null)
+                {
+                    _InstructionDocument = null;
+
+                    StemStr str = new StemStr(_SerializationSourceInstructionDocument, _SerializationSourceInstructionDocument.Length);
+
+                    int index = 0;
+                    while ((index = str.IndexOf(VDClose, index)) > -1)
+                    {
+                        index += VDClose.Length;
+
+                        int i = str.IndexOf(IDOpen, index);
+                        if (i == -1)
+                            continue;
+
+                        index = i;
+
+                        index += IDOpen.Length;
+
+                        str.Overwrite(Guid.Empty.ToString(), index);
+                    }
+
+                    _SerializationSourceInstructionDocument = str.ToString();
+                }
+            }
+        }
+
+        /// <summary>
         /// This method minimizes re-serialization by updating only Instruction xml nodes specified in the instructionOrdinals list
         /// </summary>
         /// <param name="instructionOrdinals">Instructions that need to be re-serialized because they have been modified</param>
