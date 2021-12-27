@@ -344,7 +344,20 @@ namespace STEM.Sys.IO
 
                             _Resolved[k].LastResolved = DateTime.UtcNow;
                         }
-                        catch { }
+                        catch
+                        {
+                            lock (_Resolved)
+                            {
+                                foreach (string key in _Resolved.Keys.ToList())
+                                {
+                                    if (k != key)
+                                        if (_Resolved[k] == _Resolved[key])
+                                            _Resolved.Remove(key);
+                                }
+
+                                _Resolved.Remove(k);
+                            }
+                        }
                 }
             }
             catch { }
