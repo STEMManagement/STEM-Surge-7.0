@@ -44,25 +44,10 @@ namespace STEM.Surge.BasicControllers
                 
                 CustomizeInstructionSet(iSet, TemplateKVP, recommendedBranchIP, initiationSource, true);
 
-                foreach (Instruction ins in iSet.Instructions)
-                {
-                    try
-                    {
-                        foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Sys.Security.IAuthentication))))
-                        {
-                            try
-                            {
-                                STEM.Sys.Security.IAuthentication a = prop.GetValue(ins) as STEM.Sys.Security.IAuthentication;
-                                STEM.Sys.Security.IAuthentication b = GetAuthentication(a.ConfigurationName);
+                bool updated = iSet.PopulateAuthenticationDetails(GetAuthenticationStore());
 
-                                if (b != null)
-                                    a.PopulateFrom(b);
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
-                }
+                if (updated)
+                    CustomizeInstructionSet(iSet, TemplateKVP, recommendedBranchIP, initiationSource, true);
 
                 File.Delete(initiationSource);
 
