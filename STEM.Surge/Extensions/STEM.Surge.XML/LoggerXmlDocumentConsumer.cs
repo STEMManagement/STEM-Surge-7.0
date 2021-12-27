@@ -106,6 +106,37 @@ namespace STEM.Surge.XML
 
                 ILogger logger = STEM.Surge.Logging.ILogger.GetLogger(LoggerName);
 
+                foreach (Guid id in objects.Select(i => i.ID).ToList())
+                {
+                    List<ILogger.ObjectData> objs = objects.Where(i => i.ID == id).ToList();
+
+                    if (objs.Count == 1)
+                        continue;
+
+                    ILogger.ObjectData keep = objs[0];
+                    foreach (ILogger.ObjectData o in objs)
+                    {
+                        if (o == keep)
+                            continue;
+
+                        if (keep.CreationTime < o.CreationTime)
+                        {
+                            keep.CreationTime = o.CreationTime;
+
+                            if (String.IsNullOrEmpty(keep.Name))
+                                keep.Name = o.Name;
+                        }
+                    }
+
+                    foreach (ILogger.ObjectData o in objs)
+                    {
+                        if (o == keep)
+                            continue;
+
+                        objects.Remove(o);
+                    }
+                }
+
                 if (objects.Count > 0)
                     if (!logger.BulkLoad(objects, out exceptions))
                         throw new Exception("Error loading Objects");
