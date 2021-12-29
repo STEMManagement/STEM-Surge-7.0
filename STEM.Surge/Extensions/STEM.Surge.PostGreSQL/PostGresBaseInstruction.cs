@@ -104,6 +104,7 @@ namespace STEM.Surge.PostGreSQL
                         connection.Open();
                         NpgsqlCommand command = new NpgsqlCommand(sql, connection);
                         command.ExecuteNonQuery();
+                        connection.Close();
                     }
 
                     break;
@@ -137,6 +138,8 @@ namespace STEM.Surge.PostGreSQL
                         DataSet ds = new DataSet();
 
                         da.Fill(ds);
+
+                        connection.Close();
 
                         return ds;
                     }
@@ -192,6 +195,7 @@ namespace STEM.Surge.PostGreSQL
 
                     writer.Complete();
                 }
+                connection.Close();
             }
         }
 
