@@ -38,6 +38,11 @@ namespace STEM.Surge.XML
         [DisplayName("File List (Property Name: FileList)"), DescriptionAttribute("List<string> Property for the GroupingController to populate.")]
         public List<string> FileList { get; set; }
 
+        public LoggerXmlDocumentConsumer()
+        {
+            FileList = new List<string>();
+        }
+
         protected override void _Rollback()
         {
         }
