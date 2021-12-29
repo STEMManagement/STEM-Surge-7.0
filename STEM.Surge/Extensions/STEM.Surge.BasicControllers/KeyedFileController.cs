@@ -412,8 +412,16 @@ namespace STEM.Surge.BasicControllers
                         
                         binding = new BoundKey(this, initiationSource, key, branchIP, fileLen, true);
 
-                        if (!CoordinatedKeyManager.Lock(key, binding, CoordinateWith))
-                            return null;
+                        if (UseSubnetCoordination)
+                        {
+                            if (!CoordinatedKeyManager.Lock(key, binding, CoordinateWith))
+                                return null;
+                        }
+                        else
+                        {
+                            if (!CoordinatedKeyManager.Lock(key, binding))
+                                return null;
+                        }
 
                         return binding.BranchIP;
                     }

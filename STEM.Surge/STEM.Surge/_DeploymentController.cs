@@ -42,6 +42,7 @@ namespace STEM.Surge
         public _DeploymentController()
         {
             AllowThreadedAssignment = true;
+            UseSubnetCoordination = true;
             HonorPriorityFilters = false;
             PollError = "";
             PreprocessPerformsDiscovery = false;
@@ -180,13 +181,20 @@ namespace STEM.Surge
         [Category("Post Mortem Evaluation")]
         [DisplayName("Cache Post Mortem MetaData"), DescriptionAttribute("Should reports be cached after list walk for post mortem evaluation?")]
         public bool CachePostMortem { get; set; }
-               
+
         /// <summary>
         /// Allow any given listing to be assigned from, without regard to order, and from multiple managers simultaneously?
         /// </summary>
         [Category("Assignment Profile")]
         [DisplayName("Allow Async Assignment"), DescriptionAttribute("Allow any given listing to be assigned from, without regard to order, and from multiple managers simultaneously?")]
         public bool AllowThreadedAssignment { get; set; }
+
+        /// <summary>
+        /// Limit coordination efforts among managers based on subnet proximity?
+        /// </summary>
+        [Category("Assignment Profile")]
+        [DisplayName("Use Subnet Coordination"), DescriptionAttribute("Limit coordination efforts among managers based on subnet proximity?")]
+        public bool UseSubnetCoordination { get; set; }
 
 
         /// <summary>

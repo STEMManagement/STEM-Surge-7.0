@@ -267,7 +267,7 @@ namespace STEM.Surge.BasicControllers
 
                     if (_Keys.ContainsKey(key))
                         binding = _Keys[key];
-                    
+
                     if (binding != null)
                     {
                         lock (binding)
@@ -310,8 +310,16 @@ namespace STEM.Surge.BasicControllers
                     {
                         binding = new BoundKey(this, initiationSource, key, true);
 
-                        if (!CoordinatedKeyManager.Lock(key, binding, CoordinateWith))
-                            return false;
+                        if (UseSubnetCoordination)
+                        {
+                            if (!CoordinatedKeyManager.Lock(key, binding, CoordinateWith))
+                                return false;
+                        }
+                        else
+                        {
+                            if (!CoordinatedKeyManager.Lock(key, binding))
+                                return false;
+                        }
                     }
                 }
             }

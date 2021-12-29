@@ -65,6 +65,11 @@ namespace STEM.Surge
         public abstract List<string> CoordinateWith { get; }
 
         /// <summary>
+        /// Coordinate with other Deployment Managers performing this deployment based on subnet proximity
+        /// </summary>
+        public abstract bool UseSubnetCoordination { get; }
+        
+        /// <summary>
         /// A list optionally used by controllers to order assignments (mostly used by ListPreprocess)
         /// </summary>
         public abstract List<string> PriorityFilters { get; }

@@ -70,28 +70,58 @@ namespace STEM.Surge
                             RequiredTargetNameCoordination = true;
                         }
 
-                    if (ControllerManager.KeyManager.Lock(initiationSource, this, ControllerManager.CoordinateWith))
+                    if (ControllerManager.UseSubnetCoordination)
                     {
-                        if (RequiredTargetNameCoordination)
+                        if (ControllerManager.KeyManager.Lock(initiationSource, this, ControllerManager.CoordinateWith))
                         {
-                            string key = STEM.Sys.IO.Path.GetFileName(initiationSource);
+                            if (RequiredTargetNameCoordination)
+                            {
+                                string key = STEM.Sys.IO.Path.GetFileName(initiationSource);
 
-                            if (ControllerManager.KeyManager.Lock(key, this, ControllerManager.CoordinateWith))
+                                if (ControllerManager.KeyManager.Lock(key, this, ControllerManager.CoordinateWith))
+                                {
+                                    LockTime = DateTime.UtcNow;
+                                    InitiationSource = initiationSource;
+                                    return true;
+                                }
+                                else
+                                {
+                                    ControllerManager.KeyManager.Unlock(initiationSource, this);
+                                }
+                            }
+                            else
                             {
                                 LockTime = DateTime.UtcNow;
                                 InitiationSource = initiationSource;
                                 return true;
                             }
+                        }
+                    }
+                    else
+                    {
+                        if (ControllerManager.KeyManager.Lock(initiationSource, this))
+                        {
+                            if (RequiredTargetNameCoordination)
+                            {
+                                string key = STEM.Sys.IO.Path.GetFileName(initiationSource);
+
+                                if (ControllerManager.KeyManager.Lock(key, this))
+                                {
+                                    LockTime = DateTime.UtcNow;
+                                    InitiationSource = initiationSource;
+                                    return true;
+                                }
+                                else
+                                {
+                                    ControllerManager.KeyManager.Unlock(initiationSource, this);
+                                }
+                            }
                             else
                             {
-                                ControllerManager.KeyManager.Unlock(initiationSource, this);
+                                LockTime = DateTime.UtcNow;
+                                InitiationSource = initiationSource;
+                                return true;
                             }
-                        }
-                        else
-                        {
-                            LockTime = DateTime.UtcNow;
-                            InitiationSource = initiationSource;
-                            return true;
                         }
                     }
                 }
