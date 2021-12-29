@@ -32,25 +32,15 @@ namespace STEM.Surge.SMB
         protected ActionType Action { get; set; }
 
 
-        [Category("Source")]
-        [DisplayName("Source Path"), DescriptionAttribute("The location of the file(s) to be actioned.")]
-        public string SourcePath { get; set; }
+        protected string CB_SourcePath { get; set; }
 
-        [Category("Source")]
-        [DisplayName("Expand Source Path"), DescriptionAttribute("When searching for files to action, should the 'Source Path' be treated like an expandable?.")]
-        public bool ExpandSource { get; set; }
+        protected bool CB_ExpandSource { get; set; }
 
-        [Category("Source")]
-        [DisplayName("File Filter"), DescriptionAttribute("The filter used on files in 'Source Path' to select files to action. This can be a compound filter.")]
-        public string FileFilter { get; set; }
+        protected string CB_FileFilter { get; set; }
 
-        [Category("Source")]
-        [DisplayName("Directory Filter"), DescriptionAttribute("The filter used on directories in 'Source Path' when 'Recurse Source' is specified. This can be a compound filter.")]
-        public string DirectoryFilter { get; set; }
+        protected string CB_DirectoryFilter { get; set; }
 
-        [Category("Source")]
-        [DisplayName("Recurse Source"), DescriptionAttribute("Recurse the source for files to action?")]
-        public bool RecurseSource { get; set; }
+        protected bool CB_RecurseSource { get; set; }
 
         [Category("Destination")]
         [DisplayName("Recreate Source Tree"), DescriptionAttribute("If the source folder is being recursively searched, should the subdirectory be recreated in the destination folder?")]
@@ -108,11 +98,11 @@ namespace STEM.Surge.SMB
 
             DestinationActionRule = DestinationRule.AllOrNone;
 
-            ExpandSource = false;
-            SourcePath = "[TargetPath]";
-            FileFilter = "[TargetName]";
-            DirectoryFilter = "!TEMP";
-            RecurseSource = false;
+            CB_ExpandSource = false;
+            CB_SourcePath = "[TargetPath]";
+            CB_FileFilter = "[TargetName]";
+            CB_DirectoryFilter = "!TEMP";
+            CB_RecurseSource = false;
             RecreateTree = false;
 
             ExpandDestination = false;
@@ -164,13 +154,13 @@ namespace STEM.Surge.SMB
             try
             {
                 List<string> sources = new List<string>();
-                if (ExpandSource)
+                if (CB_ExpandSource)
                 {
-                    sources = STEM.Sys.IO.Path.ExpandRangedPath(SourcePath);
+                    sources = STEM.Sys.IO.Path.ExpandRangedPath(CB_SourcePath);
                 }
                 else
                 {
-                    sources.Add(SourcePath);
+                    sources.Add(CB_SourcePath);
                 }
 
                 List<string> destinations = new List<string>();
@@ -194,14 +184,14 @@ namespace STEM.Surge.SMB
                 {
                     List<string> files = null;
 
-                    if (!RecurseSource && !FileFilter.Contains("|") && !FileFilter.Contains("!") && !FileFilter.Contains("<>") && !FileFilter.Contains("?") && !FileFilter.Contains("*"))
+                    if (!CB_RecurseSource && !CB_FileFilter.Contains("|") && !CB_FileFilter.Contains("!") && !CB_FileFilter.Contains("<>") && !CB_FileFilter.Contains("?") && !CB_FileFilter.Contains("*"))
                     {
                         files = new List<string>();
-                        files.Add(Path.Combine(src, FileFilter));
+                        files.Add(Path.Combine(src, CB_FileFilter));
                     }
                     else
                     {
-                        files = STEM.Sys.IO.Directory.STEM_GetFiles(src, FileFilter, DirectoryFilter, (RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false);
+                        files = STEM.Sys.IO.Directory.STEM_GetFiles(src, CB_FileFilter, CB_DirectoryFilter, (CB_RecurseSource ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly), false);
                     }
 
                     foreach (string s in files)
@@ -229,7 +219,7 @@ namespace STEM.Surge.SMB
                                     catch { }
 
                                     string dPath = STEM.Sys.IO.Path.AdjustPath(d);
-                                    if (RecurseSource && RecreateTree)
+                                    if (CB_RecurseSource && RecreateTree)
                                     {
                                         dPath = System.IO.Path.Combine(dPath, STEM.Sys.IO.Path.GetDirectoryName(s).Replace(STEM.Sys.IO.Path.AdjustPath(src), "").Trim(System.IO.Path.DirectorySeparatorChar));
                                     }

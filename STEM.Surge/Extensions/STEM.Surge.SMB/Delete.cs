@@ -61,7 +61,7 @@ namespace STEM.Surge.SMB
 
         [Category("Flow")]
         [DisplayName("Execution Mode"), Description("Should this be executed on forward InstructionSet execution or on Rollback? Consider the use case where you want to " +
-            "move a file out of the flow to an error folder on Rollback.")]
+            "delete a file out of the flow on Rollback.")]
         public ExecuteOn ExecutionMode { get; set; }
 
         public Delete()
