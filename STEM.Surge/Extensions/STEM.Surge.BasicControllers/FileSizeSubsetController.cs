@@ -40,8 +40,8 @@ namespace STEM.Surge.BasicControllers
             }
 
             public int MaxLoadPerBranch { get; set; }
-            public int MinMB { get; set; }
-            public int MaxMB { get; set; }
+            public double MinMB { get; set; }
+            public double MaxMB { get; set; }
 
             public SizeRange Clone()
             {
