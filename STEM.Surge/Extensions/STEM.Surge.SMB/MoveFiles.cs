@@ -44,6 +44,9 @@ namespace STEM.Surge.SMB
 
             foreach (string file in FileList)
             {
+                if (!File.Exists(file))
+                    continue;
+
                 CB_SourcePath = Path.GetDirectoryName(file);
                 CB_FileFilter = Path.GetFileName(file);
                 CB_DirectoryFilter = "*";
