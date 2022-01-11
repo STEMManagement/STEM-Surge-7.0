@@ -999,6 +999,8 @@ namespace STEM.Surge
                             if (messages.Count == 0)
                                 continue;
 
+                            DateTime mts = messages.Max(i => i.TimeSent);
+
                             List<ActiveDeployments.Entry> working = new List<ActiveDeployments.Entry>(messages.Sum(i => i.Entries.Count));
                             HashSet <Guid> ids = new HashSet<Guid>();
 
@@ -1008,7 +1010,7 @@ namespace STEM.Surge
 
                                 if (m.Entries.Count > 0)
                                 {
-                                    working.AddRange(m.Entries.Where(i => !ids.Contains(i.InstructionSetID) && !(i.Completed != DateTime.MinValue && (DateTime.UtcNow - i.Completed).TotalMinutes > 2)));
+                                    working.AddRange(m.Entries.Where(i => !ids.Contains(i.InstructionSetID) && !(i.Completed != DateTime.MinValue && (mts - i.Completed).TotalMinutes > 2)));
 
                                     ids = new HashSet<Guid>(working.Select(i => i.InstructionSetID));
                                 }
@@ -1017,7 +1019,7 @@ namespace STEM.Surge
                             ids = new HashSet<Guid>(working.Select(i => i.InstructionSetID));
 
                             lock (_TmpDeployments)
-                                _TmpDeployments.RemoveAll(i => ids.Contains(i.InstructionSetID) || deadConnections.Contains(i.DeploymentManagerIP) || (i.Completed != DateTime.MinValue && (DateTime.UtcNow - i.Completed).TotalMinutes > 2));
+                                _TmpDeployments.RemoveAll(i => ids.Contains(i.InstructionSetID) || deadConnections.Contains(i.DeploymentManagerIP) || (i.Completed != DateTime.MinValue && (mts - i.Completed).TotalMinutes > 2));
                             
                             lock (_TmpDeployments)
                                 _TmpDeployments.RemoveAll(i => i.DeploymentManagerIP == key && !allActive.Contains(i.InstructionSetID));
