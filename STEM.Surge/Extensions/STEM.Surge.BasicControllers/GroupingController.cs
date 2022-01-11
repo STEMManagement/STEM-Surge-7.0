@@ -130,9 +130,18 @@ namespace STEM.Surge.BasicControllers
                             break;
 
                         string s = ApplyKVP(_LastList[x], TemplateKVP, recommendedBranchIP, initiationSource, true);
-
+                                                                       
                         if (CoordinatedKeyManager.Lock(s, CoordinateWith))
                         {
+                            if (RequireTargetNameCoordination)
+                            {
+                                if (!CoordinatedKeyManager.Lock(System.IO.Path.GetFileName(s), CoordinateWith))
+                                {
+                                    CoordinatedKeyManager.Unlock(s);
+                                    continue;
+                                }
+                            }
+
                             locks.Add(s);
                             
                             foreach (List<string> li in iSetLists)
@@ -151,7 +160,12 @@ namespace STEM.Surge.BasicControllers
                 STEM.Sys.EventLog.WriteEntry("GroupingController.GenerateDeploymentDetails", new Exception(InstructionSetTemplate + ": " + initiationSource, ex).ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
 
                 foreach (string s in locks)
+                {
                     CoordinatedKeyManager.Unlock(s);
+
+                    if (RequireTargetNameCoordination)
+                        CoordinatedKeyManager.Unlock(System.IO.Path.GetFileName(s));
+                }
 
                 locks.Clear();
             }
@@ -173,7 +187,12 @@ namespace STEM.Surge.BasicControllers
             if (locks != null)
             {
                 foreach (string s in locks)
+                {
                     CoordinatedKeyManager.Unlock(s);
+
+                    if (RequireTargetNameCoordination)
+                        CoordinatedKeyManager.Unlock(System.IO.Path.GetFileName(s));
+                }
 
                 STEM.Sys.State.Containers.Session[details.InstructionSetID.ToString()] = null;
             }
