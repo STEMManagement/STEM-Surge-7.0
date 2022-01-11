@@ -41,6 +41,13 @@ namespace STEM.Surge.SMB
         protected override bool _Run()
         {
             List<Exception> exceptions = new List<Exception>();
+            STEM.Sys.Serialization.Dictionary<string, string> fileSizes = new Sys.Serialization.Dictionary<string, string>();
+            List<string> filesActioned = new List<string>();
+
+            if (PopulatePostMortemMeta)
+            {
+                PostMortemMetaData["FilesRequested"] = STEM.Sys.Serializable.Serialize(FileList);
+            }
 
             foreach (string file in FileList)
             {
@@ -54,8 +61,33 @@ namespace STEM.Surge.SMB
 
                 base._Run();
 
+                if (PopulatePostMortemMeta)
+                    if (Exceptions.Count == 0)
+                    {
+                        if (PostMortemMetaData.ContainsKey("FileSize"))
+                        {
+                            string fs = PostMortemMetaData["FileSize"];
+
+                            fileSizes[file] = fs;
+                        }
+
+                        filesActioned.Add(file);
+                    }
+
+                if (PostMortemMetaData.ContainsKey("FileSize"))
+                    PostMortemMetaData.Remove("FileSize");
+
+                if (PostMortemMetaData.ContainsKey("FilesActioned"))
+                    PostMortemMetaData.Remove("FilesActioned");
+
                 exceptions.AddRange(Exceptions);
                 Exceptions.Clear();
+            }
+
+            if (PopulatePostMortemMeta)
+            {
+                PostMortemMetaData["FilesActioned"] = STEM.Sys.Serializable.Serialize(filesActioned);
+                PostMortemMetaData["FileSizes"] = STEM.Sys.Serializable.Serialize(fileSizes);
             }
 
             if (exceptions.Count > 0)
