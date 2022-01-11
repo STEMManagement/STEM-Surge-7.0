@@ -89,8 +89,7 @@ namespace STEM.Surge.BasicControllers
 
             if (RandomizeList)
             {
-                Random rnd = new Random();
-                returnList = list.OrderBy(i => rnd.Next()).ToList();
+                returnList = list.OrderBy(i => _Random.Next()).ToList();
             }
             else
             {
