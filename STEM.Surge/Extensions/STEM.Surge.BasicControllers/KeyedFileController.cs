@@ -53,6 +53,7 @@ namespace STEM.Surge.BasicControllers
                 BranchIP = branchIP;
                 FileSize = fileSize;
                 LastAssigned = DateTime.UtcNow;
+                LastSuccessfulAssignment = DateTime.UtcNow;
                 Assigned = assigned;
             }
             
@@ -106,7 +107,7 @@ namespace STEM.Surge.BasicControllers
                         }
                         catch { }
 
-                if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
+                if (((TimeSpan)(DateTime.UtcNow - LastSuccessfulAssignment)) > _Owner.KeyTimeout)
                     if (_Owner.KeyExpired != null)
                         try
                         {
@@ -148,7 +149,7 @@ namespace STEM.Surge.BasicControllers
                             //        FileSize = 0;
                             //    }
 
-                            if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
+                            if (((TimeSpan)(DateTime.UtcNow - LastSuccessfulAssignment)) > _Owner.KeyTimeout)
                                 _Owner.CoordinatedKeyManager.Unlock(Key, this);
                         }
                         catch { }
@@ -211,10 +212,11 @@ namespace STEM.Surge.BasicControllers
             }
 
             internal DateTime LastAssigned { get; set; }
+            internal DateTime LastSuccessfulAssignment { get; set; }
 
             public override string ToString()
             {
-                return "Last Assigned: " + LastAssigned.ToString("G") + ", " + _Owner.GetType().Name + " - " + InitiationSource;
+                return "Last Successful Assignment: " + LastSuccessfulAssignment.ToString("G") + ", " + _Owner.GetType().Name + " - " + InitiationSource;
             }
         }
 
@@ -287,7 +289,7 @@ namespace STEM.Surge.BasicControllers
             catch (Exception ex)
             {
                 STEM.Sys.EventLog.WriteEntry("KeyedFileController.GenerateDeploymentDetails", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                ReleaseSerializationKey(initiationSource);
+                ReleaseSerializationKey(initiationSource, false);
                 ret = null;
             }
 
@@ -435,7 +437,7 @@ namespace STEM.Surge.BasicControllers
             return branchIP;
         }
 
-        void ReleaseSerializationKey(string initiationSource)
+        void ReleaseSerializationKey(string initiationSource, bool successfulAssignment)
         {
             try
             {
@@ -469,6 +471,9 @@ namespace STEM.Surge.BasicControllers
                         fileBinding.InitiationSource = null;
                         fileBinding.Assigned = false;
 
+                        if (successfulAssignment)
+                            fileBinding.LastSuccessfulAssignment = DateTime.UtcNow;
+
                         if (key != null)
                         {
                             string k = fileBinding.Key;
@@ -490,6 +495,9 @@ namespace STEM.Surge.BasicControllers
                             {
                                 keyBinding.InitiationSource = null;
                                 keyBinding.Assigned = false;
+
+                                if (successfulAssignment)
+                                    keyBinding.LastSuccessfulAssignment = DateTime.UtcNow;
                             }
                     }
                 }
@@ -576,7 +584,7 @@ namespace STEM.Surge.BasicControllers
 
                 try
                 {
-                    ReleaseSerializationKey(details.InitiationSource);
+                    ReleaseSerializationKey(details.InitiationSource, exceptions.Count == 0);
                 }
                 catch { }
 

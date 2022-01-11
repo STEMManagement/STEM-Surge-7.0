@@ -47,6 +47,7 @@ namespace STEM.Surge.BasicControllers
                 Key = key;
                 InitiationSource = initiationSource;
                 LastAssigned = DateTime.UtcNow;
+                LastSuccessfulAssignment = DateTime.UtcNow;
                 Assigned = assigned;
             }
 
@@ -89,7 +90,7 @@ namespace STEM.Surge.BasicControllers
                         }
                         catch { }
 
-                if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
+                if (((TimeSpan)(DateTime.UtcNow - LastSuccessfulAssignment)) > _Owner.KeyTimeout)
                     if (_Owner.KeyExpired != null)
                         try
                         {
@@ -116,7 +117,7 @@ namespace STEM.Surge.BasicControllers
                             //        Assigned = false;
                             //    }
 
-                            if (((TimeSpan)(DateTime.UtcNow - LastAssigned)) > _Owner.KeyTimeout)
+                            if (((TimeSpan)(DateTime.UtcNow - LastSuccessfulAssignment)) > _Owner.KeyTimeout)
                                 _Owner.CoordinatedKeyManager.Unlock(Key, this);
                         }
                         catch { }
@@ -151,10 +152,12 @@ namespace STEM.Surge.BasicControllers
             }
 
             internal DateTime LastAssigned { get; set; }
+            internal DateTime LastSuccessfulAssignment { get; set; }
+            
 
             public override string ToString()
             {
-                return "Last Assigned: " + LastAssigned.ToString("G") + ", " + _Owner.GetType().Name + " - " + InitiationSource;
+                return "Last Successful Assignment: " + LastSuccessfulAssignment.ToString("G") + ", " + _Owner.GetType().Name + " - " + InitiationSource;
             }
         }
         
@@ -200,14 +203,14 @@ namespace STEM.Surge.BasicControllers
 
                     if (ret == null)
                     {
-                        ReleaseSerializationKey(initiationSource);
+                        ReleaseSerializationKey(initiationSource, false);
                     }
                 }
             }
             catch (Exception ex)
             {
                 STEM.Sys.EventLog.WriteEntry("SerialDeploymentController.LockSerializationKey", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                ReleaseSerializationKey(initiationSource);
+                ReleaseSerializationKey(initiationSource, false);
                 ret = null;
             }
             
@@ -332,7 +335,7 @@ namespace STEM.Surge.BasicControllers
             return true;
         }
 
-        protected void ReleaseSerializationKey(string initiationSource)
+        protected void ReleaseSerializationKey(string initiationSource, bool successfulAssignment)
         {
             try
             {
@@ -349,6 +352,9 @@ namespace STEM.Surge.BasicControllers
                             {
                                 binding.InitiationSource = null;
                                 binding.Assigned = false;
+
+                                if (successfulAssignment)
+                                    binding.LastSuccessfulAssignment = DateTime.UtcNow;
                             }
 
                         break;
@@ -389,7 +395,7 @@ namespace STEM.Surge.BasicControllers
 
             try
             {
-                ReleaseSerializationKey(details.InitiationSource);
+                ReleaseSerializationKey(details.InitiationSource, exceptions.Count == 0);
             }
             catch { }
 
