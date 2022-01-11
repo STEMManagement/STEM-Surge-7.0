@@ -54,6 +54,10 @@ namespace STEM.Surge.BasicControllers
 
         public override List<string> ListPreprocess(IReadOnlyList<string> list)
         {
+            lock (_ListMap)
+                if (_ListMap.Count > 0)
+                    return _ListMap.Keys.ToList();
+
             _LastList = list;
             if (RandomizeList)
             {
@@ -88,7 +92,13 @@ namespace STEM.Surge.BasicControllers
             
             try
             {
-                int iter = _ListMap[initiationSource];
+                int iter = 0;
+
+                lock (_ListMap)
+                {
+                    iter = _ListMap[initiationSource];
+                    _ListMap.Remove(initiationSource);
+                }
 
                 ret = base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
 
