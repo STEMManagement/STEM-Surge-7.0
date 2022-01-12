@@ -55,6 +55,7 @@ namespace STEM.Surge.SMB
                     continue;
 
                 CB_SourcePath = Path.GetDirectoryName(file);
+                CB_ExpandSource = false;
                 CB_FileFilter = Path.GetFileName(file);
                 CB_DirectoryFilter = "*";
                 CB_RecurseSource = false;

@@ -53,6 +53,7 @@ namespace STEM.Surge.SMB
         protected override void _Rollback()
         {
             CB_SourcePath = SourcePath;
+            CB_ExpandSource = ExpandSource;
             CB_FileFilter = FileFilter;
             CB_DirectoryFilter = DirectoryFilter;
             CB_RecurseSource = RecurseSource;
@@ -63,6 +64,7 @@ namespace STEM.Surge.SMB
         protected override bool _Run()
         {
             CB_SourcePath = SourcePath;
+            CB_ExpandSource = ExpandSource;
             CB_FileFilter = FileFilter;
             CB_DirectoryFilter = DirectoryFilter;
             CB_RecurseSource = RecurseSource;
