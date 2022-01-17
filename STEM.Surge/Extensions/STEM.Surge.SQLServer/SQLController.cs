@@ -34,7 +34,7 @@ namespace STEM.Surge.SQLServer
     {
         [Category("SQL Server")]
         [DisplayName("Authentication"), DescriptionAttribute("The authentication configuration to be used.")]
-        public new Authentication Authentication { get; set; }
+        public Authentication Authentication { get; set; }
 
         [Category("SQL Controller")]
         [DisplayName("Sql to be executed"), DescriptionAttribute("This is the Sql that will feed the assignment chain.")]

@@ -47,7 +47,7 @@ namespace STEM.Surge.SSH
             try
             {
                 TemplateKVP["[SshServerAddress]"] = STEM.Sys.IO.Path.IPFromPath(initiationSource);
-                TemplateKVP["[SshServerPort]"] = ((Authentication)Authentication).Port;
+                TemplateKVP["[SshServerPort]"] = ((Authentication)SourceAuthentication()).Port;
 
                 return base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
             }

@@ -46,7 +46,7 @@ namespace STEM.Surge.FTP
             try
             {
                 TemplateKVP["[FtpServerAddress]"] = STEM.Sys.IO.Path.IPFromPath(initiationSource);
-                TemplateKVP["[FtpServerPort]"] = ((Authentication)Authentication).Port;
+                TemplateKVP["[FtpServerPort]"] = ((Authentication)SourceAuthentication()).Port;
 
                 return base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
             }
