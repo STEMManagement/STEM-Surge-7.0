@@ -77,9 +77,15 @@ namespace STEM.Surge
         }
 
 
-        [XmlIgnore]
-        [Browsable(false)]
-        public STEM.Sys.IO.Listing.IAuthentication Authentication { get; set; }
+        STEM.Sys.IO.Listing.IAuthentication _SourceAuthentication = null;
+        public STEM.Sys.IO.Listing.IAuthentication SourceAuthentication()
+        {
+            return _SourceAuthentication;
+        }
+        public void AssignSourceAuthentication(STEM.Sys.IO.Listing.IAuthentication sa)
+        {
+            _SourceAuthentication = sa;
+        }
 
         /// <summary>
         /// An internal ID unique to this instance of a DeploymentController
@@ -590,15 +596,19 @@ namespace STEM.Surge
         protected virtual _InstructionSet GetTemplateInstance(string templateName, bool cloneTemplate = false)
         {
             string txt = STEM.Sys.IO.TextFileManager.GetFileText(templateName);
-            DateTime lwt = STEM.Sys.IO.TextFileManager.GetFileLastWriteTime(templateName);
-            if (!_LastWriteTime.ContainsKey(templateName) || lwt > _LastWriteTime[templateName])
+
+            if (txt != null)
             {
-                try
+                DateTime lwt = STEM.Sys.IO.TextFileManager.GetFileLastWriteTime(templateName);
+                if (!_LastWriteTime.ContainsKey(templateName) || lwt > _LastWriteTime[templateName])
                 {
-                    _InstructionSet[templateName] = STEM.Sys.Serializable.Deserialize(txt) as _InstructionSet;
-                    _LastWriteTime[templateName] = lwt;
+                    try
+                    {
+                        _InstructionSet[templateName] = STEM.Sys.Serializable.Deserialize(txt) as _InstructionSet;
+                        _LastWriteTime[templateName] = lwt;
+                    }
+                    catch { }
                 }
-                catch { }
             }
 
             if (_InstructionSet.ContainsKey(templateName))

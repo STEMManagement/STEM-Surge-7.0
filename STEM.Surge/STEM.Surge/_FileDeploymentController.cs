@@ -74,8 +74,6 @@ namespace STEM.Surge
             CheckTriggerExists = true;
             RequireTargetNameCoordination = false;
 
-            Authentication = null;
-
             RecreateSubFromRootOf = "";
 
             TemplateKVP["[TargetPath]"] = "Reserved";
@@ -331,8 +329,8 @@ namespace STEM.Surge
         /// <returns>The FileInfo for the specified file</returns>
         public virtual STEM.Sys.IO.Listing.FileInfo GetFileInfo(string file)
         {
-            if (Authentication != null)
-                return Authentication.GetFileInfo(file);
+            if (SourceAuthentication() != null)
+                return SourceAuthentication().GetFileInfo(file);
 
             return null;
         }
@@ -344,8 +342,8 @@ namespace STEM.Surge
         /// <returns>The FileInfo for the specified file</returns>
         public virtual STEM.Sys.IO.Listing.DirectoryInfo GetDirectoryInfo(string directory)
         {
-            if (Authentication != null)
-                return Authentication.GetDirectoryInfo(directory);
+            if (SourceAuthentication() != null)
+                return SourceAuthentication().GetDirectoryInfo(directory);
 
             return null;
         }
@@ -357,8 +355,8 @@ namespace STEM.Surge
         /// <returns>True if the file can be found</returns>
         public virtual bool FileExists(string file)
         {
-            if (Authentication != null)
-                return Authentication.FileExists(file);
+            if (SourceAuthentication() != null)
+                return SourceAuthentication().FileExists(file);
 
             return false;
         }
@@ -369,8 +367,8 @@ namespace STEM.Surge
         /// <param name="directory">The directory to be created</param>
         public virtual void CreateDirectory(string directory)
         {
-            if (Authentication != null)
-                Authentication.CreateDirectory(directory);
+            if (SourceAuthentication() != null)
+                SourceAuthentication().CreateDirectory(directory);
         }
 
         /// <summary>
@@ -383,9 +381,9 @@ namespace STEM.Surge
         /// <returns>The file list</returns>
         public List<string> ListFiles(string directory, string directoryFilter, string fileFilter, bool recurse)
         {
-            if (Authentication != null)
+            if (SourceAuthentication() != null)
             {
-                STEM.Sys.IO.Listing.IListingAgent agent = Authentication.ConstructListingAgent(Sys.IO.Listing.ListingType.File, directory, fileFilter, directoryFilter, recurse);
+                STEM.Sys.IO.Listing.IListingAgent agent = SourceAuthentication().ConstructListingAgent(Sys.IO.Listing.ListingType.File, directory, fileFilter, directoryFilter, recurse);
 
                 STEM.Sys.IO.Listing.ListResult result = agent.GetListResult(Sys.IO.Listing.ListingElements.None);
 
@@ -404,9 +402,9 @@ namespace STEM.Surge
         /// <returns>The directory list</returns>
         public List<string> ListDirectories(string directory, string directoryFilter, bool recurse)
         {
-            if (Authentication != null)
+            if (SourceAuthentication() != null)
             {
-                STEM.Sys.IO.Listing.IListingAgent agent = Authentication.ConstructListingAgent(Sys.IO.Listing.ListingType.Directory, directory, "*", directoryFilter, recurse);
+                STEM.Sys.IO.Listing.IListingAgent agent = SourceAuthentication().ConstructListingAgent(Sys.IO.Listing.ListingType.Directory, directory, "*", directoryFilter, recurse);
 
                 STEM.Sys.IO.Listing.ListResult result = agent.GetListResult(Sys.IO.Listing.ListingElements.None);
 
@@ -423,8 +421,8 @@ namespace STEM.Surge
         /// <returns>True if the directory can be found</returns>
         public virtual bool DirectoryExists(string directory)
         {
-            if (Authentication != null)
-                return Authentication.DirectoryExists(directory);
+            if (SourceAuthentication() != null)
+                return SourceAuthentication().DirectoryExists(directory);
 
             return false;
         }
