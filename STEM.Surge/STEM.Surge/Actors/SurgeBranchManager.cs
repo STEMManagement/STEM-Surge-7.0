@@ -35,18 +35,15 @@ namespace STEM.Surge
         {
             get
             {
-                if (_PostMortemCache != null)
-                {
-                    if (!System.IO.Directory.Exists(_PostMortemCache))
-                        System.IO.Directory.CreateDirectory(_PostMortemCache);
-                }
-
                 return _PostMortemCache;
             }
 
             set
             {
                 _PostMortemCache = STEM.Sys.IO.Path.AdjustPath(value);
+
+                if (!System.IO.Directory.Exists(_PostMortemCache))
+                    System.IO.Directory.CreateDirectory(_PostMortemCache);
             }
         }
 
@@ -835,7 +832,7 @@ namespace STEM.Surge
                             }
 
                         if (_AssemblyListInitializer.RemoteAddress == _Connection.RemoteAddress)
-                            if (_Owner._AsmPool.LoadLevel > 0)
+                            if (_AsmPool.LoadLevel > 0)
                             {
                                 ExecutionInterval = TimeSpan.FromSeconds(1);
                                 endAsync = false;
@@ -1937,7 +1934,7 @@ namespace STEM.Surge
             }
         }
 
-        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
+        static STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
         void LoadAsm(object o)
         {
             if (o is FileTransfer)
@@ -2167,9 +2164,24 @@ namespace STEM.Surge
                         File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
 
                     if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
-                        using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
+                        try
                         {
-                            fs.Write(iSet.Serialize());
+                            using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
+                            {
+                                fs.Write(iSet.Serialize());
+                            }
+                        }
+                        catch
+                        {
+                            if (!System.IO.Directory.Exists(PostMortemCache))
+                            {
+                                System.IO.Directory.CreateDirectory(PostMortemCache);
+
+                                using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
+                                {
+                                    fs.Write(iSet.Serialize());
+                                }
+                            }
                         }
                 }
                 catch { System.Threading.Thread.Sleep(10); }
