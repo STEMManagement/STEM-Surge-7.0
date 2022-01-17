@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using STEM.Sys.Security;
 using STEM.Sys.IO.Listing;
@@ -47,45 +48,46 @@ namespace STEM.Listing.SMB
                 {
                     List<string> files = STEM.Sys.IO.Directory.STEM_GetFiles(Path, FileFilter, SubpathFilter, Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false);
 
-                    foreach (string file in files)
+                    if (elements == ListingElements.None)
                     {
-                        if (elements == ListingElements.None)
-                        {
-                            ret.Add(new ListingEntry { Name = file, ItemType = ItemType.File });
-                        }
-                        else if (elements == ListingElements.LastWriteTimeUtc)
-                        {
+                        ret = files.Select(file => new ListingEntry { Name = file, ItemType = ItemType.File }).ToList();
+                    }
+                    else if (elements == ListingElements.LastWriteTimeUtc)
+                    {
+                        foreach (string file in files)
                             try
                             {
                                 ret.Add(new ListingEntry { Name = file, ItemType = ItemType.File, LastWriteTimeUtc = System.IO.File.GetLastWriteTimeUtc(file) });
                             }
                             catch { }
-                        }
-                        else if (elements == ListingElements.CreationTimeUtc)
-                        {
+                    }
+                    else if (elements == ListingElements.CreationTimeUtc)
+                    {
+                        foreach (string file in files)
                             try
                             {
                                 ret.Add(new ListingEntry { Name = file, ItemType = ItemType.File, CreationTimeUtc = System.IO.File.GetCreationTimeUtc(file) });
                             }
                             catch { }
-                        }
-                        else if (elements == ListingElements.LastAccessTimeUtc)
-                        {
+                    }
+                    else if (elements == ListingElements.LastAccessTimeUtc)
+                    {
+                        foreach (string file in files)
                             try
                             {
                                 ret.Add(new ListingEntry { Name = file, ItemType = ItemType.File, LastAccessTimeUtc = System.IO.File.GetLastAccessTimeUtc(file) });
                             }
                             catch { }
-                        }
-                        else
-                        {
+                    }
+                    else
+                    {
+                        foreach (string file in files)
                             try
                             {
                                 System.IO.FileInfo i = new System.IO.FileInfo(file);
                                 ret.Add(new ListingEntry { CreationTimeUtc = i.CreationTimeUtc, LastAccessTimeUtc = i.LastAccessTimeUtc, LastWriteTimeUtc = i.LastWriteTimeUtc, Size = i.Length, Name = file, ItemType = ItemType.File });
                             }
                             catch { }
-                        }
                     }
                 }
 
@@ -93,45 +95,46 @@ namespace STEM.Listing.SMB
                 {
                     List<string> directories = STEM.Sys.IO.Directory.STEM_GetDirectories(Path, SubpathFilter, Recurse ? System.IO.SearchOption.AllDirectories : System.IO.SearchOption.TopDirectoryOnly, false);
 
-                    foreach (string dir in directories)
+                    if (elements == ListingElements.None)
                     {
-                        if (elements == ListingElements.None)
-                        {
-                            ret.Add(new ListingEntry { Name = dir });
-                        }
-                        else if (elements == ListingElements.LastWriteTimeUtc)
-                        {
+                        ret = directories.Select(dir => new ListingEntry { Name = dir, ItemType = ItemType.Directory }).ToList();
+                    }
+                    else if (elements == ListingElements.LastWriteTimeUtc)
+                    {
+                        foreach (string dir in directories)
                             try
                             {
                                 ret.Add(new ListingEntry { Name = dir, ItemType = ItemType.Directory, LastWriteTimeUtc = System.IO.Directory.GetLastWriteTimeUtc(dir) });
                             }
                             catch { }
-                        }
-                        else if (elements == ListingElements.CreationTimeUtc)
-                        {
+                    }
+                    else if (elements == ListingElements.CreationTimeUtc)
+                    {
+                        foreach (string dir in directories)
                             try
                             {
                                 ret.Add(new ListingEntry { Name = dir, ItemType = ItemType.Directory, CreationTimeUtc = System.IO.Directory.GetCreationTimeUtc(dir) });
                             }
                             catch { }
-                        }
-                        else if (elements == ListingElements.LastAccessTimeUtc)
-                        {
+                    }
+                    else if (elements == ListingElements.LastAccessTimeUtc)
+                    {
+                        foreach (string dir in directories)
                             try
                             {
                                 ret.Add(new ListingEntry { Name = dir, ItemType = ItemType.Directory, LastAccessTimeUtc = System.IO.Directory.GetLastAccessTimeUtc(dir) });
                             }
                             catch { }
-                        }
-                        else
-                        {
+                    }
+                    else
+                    {
+                        foreach (string dir in directories)
                             try
                             {
                                 System.IO.DirectoryInfo i = new System.IO.DirectoryInfo(dir);
                                 ret.Add(new ListingEntry { CreationTimeUtc = i.CreationTimeUtc, LastAccessTimeUtc = i.LastAccessTimeUtc, LastWriteTimeUtc = i.LastWriteTimeUtc, Name = dir, ItemType = ItemType.Directory });
                             }
                             catch { }
-                        }
                     }
                 }
 
