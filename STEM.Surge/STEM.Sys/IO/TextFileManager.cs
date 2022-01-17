@@ -12,47 +12,77 @@ namespace STEM.Sys.IO
 
         public static DateTime GetFileLastWriteTime(string filename)
         {
-            lock (_FileContent)
-            {
-                DateTime ret = DateTime.MinValue;
+            DateTime ret = DateTime.MinValue;
 
-                foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(filename, STEM.Sys.IO.Net.MachineIP()))
+            foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(filename, STEM.Sys.IO.Net.MachineIP()))
+                try
                 {
-                    string txt = GetFileText(t);
-
-                    if (txt != null)
-                        if (ret < _LastWriteTime[t])
-                            ret = _LastWriteTime[t];
+                    if (ret < _LastWriteTime[t])
+                        ret = _LastWriteTime[t];
                 }
+                catch { }
 
-                return ret;
-            }
+            return ret;
         }
+
         public static string GetFileText(string filename)
         {
-            lock (_FileContent)
-                foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(filename, STEM.Sys.IO.Net.MachineIP()))
+            foreach (string t in STEM.Sys.IO.Path.OrderPathsWithSubnet(filename, STEM.Sys.IO.Net.MachineIP()))
+                try
                 {
                     string content = null;
-                    if (_FileContent.ContainsKey(t))
-                    {
-                        content = _FileContent[t];
-                    }
 
-                    if (!System.IO.File.Exists(t) && content == null)
-                    {
-                        STEM.Sys.EventLog.WriteEntry("STEM.Sys.IO.TextFileManager.GetFileText", "File does not exist: " + t, STEM.Sys.EventLog.EventLogEntryType.Error);
-                        continue;
-                    }
-                    else if (System.IO.File.Exists(t))
+                    while (true)
+                        try
+                        {
+                            if (_FileContent.ContainsKey(t))
+                            {
+                                content = _FileContent[t];
+                            }
+
+                            break;
+                        }
+                        catch { }
+
+                    if (content != null)
                     {
                         if (_LastWriteTimeCheck.ContainsKey(t))
                         {
-                            if (content == null || (DateTime.UtcNow - _LastWriteTimeCheck[t]).TotalSeconds > 15)
+                            if ((DateTime.UtcNow - _LastWriteTimeCheck[t]).TotalSeconds > 30)
+                            {
+                                lock (_LastWriteTime)
+                                    if ((DateTime.UtcNow - _LastWriteTimeCheck[t]).TotalSeconds > 30)
+                                    {
+                                        DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
+
+                                        if (_LastWriteTime[t] != lwt)
+                                        {
+                                            try
+                                            {
+                                                content = System.IO.File.ReadAllText(t);
+
+                                                _FileContent[t] = content;
+                                                _LastWriteTime[t] = lwt;
+                                                _LastWriteTimeCheck[t] = DateTime.UtcNow;
+                                            }
+                                            catch
+                                            {
+                                            }
+                                        }
+                                    }
+                            }
+                        }
+
+                        return content;
+                    }
+                    else
+                    {
+                        lock (_LastWriteTime)
+                            if (System.IO.File.Exists(t))
                             {
                                 DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
 
-                                if (_LastWriteTime[t] != lwt || content == null)
+                                try
                                 {
                                     content = System.IO.File.ReadAllText(t);
 
@@ -60,23 +90,15 @@ namespace STEM.Sys.IO
                                     _LastWriteTime[t] = lwt;
                                     _LastWriteTimeCheck[t] = DateTime.UtcNow;
                                 }
+                                catch
+                                {
+                                }
+
+                                return content;
                             }
-                        }
-                        else
-                        {
-                            DateTime lwt = System.IO.File.GetLastWriteTimeUtc(t);
-
-                            content = System.IO.File.ReadAllText(t);
-
-                            _FileContent[t] = content;
-                            _LastWriteTime[t] = lwt;
-                            _LastWriteTimeCheck[t] = DateTime.UtcNow;
-                        }
                     }
-
-                    if (content != null)
-                        return content;
                 }
+                catch { }
 
             return null;
         }
