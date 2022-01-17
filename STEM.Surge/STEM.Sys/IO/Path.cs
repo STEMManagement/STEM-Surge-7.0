@@ -1177,7 +1177,7 @@ namespace STEM.Sys.IO
             f = f.TrimEnd(new char[] { '|' });
 
             if (f.Trim().Length > 0)
-                return new Regex(f, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+                return new Regex(f, RegexOptions.IgnoreCase);
 
             return null;
         }
@@ -1198,7 +1198,7 @@ namespace STEM.Sys.IO
             f = f.TrimEnd(new char[] { '|' });
 
             if (f.Trim().Length > 0)
-                return new Regex(f, RegexOptions.IgnoreCase | RegexOptions.Compiled );
+                return new Regex(f, RegexOptions.IgnoreCase);
 
             return null;
         }
