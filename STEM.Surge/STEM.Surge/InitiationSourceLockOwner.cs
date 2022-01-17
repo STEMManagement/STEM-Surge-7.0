@@ -57,20 +57,20 @@ namespace STEM.Surge
             return "Branch: " + (Branch != null ? Branch.BranchIP : "Unassigned") + " - " + ControllerManager.DeploymentControllerDescription;
         }
 
-        public bool Lock(string initiationSource)
+        public bool Lock(string initiationSource, _DeploymentController controller)
         {
             lock (this)
             {
                 if (initiationSource != null)
                 {
-                    _FileDeploymentController fileBasis = ControllerManager.ValidatedController as _FileDeploymentController;
+                    _FileDeploymentController fileBasis = controller as _FileDeploymentController;
                     if (fileBasis != null)
                         if (fileBasis.RequireTargetNameCoordination)
                         {
                             RequiredTargetNameCoordination = true;
                         }
 
-                    if (ControllerManager.UseSubnetCoordination)
+                    if (controller.UseSubnetCoordination)
                     {
                         if (ControllerManager.KeyManager.Lock(initiationSource, this, ControllerManager.CoordinateWith))
                         {
