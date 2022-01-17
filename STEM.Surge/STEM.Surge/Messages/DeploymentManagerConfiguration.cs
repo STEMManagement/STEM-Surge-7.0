@@ -52,6 +52,18 @@ namespace STEM.Surge.Messages
                     test.AdHocInstructionSets = candidate.AdHocInstructionSets;
                     test.InstructionSetStatics = candidate.InstructionSetStatics;
 
+                    foreach (SwitchboardConfig.FileSourcesRow r in candidate.SwitchboardConfiguration.FileSources)
+                    {
+                        if (r.IsAuthenticationFilenameNull())
+                        {
+                            return false;
+                        }
+                        else if (String.IsNullOrEmpty(r.AuthenticationFilename))
+                        {
+                            return false;
+                        }
+                    }
+
                     if (orig == test.Serialize())
                         return false;
 
