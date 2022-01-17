@@ -1085,7 +1085,7 @@ namespace STEM.Surge
             {
                 Branches m = message as Branches;
 
-                if (connection.IsConnected())
+                //if (connection.IsConnected())
                     lock (_BranchesMessages)
                         _BranchesMessages[connection.RemoteAddress] = m;
             }
@@ -1093,7 +1093,7 @@ namespace STEM.Surge
             {
                 Backlogs m = message as Backlogs;
 
-                if (connection.IsConnected())
+                //if (connection.IsConnected())
                     lock (_BacklogsMessages)
                         _BacklogsMessages[connection.RemoteAddress] = m;
             }
@@ -1106,7 +1106,7 @@ namespace STEM.Surge
                         if (!_ActiveDeploymentsMessages.ContainsKey(connection.RemoteAddress))
                             _ActiveDeploymentsMessages[connection.RemoteAddress] = new List<ActiveDeployments>();
 
-                if (connection.IsConnected())
+                //if (connection.IsConnected())
                     lock (_ActiveDeploymentsMessages[connection.RemoteAddress])
                         _ActiveDeploymentsMessages[connection.RemoteAddress].Add(m);
             }
@@ -1225,7 +1225,7 @@ namespace STEM.Surge
             }
         }
 
-        STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
+        static STEM.Sys.Threading.ThreadPool _AsmPool = new Sys.Threading.ThreadPool(Environment.ProcessorCount);
         void LoadAsm(object o)
         {
             if (o is FileTransfer)
