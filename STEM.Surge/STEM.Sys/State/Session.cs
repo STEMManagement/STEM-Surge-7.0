@@ -32,6 +32,20 @@ namespace STEM.Sys.State
 
         public Session()
         {
+            _TargetObjects = _SessionObjects;
+        }
+
+        public Session(bool dedicated)
+        {
+            if (dedicated)
+            {
+                _TargetObjects = new Dictionary<string, SessionObject>();
+                STEM.Sys.Global.ThreadPool.BeginAsync(new ThreadStart(__TimeoutThread), TimeSpan.FromMinutes(5));
+            }
+            else
+            {
+                _TargetObjects = _SessionObjects;
+            }
         }
 
         static void _TimeoutThread()
@@ -55,7 +69,30 @@ namespace STEM.Sys.State
             catch { }
         }
 
+        void __TimeoutThread()
+        {
+            try
+            {
+                List<string> keys = new List<string>();
+
+                lock (_TargetObjects)
+                    keys.AddRange(_TargetObjects.Keys);
+
+                foreach (string key in keys)
+                    lock (_TargetObjects)
+                        if (_TargetObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                            if ((DateTime.UtcNow - _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastAccess).TotalMinutes > 120)
+                            {
+                                _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].Dispose();
+                                _TargetObjects.Remove(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                            }
+            }
+            catch { }
+        }
+
         static Dictionary<string, SessionObject> _SessionObjects = new Dictionary<string, SessionObject>();
+
+        Dictionary<string, SessionObject> _TargetObjects = new Dictionary<string, SessionObject>();
 
         public List<string> KeyList()
         {
@@ -63,8 +100,8 @@ namespace STEM.Sys.State
 
             try
             {
-                lock (_SessionObjects)
-                    ret.AddRange(_SessionObjects.Keys);
+                lock (_TargetObjects)
+                    ret.AddRange(_TargetObjects.Keys);
             }
             catch { }
 
@@ -78,8 +115,8 @@ namespace STEM.Sys.State
 
             try
             {
-                lock (_SessionObjects)
-                    return _SessionObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                lock (_TargetObjects)
+                    return _TargetObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
             }
             catch { }
 
@@ -93,8 +130,8 @@ namespace STEM.Sys.State
 
             try
             {
-                lock (_SessionObjects)
-                    return _SessionObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastAccess;
+                lock (_TargetObjects)
+                    return _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastAccess;
             }
             catch { }
 
@@ -108,8 +145,8 @@ namespace STEM.Sys.State
 
             try
             {
-                lock (_SessionObjects)
-                    return _SessionObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastRead;
+                lock (_TargetObjects)
+                    return _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastRead;
             }
             catch { }
 
@@ -123,8 +160,8 @@ namespace STEM.Sys.State
 
             try
             {
-                lock (_SessionObjects)
-                    return _SessionObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastWrite;
+                lock (_TargetObjects)
+                    return _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].LastWrite;
             }
             catch { }
 
@@ -138,9 +175,9 @@ namespace STEM.Sys.State
                 if (String.IsNullOrEmpty(key))
                     throw new ArgumentNullException(nameof(key));
 
-                lock (_SessionObjects)
-                    if (_SessionObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
-                        return _SessionObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].Value;
+                lock (_TargetObjects)
+                    if (_TargetObjects.ContainsKey(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)))
+                        return _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)].Value;
 
                 return null;
             }
@@ -150,11 +187,11 @@ namespace STEM.Sys.State
                 if (String.IsNullOrEmpty(key))
                     throw new ArgumentNullException(nameof(key));
 
-                lock (_SessionObjects)
+                lock (_TargetObjects)
                     if (value == null)
-                        _SessionObjects.Remove(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
-                    else                        
-                        _SessionObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = new SessionObject(key, value);
+                        _TargetObjects.Remove(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
+                    else
+                        _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = new SessionObject(key, value);
             }
         }
     }
