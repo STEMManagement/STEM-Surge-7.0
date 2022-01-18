@@ -1161,6 +1161,7 @@ namespace STEM.Sys.IO
             return values;
         }
 
+        static STEM.Sys.State.Session _ExclusiveFilterSession = new State.Session(true);
         /// <summary>
         /// Builds a Regex representing the exclusive filter set from fullFilterSet
         /// </summary>
@@ -1177,11 +1178,19 @@ namespace STEM.Sys.IO
             f = f.TrimEnd(new char[] { '|' });
 
             if (f.Trim().Length > 0)
-                return new Regex(f, RegexOptions.IgnoreCase);
+            {
+                if (!_ExclusiveFilterSession.ContainsKey(f))
+                    lock (_ExclusiveFilterSession)
+                        if (!_ExclusiveFilterSession.ContainsKey(f))
+                            _ExclusiveFilterSession[f] = new Regex(f, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+                return _ExclusiveFilterSession[f] as Regex;
+            }
 
             return null;
         }
 
+        static STEM.Sys.State.Session _InclusiveFilterSession = new State.Session(true);
         /// <summary>
         /// Builds a Regex representing the inclusive filter set from fullFilterSet
         /// </summary>
@@ -1198,7 +1207,14 @@ namespace STEM.Sys.IO
             f = f.TrimEnd(new char[] { '|' });
 
             if (f.Trim().Length > 0)
-                return new Regex(f, RegexOptions.IgnoreCase);
+            {
+                if (!_InclusiveFilterSession.ContainsKey(f))
+                    lock (_InclusiveFilterSession)
+                        if (!_InclusiveFilterSession.ContainsKey(f))
+                            _InclusiveFilterSession[f] = new Regex(f, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+                return _InclusiveFilterSession[f] as Regex;
+            }
 
             return null;
         }
