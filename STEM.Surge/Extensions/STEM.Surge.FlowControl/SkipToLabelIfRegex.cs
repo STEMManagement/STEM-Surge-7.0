@@ -58,7 +58,7 @@ namespace STEM.Surge.FlowControl
             {
                 try
                 {
-                    if (STEM.Sys.IO.Path.StringMatches(TestString, new System.Text.RegularExpressions.Regex(RegexFilter, System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled)))
+                    if (STEM.Sys.IO.Path.StringMatches(TestString, new System.Text.RegularExpressions.Regex(RegexFilter, System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
                         SkipForwardToFlowControlLabel(SkipToLabel);
                 }
                 catch (Exception ex)
@@ -79,7 +79,7 @@ namespace STEM.Surge.FlowControl
             {
                 try
                 {
-                    if (STEM.Sys.IO.Path.StringMatches(TestString, new System.Text.RegularExpressions.Regex(RegexFilter, System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled)))
+                    if (STEM.Sys.IO.Path.StringMatches(TestString, new System.Text.RegularExpressions.Regex(RegexFilter, System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
                         SkipBackwardToFlowControlLabel(SkipToLabel);
                 }
                 catch (Exception ex)
