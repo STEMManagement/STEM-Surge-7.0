@@ -45,6 +45,10 @@ namespace STEM.Listing.FTP
         public int TimeoutSeconds { get; set; }
 
         [Category("FTP Server")]
+        [DisplayName("Working Directory"), DescriptionAttribute("What is the FTP server working directory? (Blank for default)")]
+        public string WorkingDirectory { get; set; }
+
+        [Category("FTP Server")]
         [DisplayName("FTP User"), DescriptionAttribute("What is the FTP user?")]
         public string FTPUser { get; set; }
 
@@ -80,6 +84,7 @@ namespace STEM.Listing.FTP
             ServerAddress = "[FtpServerAddress]";
             Port = "[FtpServerPort]";
             TimeoutSeconds = 15;
+            WorkingDirectory = "";
             FTPUser = "";
             FTPPassword = "";
             RequireCertificateValidation = false;
@@ -357,6 +362,9 @@ namespace STEM.Listing.FTP
                     }
 
                     conn.Connect();
+
+                    if (!String.IsNullOrEmpty(WorkingDirectory))
+                        conn.SetWorkingDirectory(WorkingDirectory);
 
                     return conn;
                 }
@@ -717,9 +725,11 @@ namespace STEM.Listing.FTP
 
                 filename = AdjustPath(conn.Host, filename);
 
-                conn.SetWorkingDirectory(AdjustPath(conn.Host, STEM.Sys.IO.Path.GetDirectoryName(filename)));
+                string directory = STEM.Sys.IO.Path.GetDirectoryName(filename);
 
                 string unique = STEM.Sys.IO.Path.GetFileName(filename);
+
+                unique = AdjustPath(conn.Host, directory) + "/" + unique;
 
                 if (filename.ToUpper().Contains("/DEV/NULL"))
                     return filename;
@@ -732,9 +742,11 @@ namespace STEM.Listing.FTP
                         STEM.Sys.IO.Path.GetFileNameWithoutExtension(filename),
                         (cnt++).ToString("0000"),
                         STEM.Sys.IO.Path.GetExtension(filename));
+
+                    unique = AdjustPath(conn.Host, directory) + "/" + unique;
                 }
 
-                return AdjustPath(conn.Host, STEM.Sys.IO.Path.GetDirectoryName(filename)) + "/" + unique;
+                return unique;
             }
             catch (Exception ex)
             {
@@ -770,11 +782,6 @@ namespace STEM.Listing.FTP
                 {
                     path = path.Substring(("/" + machine).Length);
                 }
-
-            path = path.TrimStart('/', '\\');
-
-            if (path == "")
-                path = ".";
 
             return path;
         }

@@ -46,6 +46,10 @@ namespace STEM.Listing.SSH
         public int TimeoutSeconds { get; set; }
 
         [Category("SSH")]
+        [DisplayName("Working Directory"), DescriptionAttribute("What is the SSH server working directory? (Blank for default)")]
+        public string WorkingDirectory { get; set; }
+
+        [Category("SSH")]
         [DisplayName("User"), DescriptionAttribute("What is the SSH user?")]
         public string User { get; set; }
 
@@ -77,6 +81,7 @@ namespace STEM.Listing.SSH
             ServerAddress = "[SshServerAddress]";
             Port = "[SshServerPort]";
             TimeoutSeconds = 5;
+            WorkingDirectory = "";
             User = "";
             KeyFile = "";
             Password = "";
@@ -171,33 +176,30 @@ namespace STEM.Listing.SSH
 
         public string TargetAddress(string target)
         {
-            lock (_SftpClients)
-            {
-                if (_SelectedAddress != null)
-                    return _SelectedAddress;
-
-                if (!String.IsNullOrEmpty(target))
-                {
-                    _SelectedAddress = ServerFromPath(target);
-
-                    if (!String.IsNullOrEmpty(_SelectedAddress))
-                        _SelectedAddress = null;
-                }
-
-                SftpClient client = null;
-
-                try
-                {
-                    client = OpenClient();
-                }
-                catch { }
-                finally
-                {
-                    RecycleClient(client);
-                }
-
+            if (_SelectedAddress != null)
                 return _SelectedAddress;
+
+            if (!String.IsNullOrEmpty(target))
+            {
+                _SelectedAddress = ServerFromPath(target);
+
+                if (!String.IsNullOrEmpty(_SelectedAddress))
+                    _SelectedAddress = null;
             }
+
+            SftpClient client = null;
+
+            try
+            {
+                client = OpenClient();
+            }
+            catch { }
+            finally
+            {
+                RecycleClient(client);
+            }
+
+            return _SelectedAddress;
         }
 
         public string FullPath(string path)
@@ -224,53 +226,50 @@ namespace STEM.Listing.SSH
         /// <exception cref="System.IO.IOException"></exception>
         public SftpClient OpenClient()
         {
-            lock (_SftpClients)
+            if (_SelectedAddress != null)
             {
-                if (_SelectedAddress != null)
+                try
                 {
-                    try
-                    {
-                        SftpClient conn = OpenClient(_SelectedAddress);
+                    SftpClient conn = OpenClient(_SelectedAddress);
 
-                        if (conn != null)
-                            return conn;
-                    }
-                    catch (Exception ex)
+                    if (conn != null)
+                        return conn;
+                }
+                catch (Exception ex)
+                {
+                    throw new System.IO.IOException("No connection could be established. (" + _SelectedAddress + ")", ex);
+                }
+            }
+
+            int available = 1;
+            string server = Authentication.NextAddress(ServerAddress, out available);
+
+            do
+            {
+                if (server == null)
+                    throw new System.IO.IOException("No connection could be established. (" + ServerAddress + ")");
+
+                try
+                {
+                    SftpClient conn = OpenClient(server);
+
+                    if (conn != null)
                     {
-                        throw new System.IO.IOException("No connection could be established. (" + _SelectedAddress + ")", ex);
+                        _SelectedAddress = server;
+                        return conn;
                     }
                 }
-
-                int available = 1;
-                string server = Authentication.NextAddress(ServerAddress, out available);
-
-                do
+                catch (Exception ex)
                 {
-                    if (server == null)
-                        throw new System.IO.IOException("No connection could be established. (" + ServerAddress + ")");
+                    if (available == 0)
+                        throw new System.IO.IOException("No connection could be established. (" + ServerAddress + ")", ex);
+                }
 
-                    try
-                    {
-                        SftpClient conn = OpenClient(server);
+                server = Authentication.NextAddress(ServerAddress, out _);
 
-                        if (conn != null)
-                        {
-                            _SelectedAddress = server;
-                            return conn;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (available == 0)
-                            throw new System.IO.IOException("No connection could be established. (" + ServerAddress + ")", ex);
-                    }
+            } while (available-- > 0);
 
-                    server = Authentication.NextAddress(ServerAddress, out _);
-
-                } while (available-- > 0);
-
-                throw new System.IO.IOException("No connection could be established. (" + ServerAddress + ")");
-            }
+            throw new System.IO.IOException("No connection could be established. (" + ServerAddress + ")");
         }
 
         /// <summary>
@@ -281,95 +280,98 @@ namespace STEM.Listing.SSH
         /// <exception cref="System.IO.IOException"></exception>
         public SftpClient OpenClient(string path)
         {
-            lock (_SftpClients)
+            SftpClient conn = null;
+
+            try
             {
-                SftpClient conn = null;
+                string server = null;
 
-                try
-                {
-                    string server = null;
+                if (path == null)
+                    path = _SelectedAddress;
 
-                    if (path == null)
-                        path = _SelectedAddress;
+                if (path == _SelectedAddress)
+                    server = _SelectedAddress;
 
-                    if (path == _SelectedAddress)
-                        server = _SelectedAddress;
+                if (server == null)
+                    server = ServerFromPath(path);
 
-                    if (server == null)
-                        server = ServerFromPath(path);
+                if (String.IsNullOrEmpty(server))
+                    server = _SelectedAddress;
 
-                    if (String.IsNullOrEmpty(server))
-                        server = _SelectedAddress;
+                if (String.IsNullOrEmpty(server))
+                    throw new System.IO.IOException("System.Listing.SSH.OpenClient called with empty server value.");
 
-                    if (String.IsNullOrEmpty(server))
-                        throw new System.IO.IOException("System.Listing.SSH.OpenClient called with empty server value.");
+                if (_SelectedAddress == null)
+                    _SelectedAddress = server;
 
-                    if (_SelectedAddress == null)
-                        _SelectedAddress = server;
+                string clientKey = server + ":" + Port + ":" + User + ":" + Password + ":" + KeyFile;
 
-                    string clientKey = server + ":" + Port + ":" + User + ":" + Password + ":" + KeyFile;
+                if (!_SftpClients.ContainsKey(clientKey))
+                    lock (_SftpClients)
+                        if (!_SftpClients.ContainsKey(clientKey))
+                            _SftpClients[clientKey] = new Queue<SftpClient>();
 
-                    if (!_SftpClients.ContainsKey(clientKey))
-                        _SftpClients[clientKey] = new Queue<SftpClient>();
-
+                lock (_SftpClients[clientKey])
                     if (_SftpClients[clientKey].Count > 0)
                         conn = _SftpClients[clientKey].Dequeue();
 
+                if (conn != null)
+                {
+                    if (!conn.IsConnected)
+                        conn = OpenClient(server);
+
                     if (conn != null)
-                    {
-                        if (!conn.IsConnected)
-                            conn = OpenClient(server);
+                        return conn;
+                }
 
-                        if (conn != null)
-                            return conn;
-                    }
+                AuthenticationMethod authenticationMethod = null;
 
-                    AuthenticationMethod authenticationMethod = null;
+                if (!String.IsNullOrEmpty(KeyFile))
+                {
+                    string kf = null;
 
-                    if (!String.IsNullOrEmpty(KeyFile))
-                    {
-                        string kf = null;
-
-                        foreach (string f in STEM.Sys.IO.Path.OrderPathsWithSubnet(KeyFile, STEM.Sys.IO.Net.MachineIP()))
-                            if (System.IO.File.Exists(f))
-                            {
-                                kf = f;
-                                break;
-                            }
-
-                        if (kf == null)
-                            throw new System.Exception("No file could be found from " + KeyFile);
-
-                        if (!String.IsNullOrEmpty(Password))
+                    foreach (string f in STEM.Sys.IO.Path.OrderPathsWithSubnet(KeyFile, STEM.Sys.IO.Net.MachineIP()))
+                        if (System.IO.File.Exists(f))
                         {
-                            authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf, Password) });
+                            kf = f;
+                            break;
                         }
-                        else
-                        {
-                            authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf) });
-                        }
+
+                    if (kf == null)
+                        throw new System.Exception("No file could be found from " + KeyFile);
+
+                    if (!String.IsNullOrEmpty(Password))
+                    {
+                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf, Password) });
                     }
                     else
                     {
-                        authenticationMethod = new PasswordAuthenticationMethod(User, Password);
+                        authenticationMethod = new PrivateKeyAuthenticationMethod(User, new PrivateKeyFile[] { new PrivateKeyFile(kf) });
                     }
-
-                    conn = new SftpClient(new ConnectionInfo(server, Int32.Parse(Port), User, new AuthenticationMethod[] { authenticationMethod }));
-
-                    conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
-
-                    conn.Connect();
-
-                    return conn;
                 }
-                catch (Exception ex)
+                else
                 {
-                    DisposeClient(conn);
-                    conn = null;
-
-                    STEM.Sys.EventLog.WriteEntry("SSH.Authentication.OpenClient", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                    throw ex;
+                    authenticationMethod = new PasswordAuthenticationMethod(User, Password);
                 }
+
+                conn = new SftpClient(new ConnectionInfo(server, Int32.Parse(Port), User, new AuthenticationMethod[] { authenticationMethod }));
+
+                conn.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
+
+                conn.Connect();
+
+                if (!String.IsNullOrEmpty(WorkingDirectory))
+                    conn.ChangeDirectory(WorkingDirectory);
+
+                return conn;
+            }
+            catch (Exception ex)
+            {
+                DisposeClient(conn);
+                conn = null;
+
+                STEM.Sys.EventLog.WriteEntry("SSH.Authentication.OpenClient", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                throw ex;
             }
         }
 
@@ -399,19 +401,19 @@ namespace STEM.Listing.SSH
 
                 if (client.IsConnected)
                 {
-                    lock (_SftpClients)
-                    {
-                        string clientKey = client.ConnectionInfo.Host + ":" + Port + ":" + User + ":" + Password + ":" + KeyFile;
+                    string clientKey = client.ConnectionInfo.Host + ":" + Port + ":" + User + ":" + Password + ":" + KeyFile;
 
-                        if (!_SftpClients.ContainsKey(clientKey))
-                            _SftpClients[clientKey] = new Queue<SftpClient>();
+                    if (!_SftpClients.ContainsKey(clientKey))
+                        lock (_SftpClients)
+                            if (!_SftpClients.ContainsKey(clientKey))
+                                _SftpClients[clientKey] = new Queue<SftpClient>();
 
+                    lock (_SftpClients[clientKey])
                         if (_SftpClients[clientKey].Count < 5)
                         {
                             _SftpClients[clientKey].Enqueue(client);
                             client = null;
                         }
-                    }
                 }
 
                 DisposeClient(client);
@@ -630,10 +632,12 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
+                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", DestinationFile: " + destinationFilePath;
+
                 DisposeClient(conn);
                 conn = null;
 
-                throw ex;
+                throw new Exception(exmsg, ex);
             }
             finally
             {
@@ -682,10 +686,11 @@ namespace STEM.Listing.SSH
                 conn = OpenClient(filename);
 
                 filename = AdjustPath(conn.ConnectionInfo.Host, filename);
-
-                conn.ChangeDirectory(AdjustPath(conn.ConnectionInfo.Host, STEM.Sys.IO.Path.GetDirectoryName(filename)));
+                string directory = STEM.Sys.IO.Path.GetDirectoryName(filename);
 
                 string unique = STEM.Sys.IO.Path.GetFileName(filename);
+
+                unique = AdjustPath(conn.ConnectionInfo.Host, directory) + "/" + unique;
 
                 if (filename.ToUpper().Contains("/DEV/NULL"))
                     return filename;
@@ -698,16 +703,20 @@ namespace STEM.Listing.SSH
                         STEM.Sys.IO.Path.GetFileNameWithoutExtension(filename),
                         (cnt++).ToString("0000"),
                         STEM.Sys.IO.Path.GetExtension(filename));
+
+                    unique = AdjustPath(conn.ConnectionInfo.Host, directory) + "/" + unique;
                 }
 
-                return AdjustPath(conn.ConnectionInfo.Host, STEM.Sys.IO.Path.GetDirectoryName(filename)) + "/" + unique;
+                return unique;
             }
             catch (Exception ex)
             {
+                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", FileName: " + filename;
+
                 DisposeClient(conn);
                 conn = null;
 
-                throw ex;
+                throw new Exception(exmsg, ex);
             }
             finally
             {
@@ -736,11 +745,6 @@ namespace STEM.Listing.SSH
                 {
                     path = path.Substring(("/" + machine).Length);
                 }
-
-            path = path.TrimStart('/', '\\');
-
-            if (path == "")
-                path = ".";
 
             return path;
         }
@@ -797,23 +801,36 @@ namespace STEM.Listing.SSH
             try
             {
                 conn = OpenClient(directory);
-
-                directory = AdjustPath(conn.ConnectionInfo.Host, directory);
-
-                if (!conn.Exists(directory))
-                    conn.CreateDirectory(directory);
+                CreateDirectory(directory, conn);
             }
             catch (Exception ex)
             {
+                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", Directory: " + directory;
+
                 DisposeClient(conn);
                 conn = null;
 
-                throw ex;
+                throw new Exception(exmsg, ex);
             }
             finally
             {
                 RecycleClient(conn);
             }
+        }
+
+        void CreateDirectory(string directory, SftpClient conn)
+        {
+            directory = AdjustPath(conn.ConnectionInfo.Host, directory);
+            string sd = AdjustPath(conn.ConnectionInfo.Host, System.IO.Path.GetDirectoryName(directory.TrimEnd('/')));
+
+            if (sd.Length < 2)
+                return;
+
+            if (!conn.Exists(sd))
+                CreateDirectory(sd, conn);
+
+            if (!conn.Exists(directory))
+                conn.CreateDirectory(directory);
         }
 
         void DeleteDirectory(string directory, bool recurse, bool deleteFiles, SftpClient conn)
@@ -861,10 +878,12 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
+                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", Directory: " + directory;
+
                 DisposeClient(conn);
                 conn = null;
 
-                throw ex;
+                throw new Exception(exmsg, ex);
             }
             finally
             {
@@ -891,10 +910,12 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
+                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", File: " + file;
+
                 DisposeClient(conn);
                 conn = null;
 
-                throw ex;
+                throw new Exception(exmsg, ex);
             }
             finally
             {
@@ -1047,10 +1068,12 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
+                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", OldPath: " + oldPath + ", NewPath: " + newPath;
+
                 DisposeClient(conn);
                 conn = null;
 
-                throw ex;
+                throw new Exception(exmsg, ex);
             }
             finally
             {
