@@ -36,17 +36,18 @@ namespace STEM.Sys.State
             {
                 if (Cache._CacheObjects.Count == 0)
                 {
-                    foreach (string file in Directory.GetFiles(CacheDirectory, "*.cache"))
-                    {
-                        try
+                    if (Directory.Exists(CacheDirectory))
+                        foreach (string file in Directory.GetFiles(CacheDirectory, "*.cache"))
                         {
-                            SessionObject so = SessionObject.Deserialize(File.ReadAllText(file));
+                            try
+                            {
+                                SessionObject so = SessionObject.Deserialize(File.ReadAllText(file));
 
-                            if (so != null)
-                                _CacheObjects[so.Key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = so;
+                                if (so != null)
+                                    _CacheObjects[so.Key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = so;
+                            }
+                            catch { }
                         }
-                        catch { }
-                    }
                 }
             }
         }
