@@ -343,23 +343,31 @@ namespace STEM.Surge.SSH
                                     {
                                         string directory = STEM.Sys.IO.Path.GetDirectoryName(dPath);
 
+                                        PostMortemMetaData["LastOperation"] = "DirectoryExists";
                                         if (!Authentication.DirectoryExists(directory))
+                                        {
+                                            PostMortemMetaData["LastOperation"] = "CreateDirectory";
                                             Authentication.CreateDirectory(directory);
+                                        }
 
+                                        PostMortemMetaData["LastOperation"] = "FileExists";
                                         if (Authentication.FileExists(dPath))
                                         {
                                             switch (ExistsAction)
                                             {
                                                 case Sys.IO.FileExistsAction.Overwrite:
+                                                    PostMortemMetaData["LastOperation"] = "DeleteFile";
                                                     Authentication.DeleteFile(dPath);
                                                     dFile = dPath;
                                                     break;
 
                                                 case Sys.IO.FileExistsAction.OverwriteIfNewer:
 
+                                                    PostMortemMetaData["LastOperation"] = "GetFileInfo";
                                                     if (Authentication.GetFileInfo(dPath).LastWriteTimeUtc >= File.GetLastWriteTimeUtc(s))
                                                         continue;
 
+                                                    PostMortemMetaData["LastOperation"] = "DeleteFile";
                                                     Authentication.DeleteFile(dPath);
                                                     dFile = dPath;
                                                     break;
@@ -371,6 +379,7 @@ namespace STEM.Surge.SSH
                                                     throw new IOException("Destination file exists. (" + dPath + ")");
 
                                                 case Sys.IO.FileExistsAction.MakeUnique:
+                                                    PostMortemMetaData["LastOperation"] = "UniqueFilename";
                                                     dFile = Authentication.UniqueFilename(dPath);
                                                     break;
                                             }
@@ -382,6 +391,7 @@ namespace STEM.Surge.SSH
 
                                         DateTime mt = File.GetLastWriteTimeUtc(s);
 
+                                        PostMortemMetaData["LastOperation"] = "UploadFile";
                                         using (System.IO.Stream sStream = System.IO.File.Open(STEM.Sys.IO.Path.AdjustPath(s), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None))
                                         {
                                             Authentication.UploadFile(sStream, dFile);
@@ -389,6 +399,7 @@ namespace STEM.Surge.SSH
 
                                         try
                                         {
+                                            PostMortemMetaData["LastOperation"] = "SetLastWriteTimeUtc";
                                             Authentication.SetLastWriteTimeUtc(dFile, mt);
                                         }
                                         catch { }
