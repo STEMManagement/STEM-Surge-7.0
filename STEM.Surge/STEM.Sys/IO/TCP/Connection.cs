@@ -39,6 +39,7 @@ namespace STEM.Sys.IO.TCP
         Thread _CalloutThread = null;
         object _AccessMutex = new object();
 
+        bool _BindInitialized = false;
         bool _CloseBroadcast = false;
         void BroadcastClose()
         {
@@ -206,6 +207,13 @@ namespace STEM.Sys.IO.TCP
                 {
                     if (!IsConnected())
                     {
+                        if (!_BindInitialized)
+                        {
+                            _BelievedState = BelievedState.Closed;
+                            _CloseBroadcast = true;
+                            _BindInitialized = true;
+                        }
+
                         if (_BelievedState == BelievedState.Open) // Can't re-open until the close was fully broadcast
                             return;
 
@@ -807,7 +815,7 @@ namespace STEM.Sys.IO.TCP
                     {
                         _ConnectionClosed += value;
 
-                        if (_CloseBroadcast)
+                        if (_BindInitialized && _CloseBroadcast)
                             EnqueueCallout(value);
                     }
             }
