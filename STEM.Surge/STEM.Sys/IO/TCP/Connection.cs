@@ -47,14 +47,14 @@ namespace STEM.Sys.IO.TCP
             {
                 if (!_CloseBroadcast)
                 {
-                    lock (_CallOutQueue)
-                    {
-                        if (_ConnectionClosed != null)
-                            foreach (ConnectionClosed c in _ConnectionClosed.GetInvocationList())
-                                EnqueueCallout(c);
+                    List<object> cList = new List<object>();
+                    if (_ConnectionClosed != null)
+                        foreach (ConnectionClosed c in _ConnectionClosed.GetInvocationList())
+                            cList.Add(c);
 
-                        EnqueueCallout(new ConnectionClosed(_Closed));
-                    }
+                    cList.Add(new ConnectionClosed(_Closed));
+
+                    EnqueueCallout(cList);
 
                     _CloseBroadcast = true;
                 }
@@ -332,14 +332,14 @@ namespace STEM.Sys.IO.TCP
                         _Receiver.Start();
                     }
 
-                    lock (_CallOutQueue)
-                    {
-                        if (_ConnectionOpened != null)
-                            foreach (ConnectionOpened c in _ConnectionOpened.GetInvocationList())
-                                EnqueueCallout(c);
+                    List<object> cList = new List<object>();
+                    if (_ConnectionOpened != null)
+                        foreach (ConnectionOpened c in _ConnectionOpened.GetInvocationList())
+                            cList.Add(c);
 
-                        EnqueueCallout(new ConnectionOpened(_Opened));
-                    }
+                    cList.Add(new ConnectionOpened(_Opened));
+
+                    EnqueueCallout(cList);
                 }
             }
         }
@@ -420,6 +420,9 @@ namespace STEM.Sys.IO.TCP
                                         }
 
                                 pos += rcvd;
+
+                                if (pos == buf.Length)
+                                    break;
 
                                 if (rcvd == 0)
                                     break;
@@ -652,8 +655,32 @@ namespace STEM.Sys.IO.TCP
         {
             get
             {
-                lock (_CallOutQueue)
-                    return _CallOutQueue.Count;
+                while (true)
+                    try
+                    {
+                        return _CallOutQueue.Count;
+                    }
+                    catch { }
+            }
+        }
+        void EnqueueCallout(List<object> cList)
+        {
+            if (cList == null || cList.Count == 0)
+                return;
+
+            lock (_CallOutQueue)
+            {
+                foreach (object c in cList)
+                    _CallOutQueue.Enqueue(new object[] { c, this });
+
+                if (_CalloutThread == null)
+                {
+                    _CalloutThread = new Thread(new ThreadStart(_CallOut));
+                    _CalloutThread.IsBackground = true;
+                    _CalloutThread.Start();
+                }
+
+                System.Threading.Monitor.Pulse(_CallOutQueue);
             }
         }
 
