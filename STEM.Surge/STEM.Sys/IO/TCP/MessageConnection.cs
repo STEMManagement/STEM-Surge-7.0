@@ -26,84 +26,35 @@ namespace STEM.Sys.IO.TCP
 {
     public class MessageConnection : StringConnection
     {
-        ThreadedQueue _MessageReceivedQueue = null;
         ThreadedQueue _ResponseReceivedQueue = null;
 
         Queue<Message> _Waiting = new Queue<Message>();
         Dictionary<Guid, Message> _LocalWaiting = new Dictionary<Guid, Message>();
 
-        private bool _QueueReceivedData = false;
-
-        public MessageConnection(string address, int port, bool sslConnection, bool queueReceivedData, bool autoReconnect = false)
+        public MessageConnection(string address, int port, bool sslConnection, bool autoReconnect = false)
             : base(address, port, sslConnection, autoReconnect)
         {
-            //_QueueReceivedData = queueReceivedData;
-
-            if (_QueueReceivedData)
-            {
-                _MessageReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
-                _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
-            }
-
             _ResponseReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
             _ResponseReceivedQueue.receiveNext += ProcessResponse;
         }
 
-        public MessageConnection(string address, int port, bool sslConnection, bool queueReceivedData, X509Certificate2 certificate, bool autoReconnect = false)
+        public MessageConnection(string address, int port, bool sslConnection, X509Certificate2 certificate, bool autoReconnect = false)
             : base(address, port, sslConnection, certificate, autoReconnect)
         {
-            //_QueueReceivedData = queueReceivedData;
-
-            if (_QueueReceivedData)
-            {
-                _MessageReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
-                _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
-            }
-
             _ResponseReceivedQueue = new ThreadedQueue(address + ":" + port, TimeSpan.FromSeconds(20));
             _ResponseReceivedQueue.receiveNext += ProcessResponse;
         }
 
-        public MessageConnection(System.Net.Sockets.TcpClient client, X509Certificate2 certificate, bool queueReceivedData)
+        public MessageConnection(System.Net.Sockets.TcpClient client, X509Certificate2 certificate)
             : base(client, certificate)
         {
-            //_QueueReceivedData = queueReceivedData;
-
-            if (_QueueReceivedData)
-            {
-                _MessageReceivedQueue = new ThreadedQueue(RemoteAddress + ":" + RemotePort, TimeSpan.FromSeconds(20));
-                _MessageReceivedQueue.receiveNext += ProcessMessageReceived;
-            }
-
             _ResponseReceivedQueue = new ThreadedQueue(RemoteAddress + ":" + RemotePort, TimeSpan.FromSeconds(20));
             _ResponseReceivedQueue.receiveNext += ProcessResponse;
-        }
-
-        public override int MessageBacklog
-        {
-            get
-            {
-                if (_MessageReceivedQueue != null)
-                    return _MessageReceivedQueue.QueuedBacklog + base.MessageBacklog;
-
-                return base.MessageBacklog;
-            }
-        }
-
-        protected override void Dispose(bool dispose)
-        {
-            base.Dispose(dispose);
         }
 
         public sealed override void Close()
         {
             base.Close();
-
-            if (_MessageReceivedQueue != null)
-            {
-                _MessageReceivedQueue.Dispose();
-                _MessageReceivedQueue = null;
-            }
 
             if (_ResponseReceivedQueue != null)
             {
@@ -330,10 +281,7 @@ namespace STEM.Sys.IO.TCP
                 if (message.Contains("STEM.Sys.Messaging.ConnectionTest"))
                     return;
 
-                if (_QueueReceivedData && _MessageReceivedQueue != null)
-                    _MessageReceivedQueue.EnqueueObject(new object[] { message, received });
-                else
-                    ProcessMessageReceived(message, received);
+                ProcessMessageReceived(message, received);
             }
             catch (Exception ex)
             {
