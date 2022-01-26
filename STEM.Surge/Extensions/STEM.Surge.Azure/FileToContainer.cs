@@ -115,7 +115,7 @@ namespace STEM.Surge.Azure
                             s.Read(bData, 0, bData.Length);
                         }
 
-                        sData = System.Text.Encoding.Unicode.GetString(bData, 0, bData.Length);
+                        sData = System.Text.Encoding.UTF8.GetString(bData, 0, bData.Length);
                         bData = null;
                         break;
                 }
