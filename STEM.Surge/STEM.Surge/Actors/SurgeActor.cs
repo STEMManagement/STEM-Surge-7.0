@@ -157,7 +157,7 @@ namespace STEM.Surge
 
                 if (c == null)
                 {
-                    c = new MessageConnection(ipAddress, port, sslConnection, true, autoReconnect);
+                    c = new MessageConnection(ipAddress, port, sslConnection, autoReconnect);
                     _MessageConnections.Add(c);
                     initialize = true;
                     firstConnection = _MessageConnections.Count == 1;
@@ -201,7 +201,7 @@ namespace STEM.Surge
 
                 if (c == null)
                 {
-                    c = new MessageConnection(ipAddress, port, sslConnection, true, certificate, autoReconnect);
+                    c = new MessageConnection(ipAddress, port, sslConnection, certificate, autoReconnect);
                     _MessageConnections.Add(c);
                     initialize = true;
                     firstConnection = _MessageConnections.Count == 1;

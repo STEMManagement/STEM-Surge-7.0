@@ -122,7 +122,7 @@ namespace STEM.Surge
 
         void _TcpConnectionListener_onConnect(TcpConnectionListener caller, System.Net.Sockets.Socket soc)
         {
-            MessageConnection c = new MessageConnection(new System.Net.Sockets.TcpClient { Client = soc }, null, true);
+            MessageConnection c = new MessageConnection(new System.Net.Sockets.TcpClient { Client = soc }, null);
 
             c.onClosed += _SandboxConnections_onClosed;
             c.onReceived += _SandboxConnections_onReceived;
