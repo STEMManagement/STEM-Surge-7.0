@@ -48,6 +48,11 @@ namespace STEM.Surge.SMB
         public Copy()
             : base()
         {
+            ExpandSource = false;
+            SourcePath = "[TargetPath]";
+            FileFilter = "[TargetName]";
+            DirectoryFilter = "!TEMP";
+            RecurseSource = false;
             Action = ActionType.Copy;
         }
 
