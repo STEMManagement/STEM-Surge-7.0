@@ -299,7 +299,10 @@ namespace STEM.Listing.SSH
                     server = _SelectedAddress;
 
                 if (String.IsNullOrEmpty(server))
-                    throw new System.IO.IOException("System.Listing.SSH.OpenClient called with empty server value.");
+                {
+                    string sfp = STEM.Sys.IO.Path.FirstTokenOfPath(path);
+                    throw new System.IO.IOException("System.Listing.SSH.OpenClient called with empty server value. (Path: " + path + ", Server: " + sfp + ")");
+                }
 
                 if (_SelectedAddress == null)
                     _SelectedAddress = server;
@@ -424,7 +427,12 @@ namespace STEM.Listing.SSH
 
         public string ToString(SftpFile item)
         {
-            return  '/' + _SelectedAddress + '/' + item.FullName.Replace('\\', '/');
+            string ret = '/' + _SelectedAddress + '/' + item.FullName.Replace('\\', '/');
+
+            while (ret.Contains("//"))
+                ret = ret.Replace("//", "/");
+
+            return ret;
         }
 
         static Dictionary<string, Regex> _InclusiveDirFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);

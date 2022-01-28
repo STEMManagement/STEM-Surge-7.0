@@ -200,8 +200,10 @@ namespace STEM.Sys.IO
 
             string machine = p.TrimStart('\\').TrimStart('/');
 
-            if (machine.IndexOf(System.IO.Path.DirectorySeparatorChar) != -1)
-                machine = machine.Substring(0, machine.IndexOf(System.IO.Path.DirectorySeparatorChar));
+            if (machine.IndexOf("\\") != -1)
+                machine = machine.Substring(0, machine.IndexOf("\\"));
+            else if (machine.IndexOf("/") != -1)
+                machine = machine.Substring(0, machine.IndexOf("/"));
 
             if (machine.Contains(":"))
                 return Net.MachineIP();

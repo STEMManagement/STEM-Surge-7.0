@@ -443,7 +443,12 @@ namespace STEM.Listing.FTP
 
         public string ToString(FtpListItem item)
         {
-            return  '/' + _SelectedAddress + '/' + item.Name.Replace('\\', '/');
+            string ret = '/' + _SelectedAddress + '/' + item.Name.Replace('\\', '/');
+
+            while (ret.Contains("//"))
+                ret = ret.Replace("//", "/");
+
+            return ret;
         }
 
         static Dictionary<string, Regex> _InclusiveDirFilter = new Dictionary<string, Regex>(StringComparer.InvariantCultureIgnoreCase);
