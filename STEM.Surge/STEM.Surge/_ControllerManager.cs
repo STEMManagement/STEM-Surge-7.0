@@ -80,11 +80,6 @@ namespace STEM.Surge
         public abstract CoordinatedKeyManager KeyManager { get; }
 
         /// <summary>
-        /// The IAuthentication instance being used in active listings
-        /// </summary>
-        public abstract STEM.Sys.IO.Listing.IAuthentication ValidatedAuth { get; }
-
-        /// <summary>
         /// The DeploymentController instance being used in active deployment
         /// </summary>
         public abstract _DeploymentController ValidatedController { get; }
