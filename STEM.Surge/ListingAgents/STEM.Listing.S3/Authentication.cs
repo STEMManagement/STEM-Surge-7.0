@@ -217,13 +217,20 @@ namespace STEM.Listing.S3
 
         public static string PrefixFromPath(string path)
         {
+            bool isDir = path.EndsWith("/") || path.EndsWith("\\");
+
             string bucket = BucketFromPath(path);
 
             string prefix = path.Trim('/').Trim('\\');
 
             prefix = prefix.Substring(bucket.Length);
             prefix = prefix.Replace('\\', '/');
-            return prefix.Trim('/');
+            string r = prefix.Trim('/');
+
+            if (isDir)
+                r += "/";
+
+            return r;
         }
 
         protected override void Dispose(bool dispose)
