@@ -577,30 +577,30 @@ namespace STEM.Sys.IO.TCP
 
         public virtual void Close()
         {
+            try
+            {
+                if (_Receiver != null)
+                {
+                    Thread t = _Receiver;
+                    _Receiver = null;
+
+                    try
+                    {
+                        t.Interrupt();
+                    }
+                    catch { }
+
+                    try
+                    {
+                        t.Abort();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
             lock (_AccessMutex)
             {
-                try
-                {
-                    if (_Receiver != null)
-                    {
-                        Thread t = _Receiver;
-                        _Receiver = null;
-
-                        try
-                        {
-                            t.Interrupt();
-                        }
-                        catch { }
-
-                        try
-                        {
-                            t.Abort();
-                        }
-                        catch { }
-                    }
-                }
-                catch { }
-
                 if (_TcpClient != null)
                 {
                     try
