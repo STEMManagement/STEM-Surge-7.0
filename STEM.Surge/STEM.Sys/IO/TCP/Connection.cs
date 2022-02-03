@@ -987,6 +987,11 @@ namespace STEM.Sys.IO.TCP
                                 }
                             }
                     }
+                    catch (ObjectDisposedException ex)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("Connection.Send", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        IsConnected();
+                    }
                     catch (Exception ex)
                     {
                         if (_TcpClient.Connected)
