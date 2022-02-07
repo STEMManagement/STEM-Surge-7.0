@@ -2180,35 +2180,35 @@ namespace STEM.Surge
                             System.Threading.Thread.Sleep(10);
                     }
 
-            retry = 10;
-            while (retry-- > 0)
-                try
-                {
-                    if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
-                        File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
 
-                    if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
+            if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
+            {
+                retry = 10;
+                while (retry-- > 0)
+                    try
+                    {
+                        if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
+                            File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
+
                         try
                         {
                             using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
                             {
                                 fs.Write(iSet.Serialize());
                             }
+
+                            break;
                         }
                         catch
                         {
                             if (!System.IO.Directory.Exists(PostMortemCache))
                             {
                                 System.IO.Directory.CreateDirectory(PostMortemCache);
-
-                                using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
-                                {
-                                    fs.Write(iSet.Serialize());
-                                }
                             }
                         }
-                }
-                catch { System.Threading.Thread.Sleep(10); }
+                    }
+                    catch { System.Threading.Thread.Sleep(10); }
+            }
         }
                 
         static Dictionary<string, List<Message>> _ManagerMessageReturns = new Dictionary<string, List<Message>>();
