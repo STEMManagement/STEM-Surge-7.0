@@ -640,7 +640,10 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
-                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", DestinationFile: " + destinationFilePath;
+                string exmsg = "Connection is null.";
+
+                if (conn != null)
+                    exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", DestinationFile: " + destinationFilePath;
 
                 DisposeClient(conn);
                 conn = null;
@@ -719,7 +722,10 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
-                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", FileName: " + filename;
+                string exmsg = "Connection is null.";
+
+                if (conn != null)
+                    exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", FileName: " + filename;
 
                 DisposeClient(conn);
                 conn = null;
@@ -813,7 +819,10 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
-                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", Directory: " + directory;
+                string exmsg = "Connection is null.";
+
+                if (conn != null)
+                    exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", Directory: " + directory;
 
                 DisposeClient(conn);
                 conn = null;
@@ -886,7 +895,10 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
-                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", Directory: " + directory;
+                string exmsg = "Connection is null.";
+
+                if (conn != null)
+                    exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", Directory: " + directory;
 
                 DisposeClient(conn);
                 conn = null;
@@ -918,7 +930,10 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
-                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", File: " + file;
+                string exmsg = "Connection is null.";
+                
+                if (conn != null)
+                    exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", File: " + file;
 
                 DisposeClient(conn);
                 conn = null;
@@ -1005,6 +1020,9 @@ namespace STEM.Listing.SSH
 
                 directory = AdjustPath(conn.ConnectionInfo.Host, directory);
 
+                if (!conn.Exists(directory))
+                    return null;
+
                 SftpFile a = conn.Get(directory);
 
                 if (a.IsDirectory)
@@ -1037,6 +1055,9 @@ namespace STEM.Listing.SSH
                 conn = OpenClient(file);
 
                 file = AdjustPath(conn.ConnectionInfo.Host, file);
+
+                if (!conn.Exists(file))
+                    return null;
 
                 SftpFile a = conn.Get(file);
 
@@ -1076,7 +1097,10 @@ namespace STEM.Listing.SSH
             }
             catch (Exception ex)
             {
-                string exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", OldPath: " + oldPath + ", NewPath: " + newPath;
+                string exmsg = "Connection is null.";
+
+                if (conn != null)
+                    exmsg = "WorkingDirectory: " + conn.WorkingDirectory + ", OldPath: " + oldPath + ", NewPath: " + newPath;
 
                 DisposeClient(conn);
                 conn = null;
