@@ -27,8 +27,12 @@ namespace STEM.Listing.S3
 
             try
             {
-                bucket = S3.Authentication.BucketFromPath(Path);
-                string prefix = S3.Authentication.PrefixFromPath(Path);
+                string path = Path;
+                if (!path.EndsWith("/", StringComparison.Ordinal) && !path.EndsWith("\\", StringComparison.Ordinal))
+                    path = path + "/";
+
+                bucket = S3.Authentication.BucketFromPath(path);
+                string prefix = S3.Authentication.PrefixFromPath(path);
 
                 List<S3Object> files = _Auth.ListObjects(bucket, prefix, ListingType.File, Recurse, SubpathFilter, FileFilter, _Auth.LimitListResults);
 
