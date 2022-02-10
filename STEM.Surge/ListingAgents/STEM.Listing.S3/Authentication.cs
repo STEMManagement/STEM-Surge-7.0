@@ -319,6 +319,7 @@ namespace STEM.Listing.S3
 
             prefix = prefix.Replace('\\', '/');
             prefix = prefix.TrimEnd('/');
+            prefix = prefix + "/";
 
             Regex inclusiveDirFilter = null;
             if (_InclusiveDirFilter.ContainsKey(directoryFilter))
@@ -404,9 +405,9 @@ namespace STEM.Listing.S3
 
             List<S3Object> fullList = ListObjects(bucketName, prefix, maxResults);
 
-            List<string> folders = fullList.Where(i => !i.Key.EndsWith("/") && STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') != prefix).Select(i => STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') + '/').ToList();
+            List<string> folders = fullList.Where(i => !i.Key.EndsWith("/") && STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') != prefix.TrimEnd('/')).Select(i => STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') + '/').ToList();
             
-            folders.AddRange(fullList.Where(i => i.Key.EndsWith("/") && i.Key.TrimEnd('/') != prefix).Select(i => i.Key));
+            folders.AddRange(fullList.Where(i => i.Key.EndsWith("/") && i.Key != prefix).Select(i => i.Key));
 
             folders = folders.Distinct().ToList();
 
@@ -418,7 +419,7 @@ namespace STEM.Listing.S3
 
             if (!recurse)
             {
-                folders = folders.Where(i => i.TrimEnd('/').Equals(prefix.TrimEnd('/'), StringComparison.InvariantCultureIgnoreCase)).ToList();
+                folders = folders.Where(i => i.Equals(prefix, StringComparison.InvariantCultureIgnoreCase)).ToList();
             }
 
             List<S3Object> ret2 = fullList.Where(i => !i.Key.EndsWith("/")).ToList();
@@ -433,13 +434,13 @@ namespace STEM.Listing.S3
             {
                 if (folders.Exists(i => i.Equals(STEM.Sys.IO.Path.GetDirectoryName(o.Key).Replace("\\", "/") + "/", StringComparison.InvariantCultureIgnoreCase)))
                     ret.Add(o);
-                else if (prefix.Equals(STEM.Sys.IO.Path.GetDirectoryName(o.Key).Replace("\\", "/"), StringComparison.InvariantCultureIgnoreCase))
+                else if (prefix.Equals(STEM.Sys.IO.Path.GetDirectoryName(o.Key).Replace("\\", "/") + "/", StringComparison.InvariantCultureIgnoreCase))
                     ret.Add(o);
             }
 
             if (listType == ListingType.Directory)
             {
-                ret = ret.Where(i => i.Key.EndsWith("/") && i.Key.TrimEnd('/') != prefix).ToList();
+                ret = ret.Where(i => i.Key.EndsWith("/") && i.Key != prefix).ToList();
             }
             else if (listType == ListingType.File)
             {
