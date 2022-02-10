@@ -277,17 +277,19 @@ namespace STEM.Surge
                             return di.CreationTimeUtc;
                     }
                 }
-
-                switch (SelectedOrigin)
+                else
                 {
-                    case STEM.Surge.AgeOrigin.LastWriteTime:
-                        return fi.LastWriteTimeUtc;
+                    switch (SelectedOrigin)
+                    {
+                        case STEM.Surge.AgeOrigin.LastWriteTime:
+                            return fi.LastWriteTimeUtc;
 
-                    case STEM.Surge.AgeOrigin.LastAccessTime:
-                        return fi.LastAccessTimeUtc;
+                        case STEM.Surge.AgeOrigin.LastAccessTime:
+                            return fi.LastAccessTimeUtc;
 
-                    case STEM.Surge.AgeOrigin.CreationTime:
-                        return fi.CreationTimeUtc;
+                        case STEM.Surge.AgeOrigin.CreationTime:
+                            return fi.CreationTimeUtc;
+                    }
                 }
             }
             catch { }
