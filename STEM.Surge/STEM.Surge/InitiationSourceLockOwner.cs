@@ -57,12 +57,25 @@ namespace STEM.Surge
             return "Branch: " + (Branch != null ? Branch.BranchIP : "Unassigned") + " - " + ControllerManager.DeploymentControllerDescription;
         }
 
+        TimeSpan _UnlockDelay = TimeSpan.FromSeconds(0);
+
         public bool Lock(string initiationSource, _DeploymentController controller)
         {
             lock (this)
             {
                 if (initiationSource != null)
                 {
+                    try
+                    {
+                        if (!controller.PreprocessPerformsDiscovery)
+                        {
+                            if (controller.GetType().GetMethod("ListPreprocess").DeclaringType == typeof(_DeploymentController) ||
+                                controller.GetType().GetMethod("ListPreprocess").DeclaringType.FullName == "STEM.Surge.BasicControllers.BasicFileController")
+                                _UnlockDelay = TimeSpan.FromSeconds(10);
+                        };
+                    }
+                    catch { }
+
                     _FileDeploymentController fileBasis = controller as _FileDeploymentController;
                     if (fileBasis != null)
                         if (fileBasis.RequireTargetNameCoordination)
@@ -267,26 +280,6 @@ namespace STEM.Surge
                         {
                             STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex, STEM.Sys.EventLog.EventLogEntryType.Error);
                         }
-
-                    if (InitiationSource != null)
-                        try
-                        {
-                            if (RequiredTargetNameCoordination)
-                            {
-                                string key = STEM.Sys.IO.Path.GetFileName(InitiationSource);
-                                ControllerManager.KeyManager.Unlock(key, this);
-                            }
-
-                            ControllerManager.KeyManager.Unlock(InitiationSource, this);
-                        }
-                        catch (Exception ex)
-                        {
-                            STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.Unlock", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
-                        }
-                        finally
-                        {
-                            InitiationSource = null;
-                        }
                 }
                 catch (Exception ex)
                 {
@@ -294,8 +287,37 @@ namespace STEM.Surge
                 }
                 finally
                 {
-                    ExecutionCompleted = true;
+                    _UnlockPool.RunOnce(new System.Threading.ThreadStart(UnlockDelayed), _UnlockDelay);
                 }
+            }
+        }
+
+        static STEM.Sys.Threading.ThreadPool _UnlockPool = new Sys.Threading.ThreadPool(Int32.MaxValue, true);
+
+        void UnlockDelayed()
+        {
+            lock (this)
+            {
+                if (InitiationSource != null)
+                    try
+                    {
+                        if (RequiredTargetNameCoordination)
+                        {
+                            string key = STEM.Sys.IO.Path.GetFileName(InitiationSource);
+                            ControllerManager.KeyManager.Unlock(key, this);
+                        }
+
+                        ControllerManager.KeyManager.Unlock(InitiationSource, this);
+                    }
+                    catch (Exception ex)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("InitiationSourceLockOwner.UnlockDelayed", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                    }
+                    finally
+                    {
+                        InitiationSource = null;
+                        ExecutionCompleted = true;
+                    }
             }
         }
 
