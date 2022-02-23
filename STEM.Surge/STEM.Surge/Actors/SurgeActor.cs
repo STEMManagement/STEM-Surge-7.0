@@ -290,15 +290,15 @@ namespace STEM.Surge
         /// <param name="connection">The connection that closed</param>
         protected virtual void onClosed(Connection connection)
         {
-            lock (ConnectionLock)
-            {
-                MessageConnection c = connection as MessageConnection;
-                if (c != null && !c.AutoReconnect)
+            MessageConnection c = connection as MessageConnection;
+            if (c != null && !c.AutoReconnect)
+                lock (ConnectionLock)
+                {
                     if (_MessageConnections.Contains(c))
                     {
                         _MessageConnections.Remove(c);
                     }
-            }
+                }
         }
     }
 }
