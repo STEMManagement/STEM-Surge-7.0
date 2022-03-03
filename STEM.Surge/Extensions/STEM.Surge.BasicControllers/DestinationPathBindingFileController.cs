@@ -48,7 +48,7 @@ namespace STEM.Surge.BasicControllers
 
             string origDest = TemplateKVP["[DestinationPath]"];
 
-            string path = System.IO.Path.GetDirectoryName(initiationSource);
+            string path = System.IO.Path.GetDirectoryName(initiationSource).ToUpper();
 
             if (string.IsNullOrEmpty(path))
                 return base.GenerateDeploymentDetails(listPreprocessResult, initiationSource, recommendedBranchIP, limitedToBranches);
