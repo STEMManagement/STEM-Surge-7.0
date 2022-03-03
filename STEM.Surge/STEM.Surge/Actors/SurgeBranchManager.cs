@@ -827,6 +827,7 @@ namespace STEM.Surge
                 {
                     if (!Connection.IsConnected())
                     {
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.AssemblySync", "AssemblySync: Disconnected, " + Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
                         endAsync = true;
                         return;
                     }
@@ -844,7 +845,7 @@ namespace STEM.Surge
                             endAsync = false;
                             return;
                         }
-                        else if (_AsmPool.LoadLevel > 0)
+                        else if (_AsmPool.LoadLevel > 0 && !AssemblyInitializationComplete)
                         {
                             ExecutionInterval = TimeSpan.FromSeconds(1);
                             endAsync = false;
@@ -1302,9 +1303,8 @@ namespace STEM.Surge
 
             protected override List<Sys.Threading.IThreadable> Sort(List<Sys.Threading.IThreadable> collection)
             {
-                return collection.Where(i => !i.QueuedForExecution && (DateTime.UtcNow - i.LastExecutionEnd) > i.ExecutionInterval && Directory.Exists(((Poller)i).PollerMessage.Directory))
+                return collection.Where(i => !i.QueuedForExecution && (DateTime.UtcNow - i.LastExecutionEnd) > i.ExecutionInterval)
                                            .OrderBy(i => ((Poller)i).PollerMessage.PollInterval.Value.TotalMilliseconds - (DateTime.UtcNow - i.LastExecutionEnd).TotalMilliseconds).Take(MaximumConcurrent).ToList();
-
             }
         }
 
@@ -1376,6 +1376,8 @@ namespace STEM.Surge
                         if (_BranchHealthThreads.ContainsKey(connection.ToString()))
                             return;
                     }
+
+                    STEM.Sys.EventLog.WriteEntry("BranchManager.SendBranchHealthDetails", "Branch SendBranchHealthDetails: " + message.MessageConnection.RemoteAddress + ":" + message.MessageConnection.LocalPort, STEM.Sys.EventLog.EventLogEntryType.Information);
 
                     SendBranchHealthDetails(connection);
 
@@ -1467,6 +1469,8 @@ namespace STEM.Surge
 
                         if (_BranchHealthThreads.ContainsKey(connectionKey))
                             return;
+                        
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.BranchHealthThread", "Branch BranchHealthThread Started: " + message.MessageConnection.RemoteAddress + ":" + message.MessageConnection.LocalPort, STEM.Sys.EventLog.EventLogEntryType.Information);
 
                         System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(ReportState));
                         t.IsBackground = true;
@@ -2050,6 +2054,11 @@ namespace STEM.Surge
                     }
 
                     return true;
+                }
+                else
+                {
+                    // Force close
+                    connection.Close();
                 }
             }
 
