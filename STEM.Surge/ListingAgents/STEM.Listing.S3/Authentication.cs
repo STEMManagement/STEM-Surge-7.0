@@ -321,6 +321,15 @@ namespace STEM.Listing.S3
             prefix = prefix.TrimEnd('/');
             prefix = prefix + "/";
 
+            if (!fileFilter.Contains("|") &&
+                !fileFilter.Contains("!") &&
+                !fileFilter.Contains("<>") &&
+                !fileFilter.Contains("*") &&
+                !fileFilter.Contains("?"))
+            {
+                prefix = PrefixFromPath(bucketName + "/" + prefix + fileFilter);
+            }
+
             Regex inclusiveDirFilter = null;
             if (_InclusiveDirFilter.ContainsKey(directoryFilter))
             {
@@ -421,6 +430,8 @@ namespace STEM.Listing.S3
             {
                 folders = folders.Where(i => i.Equals(prefix, StringComparison.InvariantCultureIgnoreCase)).ToList();
             }
+
+            folders.Add("/");
 
             List<S3Object> ret2 = fullList.Where(i => !i.Key.EndsWith("/")).ToList();
 

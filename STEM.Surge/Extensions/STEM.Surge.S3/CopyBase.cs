@@ -307,6 +307,7 @@ namespace STEM.Surge.S3
                     {
                         string bucket = Authentication.BucketFromPath(src);
                         string prefix = Authentication.PrefixFromPath(src);
+
                         if (PopulatePostMortemMeta)
                         {
                             PostMortemMetaData["Bucket"] = bucket;
