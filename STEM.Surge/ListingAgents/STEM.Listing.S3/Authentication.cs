@@ -278,6 +278,9 @@ namespace STEM.Listing.S3
 
                 ret.AddRange(listResponse.Result.S3Objects);
 
+                if (ret.Count >= maxResults)
+                    break;
+
                 // Set the marker property
                 listRequest.Marker = listResponse.Result.NextMarker;
             } while (listResponse.Result.IsTruncated);
@@ -323,15 +326,6 @@ namespace STEM.Listing.S3
             prefix = prefix.Replace('\\', '/');
             prefix = prefix.TrimEnd('/');
             prefix = prefix + "/";
-
-            if (!fileFilter.Contains("|") &&
-                !fileFilter.Contains("!") &&
-                !fileFilter.Contains("<>") &&
-                !fileFilter.Contains("*") &&
-                !fileFilter.Contains("?"))
-            {
-                prefix = PrefixFromPath(bucketName + "/" + prefix + fileFilter);
-            }
 
             Regex inclusiveDirFilter = null;
             if (_InclusiveDirFilter.ContainsKey(directoryFilter))
@@ -415,7 +409,18 @@ namespace STEM.Listing.S3
                 return ret;
             }
 
-            List<S3Object> fullList = ListObjects(bucketName, prefix, maxResults);
+            string fullPrefix = prefix;
+
+            if (!fileFilter.Contains("|") &&
+                !fileFilter.Contains("!") &&
+                !fileFilter.Contains("<>") &&
+                !fileFilter.Contains("*") &&
+                !fileFilter.Contains("?"))
+            {
+                fullPrefix = PrefixFromPath(bucketName + "/" + prefix + fileFilter);
+            }
+
+            List<S3Object> fullList = ListObjects(bucketName, fullPrefix, maxResults);
 
             List<string> folders = fullList.Where(i => !i.Key.EndsWith("/") && STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') != prefix.TrimEnd('/')).Select(i => STEM.Sys.IO.Path.GetDirectoryName(i.Key).Replace("\\", "/").TrimEnd('/') + '/').ToList();
             
