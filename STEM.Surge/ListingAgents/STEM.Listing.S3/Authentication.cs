@@ -300,6 +300,9 @@ namespace STEM.Listing.S3
 
                 ret.AddRange(listResponse.Result.S3Objects);
 
+                if (ret.Count >= maxResults)
+                    break;
+
                 // Set the marker property
                 listRequest.Marker = listResponse.Result.NextMarker;
             } while (listResponse.Result.IsTruncated);
