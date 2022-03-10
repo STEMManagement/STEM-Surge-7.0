@@ -289,7 +289,7 @@ namespace STEM.Listing.S3
         {
             List<S3Object> ret = new List<S3Object>();
 
-            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, Prefix = prefix, MaxKeys = maxResults };
+            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, Prefix = prefix, Delimiter = "/", MaxKeys = maxResults };
 
             System.Threading.Tasks.Task<ListObjectsResponse> listResponse;
             do
@@ -620,12 +620,10 @@ namespace STEM.Listing.S3
                 {
                     prefix = prefix + "/";
 
-                    List<S3Object> objs = ListObjects(bucket, prefix, 1);
+                    System.Threading.Tasks.Task<GetObjectResponse> r = Client.GetObjectAsync(bucket, prefix); 
+                    r.Wait();
 
-                    if (objs != null && objs.Count > 0)
-                    {
-                        return true;
-                    }
+                    return r.Result.Key == prefix;
                 }
                 else
                 {
@@ -675,15 +673,16 @@ namespace STEM.Listing.S3
                 {
                     prefix = prefix + "/";
 
-                    List<S3Object> objs = ListObjects(bucket, prefix);
+                    System.Threading.Tasks.Task<GetObjectResponse> r = Client.GetObjectAsync(bucket, prefix);
+                    r.Wait();
 
-                    if (objs != null && objs.Count > 0)
+                    if (r.Result.Key == prefix)
                     {
                         return new DirectoryInfo
                         {
-                            CreationTimeUtc = objs.Select(i => i.LastModified).Min(),
+                            CreationTimeUtc = DateTime.MinValue,
                             LastAccessTimeUtc = DateTime.UtcNow,
-                            LastWriteTimeUtc = objs.Select(i => i.LastModified).Max()
+                            LastWriteTimeUtc = r.Result.LastModified
                         };
                     }
                 }

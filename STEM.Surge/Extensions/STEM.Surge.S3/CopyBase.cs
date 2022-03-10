@@ -321,26 +321,28 @@ namespace STEM.Surge.S3
 
                     foreach (string s in sourceFiles)
                     {
+                        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+
                         try
                         {
                             bool success = false;
 
                             Exception lastEX = null;
 
+                            long fileSz = 0;
+
+                            if (Direction == S3Direction.ToS3Bucket)
+                                fileSz = new FileInfo(s).Length;
+                            else
+                                fileSz = Authentication.GetFileInfo(s).Size;
+
+                            _PartSize[s] = (int)Math.Max(MinimumPartSize, fileSz / MaximumNumberOfParts);
+
                             foreach (string d in destinations)
                             {
                                 try
                                 {
                                     string dFile = "";
-
-                                    long fileSz = 0;
-
-                                    if (Direction == S3Direction.ToS3Bucket)
-                                        fileSz = new FileInfo(s).Length;
-                                    else
-                                        fileSz = Authentication.GetFileInfo(s).Size;
-
-                                    _PartSize[s] = (int)Math.Max(MinimumPartSize, fileSz / MaximumNumberOfParts);
 
                                     try
                                     {
@@ -369,8 +371,21 @@ namespace STEM.Surge.S3
                                         if (dPath.Contains("*"))
                                             dPath = dPath.Replace("*", STEM.Sys.IO.Path.GetFileNameWithoutExtension(s));
 
+                                        sw.Reset();
+                                        sw.Start();
+
                                         if (!Authentication.DirectoryExists(STEM.Sys.IO.Path.GetDirectoryName(dPath)))
                                             Authentication.CreateDirectory(STEM.Sys.IO.Path.GetDirectoryName(dPath));
+
+                                        sw.Stop();
+
+                                        if (PopulatePostMortemMeta)
+                                        {
+                                            PostMortemMetaData["DirectoryExists"] = sw.ElapsedMilliseconds.ToString();
+                                        }
+
+                                        sw.Reset();
+                                        sw.Start();
 
                                         if (Authentication.FileExists(dPath))
                                         {
@@ -406,6 +421,13 @@ namespace STEM.Surge.S3
                                             dFile = dPath;
                                         }
 
+                                        sw.Stop();
+
+                                        if (PopulatePostMortemMeta)
+                                        {
+                                            PostMortemMetaData["ExistsAction"] = sw.ElapsedMilliseconds.ToString();
+                                        }
+
                                         string bucket = Authentication.BucketFromPath(dFile);
                                         string prefix = Authentication.PrefixFromPath(dFile);
                                         if (PopulatePostMortemMeta)
@@ -413,8 +435,18 @@ namespace STEM.Surge.S3
                                             PostMortemMetaData["Bucket"] = bucket;
                                             PostMortemMetaData["Prefix"] = prefix;
                                         }
-										
+
+                                        sw.Reset();
+                                        sw.Start();
+
                                         TransferUtilityUpload(bucket, prefix, s, s);
+
+                                        sw.Stop();
+
+                                        if (PopulatePostMortemMeta)
+                                        {
+                                            PostMortemMetaData["TransferUtilityUpload"] = sw.ElapsedMilliseconds.ToString();
+                                        }
                                     }
                                     else
                                     {
@@ -489,7 +521,7 @@ namespace STEM.Surge.S3
                                                     Directory.CreateDirectory(tmp);
 
                                                 tmp = Path.Combine(tmp, STEM.Sys.IO.Path.GetFileName(dFile));
-												
+
                                                 TransferUtilityDownload(bucket, prefix, tmp);
 
                                                 try
@@ -563,12 +595,20 @@ namespace STEM.Surge.S3
                             {
                                 AppendToMessage(e.Message);
                             }
-							Exceptions.Add(ex); //add the entire message to the collection to maintain the top level exception's stack
+                            Exceptions.Add(ex); //add the entire message to the collection to maintain the top level exception's stack
                         }
                         catch (Exception ex)
                         {
                             AppendToMessage(ex.Message);
                             Exceptions.Add(ex);
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                sw.Stop();
+                            }
+                            catch { }
                         }
                     }
                 }
