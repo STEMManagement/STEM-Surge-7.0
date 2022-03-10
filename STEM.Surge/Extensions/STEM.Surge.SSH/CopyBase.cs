@@ -130,7 +130,7 @@ namespace STEM.Surge.SSH
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
 
-        Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
+        protected Dictionary<string, string> FilesActioned = new Dictionary<string, string>();
 
         protected override void _Rollback()
         {
@@ -141,11 +141,11 @@ namespace STEM.Surge.SSH
                 else
                     InstructionSet.InstructionSetContainer[Authentication.ConfigurationName + ".SshClientAddress"] = Authentication.TargetAddress(null);
 
-                foreach (string d in _FilesActioned.Keys)
+                foreach (string d in FilesActioned.Keys)
                 {
                     try
                     {
-                        string s = _FilesActioned[d];
+                        string s = FilesActioned[d];
 
                         if (Action == ActionType.Move)
                         {
@@ -481,7 +481,7 @@ namespace STEM.Surge.SSH
                                     {
                                         filesActioned++;
 
-                                        _FilesActioned[s] = dFile;
+                                        FilesActioned[s] = dFile;
 
                                         if (Action == ActionType.Move)
                                             AppendToMessage(s + " moved to " + dFile);
@@ -537,7 +537,7 @@ namespace STEM.Surge.SSH
                 Exceptions.Add(ex);
             }
 
-            if (_FilesActioned.Count == 0)
+            if (FilesActioned.Count == 0)
             {
                 switch (ZeroFilesAction)
                 {

@@ -113,19 +113,19 @@ namespace STEM.Surge.SMB
             ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
-        
-        Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
+
+        protected  Dictionary<string, string> FilesActioned = new Dictionary<string, string>();
 
         protected override void _Rollback()
         {
             if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
-                foreach (string d in _FilesActioned.Keys)
+                foreach (string d in FilesActioned.Keys)
                 {
                     string dFile = "";
                     try
                     {
-                        string s = _FilesActioned[d];
+                        string s = FilesActioned[d];
 
                         if (Action == ActionType.Move)
                             STEM.Sys.IO.File.STEM_Move(s, d, STEM.Sys.IO.FileExistsAction.Skip, out dFile, Retry, RetryDelaySeconds, UseTempHop);
@@ -238,7 +238,7 @@ namespace STEM.Surge.SMB
                                     {
                                         filesActioned++;
 
-                                        _FilesActioned[s] = dFile;
+                                        FilesActioned[s] = dFile;
 
                                         if (Action == ActionType.Move)
                                             AppendToMessage(s + " moved to " + dFile);
@@ -285,7 +285,7 @@ namespace STEM.Surge.SMB
                 Exceptions.Add(ex);
             }
 
-            if (_FilesActioned.Count == 0)
+            if (FilesActioned.Count == 0)
             {
                 switch (ZeroFilesAction)
                 {

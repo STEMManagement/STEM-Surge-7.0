@@ -129,17 +129,17 @@ namespace STEM.Surge.Azure
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
 
-        Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
+        protected Dictionary<string, string> FilesActioned = new Dictionary<string, string>();
 
         protected override void _Rollback()
         {
             if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
-                foreach (string d in _FilesActioned.Keys)
+                foreach (string d in FilesActioned.Keys)
                 {
                     try
                     {
-                        string s = _FilesActioned[d];
+                        string s = FilesActioned[d];
 
                         if (Action == ActionType.Move)
                         {
@@ -465,7 +465,7 @@ namespace STEM.Surge.Azure
                                     {
                                         filesActioned++;
 
-                                        _FilesActioned[s] = dFile;
+                                        FilesActioned[s] = dFile;
 
                                         if (Action == ActionType.Move)
                                             AppendToMessage(s + " moved to " + dFile);
@@ -537,7 +537,7 @@ namespace STEM.Surge.Azure
                 Exceptions.Add(ex);
             }
 
-            if (_FilesActioned.Count == 0)
+            if (FilesActioned.Count == 0)
             {
                 switch (ZeroFilesAction)
                 {
