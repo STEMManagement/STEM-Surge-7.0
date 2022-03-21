@@ -232,7 +232,16 @@ namespace STEM.Surge.SMB
                                     if (dPath.Contains("*"))
                                         dPath = dPath.Replace("*", STEM.Sys.IO.Path.GetFileNameWithoutExtension(s));
 
-                                    STEM.Sys.IO.File.STEM_Copy(s, dPath, ExistsAction, out dFile, Retry, RetryDelaySeconds, UseTempHop);
+                                    bool actioned = false;
+                                    if (Action == ActionType.Move)
+                                        if (DestinationActionRule == DestinationRule.FirstSuccess)
+                                        {
+                                            STEM.Sys.IO.File.STEM_Move(s, dPath, ExistsAction, out dFile, Retry, RetryDelaySeconds, UseTempHop);
+                                            actioned = true;
+                                        }
+
+                                    if (!actioned)
+                                        STEM.Sys.IO.File.STEM_Copy(s, dPath, ExistsAction, out dFile, Retry, RetryDelaySeconds, UseTempHop);
 
                                     if (!String.IsNullOrEmpty(dFile))
                                     {
@@ -264,7 +273,8 @@ namespace STEM.Surge.SMB
                                 throw new Exception("No successful actions taken for " + s, lastEX); // + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
 
                             if (Action == ActionType.Move)
-                                File.Delete(STEM.Sys.IO.Path.AdjustPath(s));
+                                if (File.Exists(STEM.Sys.IO.Path.AdjustPath(s)))
+                                    File.Delete(STEM.Sys.IO.Path.AdjustPath(s));
                         }
                         catch (Exception ex)
                         {
