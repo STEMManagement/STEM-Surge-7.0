@@ -490,7 +490,7 @@ namespace STEM.Surge
             }
         }
 
-        RunningSandbox LaunchSandbox(string sandboxID, string appConfig, string altAssmStore)
+        RunningSandbox LaunchSandbox(string sandboxID, string appConfig, string altAssmStore, int minutesOfInactivity)
         {
             try
             {
@@ -540,6 +540,8 @@ namespace STEM.Surge
                         {
                             configurationDS.Settings[0].AlternateAssemblyStore = altAssmStore;
                         }
+
+                        configurationDS.Settings[0].MinutesOfInactivity = minutesOfInactivity;
 
                         configurationDS.WriteXml(Path.Combine(appPath, "SurgeService.cfg"));
 
@@ -1319,7 +1321,7 @@ namespace STEM.Surge
             {
                 if (r != null && r.RequestApproved)
                 {
-                    AssignInstructionSet a = new AssignInstructionSet(m.InstructionSet, r.MessageConnection.RemoteAddress, m.InstructionSet.DeploymentControllerID, STEM.Sys.IO.Net.MachineIP(), "", "", "");
+                    AssignInstructionSet a = new AssignInstructionSet(m.InstructionSet, r.MessageConnection.RemoteAddress, m.InstructionSet.DeploymentControllerID, STEM.Sys.IO.Net.MachineIP(), "", "", "", 5);
                     new Runner(this, r.MessageConnection, a);
                 }
                 else
@@ -1670,7 +1672,7 @@ namespace STEM.Surge
                                         if (!String.IsNullOrEmpty(m.AlternateAssemblyStore))
                                             altAssmStore = m.AlternateAssemblyStore;
 
-                                        sandbox = LaunchSandbox(sandboxID, m.SandboxAppConfigXml, altAssmStore);
+                                        sandbox = LaunchSandbox(sandboxID, m.SandboxAppConfigXml, altAssmStore, m.MinutesOfInactivity);
                                     }
                                 }
                                 else
