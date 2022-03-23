@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Collections.Generic;
 using System.Xml.Serialization;
@@ -23,7 +24,7 @@ using System.Xml.Serialization;
 namespace STEM.Sys.State
 {
     [XmlType(TypeName = "STEM.Sys.State.Session")]
-    public class Session
+    public class Session : IDisposable
     {
         static Session()
         {
@@ -192,6 +193,32 @@ namespace STEM.Sys.State
                         _TargetObjects.Remove(key.ToUpper(System.Globalization.CultureInfo.CurrentCulture));
                     else
                         _TargetObjects[key.ToUpper(System.Globalization.CultureInfo.CurrentCulture)] = new SessionObject(key, value);
+            }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Dispose(true);
+            }
+            catch { }
+
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool dispose)
+        {
+            lock (_TargetObjects)
+            {
+                List<SessionObject> values = _TargetObjects.Values.ToList();
+
+                _TargetObjects.Clear();
+
+                foreach (SessionObject o in values)
+                {
+                    o.Dispose();
+                }
             }
         }
     }

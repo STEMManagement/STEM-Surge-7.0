@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.IO;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ using System.Xml.Serialization;
 namespace STEM.Sys.State
 {
     [XmlType(TypeName = "STEM.Sys.State.Cache")]
-    public class Cache
+    public class Cache : IDisposable
     {
         public Cache() { }
         
@@ -227,6 +228,32 @@ namespace STEM.Sys.State
                     {
                         STEM.Sys.EventLog.WriteEntry("STEM.Sys.State.Cache", new Exception("Failed to write cache file for key (" + key + ")", ex));
                     }
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Dispose(true);
+            }
+            catch { }
+
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool dispose)
+        {
+            lock (_CacheObjects)
+            {
+                List<SessionObject> values = _CacheObjects.Values.ToList();
+
+                _CacheObjects.Clear();
+
+                foreach (SessionObject o in values)
+                {
+                    o.Dispose();
                 }
             }
         }
