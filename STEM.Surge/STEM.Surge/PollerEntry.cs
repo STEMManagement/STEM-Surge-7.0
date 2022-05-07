@@ -33,7 +33,8 @@ namespace STEM.Surge
             PingableSource = false;
 
             LimitBranchIPs = "";
-            SandboxID = "";
+            Sandbox = false;
+            AltAssembliesOnly = false;
 
             Backlog = new Backlogs.Entry();
 
@@ -87,7 +88,8 @@ namespace STEM.Surge
             }
         }
 
-        public string SandboxID { get; set; }
+        public bool Sandbox { get; set; }
+        public bool AltAssembliesOnly { get; set; }
 
         public Backlogs.Entry Backlog { get; set; }
 
