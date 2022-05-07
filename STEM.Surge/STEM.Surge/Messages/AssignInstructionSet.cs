@@ -49,7 +49,10 @@ namespace STEM.Surge.Messages
 
         [Browsable(false)]
         public string AlternateAssemblyStore { get; set; }
-        
+
+        [Browsable(false)]
+        public int MinutesOfInactivity { get; set; }
+
         string _InstructionSetXml = null;
         [Browsable(false)]
         public string InstructionSetXml
@@ -114,7 +117,7 @@ namespace STEM.Surge.Messages
             ExecutionCompleted = DateTime.MinValue;
         }
 
-        public AssignInstructionSet(STEM.Surge._InstructionSet iSet, string deploymentManagerIP, string deploymentControllerID, string branchIP, string sandboxID, string sandboxAppConfigXml, string alternateAssemblyStore)
+        public AssignInstructionSet(STEM.Surge._InstructionSet iSet, string deploymentManagerIP, string deploymentControllerID, string branchIP, string sandboxID, string sandboxAppConfigXml, string alternateAssemblyStore, int minutesOfInactivity)
         {
             ExecutionCompleted = DateTime.MinValue;
             InitiationSource = iSet.InitiationSource;
@@ -128,10 +131,11 @@ namespace STEM.Surge.Messages
             SandboxID = sandboxID;
             SandboxAppConfigXml = sandboxAppConfigXml;
             AlternateAssemblyStore = alternateAssemblyStore;
+            MinutesOfInactivity = minutesOfInactivity;
             ContinuousExecution = false;
         }
 
-        public AssignInstructionSet(STEM.Surge._InstructionSet iSet, string deploymentManagerIP, string deploymentManagerID, string branchIP, string sandboxID, string sandboxAppConfigXml, string alternateAssemblyStore, bool isStatic, DateTime lastWriteTime)
+        public AssignInstructionSet(STEM.Surge._InstructionSet iSet, string deploymentManagerIP, string deploymentManagerID, string branchIP, string sandboxID, string sandboxAppConfigXml, string alternateAssemblyStore, int minutesOfInactivity, bool isStatic, DateTime lastWriteTime)
         {
             ExecutionCompleted = DateTime.MinValue;
             InitiationSource = iSet.InitiationSource;
@@ -143,6 +147,7 @@ namespace STEM.Surge.Messages
             SandboxID = sandboxID;
             SandboxAppConfigXml = sandboxAppConfigXml;
             AlternateAssemblyStore = alternateAssemblyStore;
+            MinutesOfInactivity = minutesOfInactivity;
 
             IsStatic = isStatic;
             LastWriteTime = lastWriteTime;
