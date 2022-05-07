@@ -46,6 +46,9 @@ namespace STEM.Surge
         [DllImport("Kernel32.dll", CallingConvention = CallingConvention.Winapi)]
         private static extern void GetSystemTimePreciseAsFileTime(out long filetime);
 
+        [DllImport("Kernel32.dll", CallingConvention = CallingConvention.Winapi)]
+        private static extern int GetCurrentThreadId();
+
 
         /// <summary>
         /// Unique ID of this instance
@@ -654,7 +657,7 @@ namespace STEM.Surge
 
         public abstract void Run(SurgeBranchManager branchManager, MessageConnection connection, string cacheDirectory, KeyManager keyManager, string clientAddress);
 
-        static DateTime PreciseTime()
+        public static DateTime PreciseTime()
         {
             DateTime utcNow = DateTime.UtcNow;
 
@@ -669,6 +672,18 @@ namespace STEM.Surge
             }
 
             return utcNow;
+        }
+        public static int ThreadID()
+        {
+            try
+            {
+                return GetCurrentThreadId();
+            }
+            catch
+            {
+            }
+
+            return System.Threading.Thread.CurrentThread.ManagedThreadId;
         }
 
         protected void Run(SurgeBranchManager branchManager, MessageConnection connection, string cacheDirectory, KeyManager keyManager)
@@ -686,6 +701,11 @@ namespace STEM.Surge
                     ReportMessage(new ExecutionStarted(this));
 
                 this.PostMortemMetaData["ManagedThreadId"] = System.Threading.Thread.CurrentThread.ManagedThreadId.ToString(System.Globalization.CultureInfo.CurrentCulture);
+                this.PostMortemMetaData["OSThreadId"] = ThreadID().ToString(System.Globalization.CultureInfo.CurrentCulture);
+
+                this.PostMortemMetaData["HLAB_START_OS_TID"] = ThreadID().ToString(System.Globalization.CultureInfo.CurrentCulture);
+                this.PostMortemMetaData["HLAB_START_HR_TIME"] = PreciseTime().ToString("O");
+                this.PostMortemMetaData["HLAB_PID"] = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
 
                 PrepareSet();
 
@@ -746,6 +766,9 @@ namespace STEM.Surge
             finally
             {
                 Completed = PreciseTime();
+
+                this.PostMortemMetaData["HLAB_END_OS_TID"] = ThreadID().ToString(System.Globalization.CultureInfo.CurrentCulture);
+                this.PostMortemMetaData["HLAB_END_HR_TIME"] = PreciseTime().ToString("O");
 
                 _Stop = true;
 
