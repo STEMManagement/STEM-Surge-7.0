@@ -113,19 +113,19 @@ namespace STEM.Surge.SMB
             ExecutionMode = ExecuteOn.ForwardExecution;
             ZeroFilesAction = FailureAction.SkipRemaining;
         }
-        
-        Dictionary<string, string> _FilesActioned = new Dictionary<string, string>();
+
+        protected  Dictionary<string, string> FilesActioned = new Dictionary<string, string>();
 
         protected override void _Rollback()
         {
             if (ExecutionMode == ExecuteOn.ForwardExecution)
             {
-                foreach (string d in _FilesActioned.Keys)
+                foreach (string d in FilesActioned.Keys)
                 {
                     string dFile = "";
                     try
                     {
-                        string s = _FilesActioned[d];
+                        string s = FilesActioned[d];
 
                         if (Action == ActionType.Move)
                             STEM.Sys.IO.File.STEM_Move(s, d, STEM.Sys.IO.FileExistsAction.Skip, out dFile, Retry, RetryDelaySeconds, UseTempHop);
@@ -232,13 +232,22 @@ namespace STEM.Surge.SMB
                                     if (dPath.Contains("*"))
                                         dPath = dPath.Replace("*", STEM.Sys.IO.Path.GetFileNameWithoutExtension(s));
 
-                                    STEM.Sys.IO.File.STEM_Copy(s, dPath, ExistsAction, out dFile, Retry, RetryDelaySeconds, UseTempHop);
+                                    bool actioned = false;
+                                    if (Action == ActionType.Move)
+                                        if (DestinationActionRule == DestinationRule.FirstSuccess)
+                                        {
+                                            STEM.Sys.IO.File.STEM_Move(s, dPath, ExistsAction, out dFile, Retry, RetryDelaySeconds, UseTempHop);
+                                            actioned = true;
+                                        }
+
+                                    if (!actioned)
+                                        STEM.Sys.IO.File.STEM_Copy(s, dPath, ExistsAction, out dFile, Retry, RetryDelaySeconds, UseTempHop);
 
                                     if (!String.IsNullOrEmpty(dFile))
                                     {
                                         filesActioned++;
 
-                                        _FilesActioned[s] = dFile;
+                                        FilesActioned[s] = dFile;
 
                                         if (Action == ActionType.Move)
                                             AppendToMessage(s + " moved to " + dFile);
@@ -264,7 +273,8 @@ namespace STEM.Surge.SMB
                                 throw new Exception("No successful actions taken for " + s, lastEX); // + "\r\n" + ((lastEX == null) ? "No additional information." : lastEX.ToString()));
 
                             if (Action == ActionType.Move)
-                                File.Delete(STEM.Sys.IO.Path.AdjustPath(s));
+                                if (File.Exists(STEM.Sys.IO.Path.AdjustPath(s)))
+                                    File.Delete(STEM.Sys.IO.Path.AdjustPath(s));
                         }
                         catch (Exception ex)
                         {
@@ -285,7 +295,7 @@ namespace STEM.Surge.SMB
                 Exceptions.Add(ex);
             }
 
-            if (_FilesActioned.Count == 0)
+            if (FilesActioned.Count == 0)
             {
                 switch (ZeroFilesAction)
                 {
