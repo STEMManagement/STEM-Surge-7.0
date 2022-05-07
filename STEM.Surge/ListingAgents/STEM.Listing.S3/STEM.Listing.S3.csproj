@@ -7,7 +7,7 @@
 		<Copyright>Copyright © STEM Management 2022</Copyright>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<Company>STEM Management</Company>
-		<Version>7.5.1</Version>
+		<Version>7.5.9</Version>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<RootNamespace>STEM.Listing.S3</RootNamespace>
 	</PropertyGroup>
@@ -19,11 +19,12 @@
 
 
 	<ItemGroup>
-	  <PackageReference Include="AWSSDK.S3" Version="3.7.7.2" />
-	</ItemGroup>
-
-
-	<ItemGroup>
+		<Reference Include="AWSSDK.Core">
+		  <HintPath>..\..\Binaries\Extensions\STEM.Surge.Extensions\AWSSDK.Core.3.7.5.5.dll</HintPath>
+		</Reference>
+		<Reference Include="AWSSDK.S3">
+		  <HintPath>..\..\Binaries\Extensions\STEM.Surge.Extensions\AWSSDK.S3.3.7.7.2.dll</HintPath>
+		</Reference>
 		<Reference Include="STEM.Sys.7.0.0.0">
 			<HintPath>..\..\RequiredDlls\STEM.Sys.7.0.0.0.dll</HintPath>
 		</Reference>
