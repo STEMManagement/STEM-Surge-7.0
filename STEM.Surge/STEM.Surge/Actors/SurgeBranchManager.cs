@@ -490,7 +490,7 @@ namespace STEM.Surge
             }
         }
 
-        RunningSandbox LaunchSandbox(string sandboxID, string appConfig, string altAssmStore)
+        RunningSandbox LaunchSandbox(string sandboxID, string appConfig, string altAssmStore, int minutesOfInactivity)
         {
             try
             {
@@ -540,6 +540,8 @@ namespace STEM.Surge
                         {
                             configurationDS.Settings[0].AlternateAssemblyStore = altAssmStore;
                         }
+
+                        configurationDS.Settings[0].MinutesOfInactivity = minutesOfInactivity;
 
                         configurationDS.WriteXml(Path.Combine(appPath, "SurgeService.cfg"));
 
@@ -746,51 +748,75 @@ namespace STEM.Surge
 
         protected override void onHandshakeComplete(ConnectionType sender, Connection connection)
         {
-            new SendAssemblyList((MessageConnection)connection, this);
+            new AssemblySync((MessageConnection)connection);
         }
 
-        class SendAssemblyList : STEM.Sys.Threading.IThreadable
+        class AssemblySync : STEM.Sys.Threading.IThreadable
         {
-            static object _Lock = new object();
+            public static List<AssemblySync> Registered = new List<AssemblySync>();
+            public static bool AssemblyInitializationComplete = false;
+
             static MessageConnection _AssemblyListInitializer = null;
 
-            MessageConnection _Connection;
-            SurgeBranchManager _Owner;
+            public MessageConnection Connection { get; set; }
 
-            public SendAssemblyList(MessageConnection connection, SurgeBranchManager owner)
+            public AssemblySync(MessageConnection connection)
             {
-                _Connection = connection;
-                _Owner = owner;
+                Connection = connection;
 
-                if (_Owner._AssemblyInitializationComplete)
-                    Send();
-                else
-                    STEM.Sys.Global.ThreadPool.BeginAsync(this);
+                lock (Registered)
+                    Registered.Add(this);
+
+                STEM.Sys.Global.ThreadPool.BeginAsync(this);
+            }
+
+            protected override void Dispose(bool dispose)
+            {
+                base.Dispose(dispose);
+
+                lock (Registered)
+                {
+                    if (_AssemblyListInitializer != null)
+                        if (_AssemblyListInitializer.RemoteAddress == Connection.RemoteAddress)
+                            _AssemblyListInitializer = null;
+
+                    if (Registered.Contains(this))
+                        Registered.Remove(this);
+                }
             }
 
             bool Send()
             {
-                AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
-
-                a.Compress = true;
-
-                if (!_Connection.Send(a))
+                try
                 {
-                    try
-                    {
-                        if (_Connection.IsConnected())
-                        {
-                            STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Forced disconnect, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Error);
+                    AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
 
-                            _Connection.Close();
+                    a.Compress = true;
+
+                    if (!Connection.Send(a))
+                    {
+                        try
+                        {
+                            if (Connection.IsConnected())
+                            {
+                                STEM.Sys.EventLog.WriteEntry("BranchManager.AssemblySync", "AssemblySync: Forced disconnect, " + Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Error);
+                                Connection.Close();
+                            }
                         }
+                        catch { }
+
+                        return false;
                     }
-                    catch { }
+                }
+                catch (Exception ex)
+                {
+                    STEM.Sys.EventLog.WriteEntry("BranchManager.AssemblySync", "AssemblySync: Forced disconnect.\r\n\r\n" + ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                    Connection.Close();
 
                     return false;
                 }
 
-                STEM.Sys.EventLog.WriteEntry("BranchManager.SendAssemblyList", "SendAssemblyList: Success, " + _Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
+                STEM.Sys.EventLog.WriteEntry("BranchManager.AssemblySync", "AssemblySync: Success, " + Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
                 
                 return true;
             }
@@ -801,58 +827,53 @@ namespace STEM.Surge
 
                 try
                 {
-                    lock (_Owner._BranchHealthThreads)
+                    if (!Connection.IsConnected())
                     {
-                        if (_Owner._BranchHealthThreads.ContainsKey(_Connection.ToString()))
-                        {
-                            endAsync = true;
-                            return;
-                        }
-                    }
-
-                    if (!_Connection.IsConnected())
-                    {
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.AssemblySync", "AssemblySync: Disconnected, " + Connection.RemoteAddress, STEM.Sys.EventLog.EventLogEntryType.Information);
                         endAsync = true;
                         return;
                     }
 
-                    lock (_Lock)
+                    lock (Registered)
                     {
                         if (_AssemblyListInitializer == null)
-                            _AssemblyListInitializer = _Connection;
+                            _AssemblyListInitializer = Connection;
                         else if (!_AssemblyListInitializer.IsConnected())
-                            _AssemblyListInitializer = _Connection;
+                            _AssemblyListInitializer = Connection;
 
-                        if (!_Owner._AssemblyInitializationComplete)
-                            if (_AssemblyListInitializer.RemoteAddress != _Connection.RemoteAddress)
-                            {
-                                ExecutionInterval = TimeSpan.FromSeconds(1);
-                                endAsync = false;
-                                return;
-                            }
-
-                        if (_AssemblyListInitializer.RemoteAddress == _Connection.RemoteAddress)
-                            if (_AsmPool.LoadLevel > 0)
-                            {
-                                ExecutionInterval = TimeSpan.FromSeconds(1);
-                                endAsync = false;
-                                return;
-                            }
+                        if (_AssemblyListInitializer.RemoteAddress != Connection.RemoteAddress && !AssemblyInitializationComplete)
+                        {
+                            ExecutionInterval = TimeSpan.FromSeconds(1);
+                            endAsync = false;
+                            return;
+                        }
+                        else if (_AsmPool.LoadLevel > 0 && !AssemblyInitializationComplete)
+                        {
+                            ExecutionInterval = TimeSpan.FromSeconds(1);
+                            endAsync = false;
+                            return;
+                        }
                     }
 
                     ExecutionInterval = TimeSpan.FromSeconds(15);
 
-                    endAsync = !Send();
-                    return;
+                    Send();
+                }
+                catch (Exception ex)
+                {
+                    STEM.Sys.EventLog.WriteEntry("BranchManager.AssemblySync", "AssemblySync: \r\n\r\n" + ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
                 }
                 finally
                 {
                     if (endAsync)
-                        lock (_Lock)
+                        lock (Registered)
                         {
                             if (_AssemblyListInitializer != null)
-                                if (_AssemblyListInitializer.RemoteAddress == _Connection.RemoteAddress)
+                                if (_AssemblyListInitializer.RemoteAddress == Connection.RemoteAddress)
                                     _AssemblyListInitializer = null;
+
+                            if (Registered.Contains(this))
+                                Registered.Remove(this);
 
                             owner.EndAsync(this);
                         }
@@ -1109,7 +1130,7 @@ namespace STEM.Surge
             {
                 try
                 {
-                    while (!_BranchManager._AssemblyInitializationComplete)
+                    while (!AssemblySync.AssemblyInitializationComplete)
                         System.Threading.Thread.Sleep(100);
 
                     MessageConnection a = _BranchManager.MessageConnection(_MessageConnection.RemoteAddress);
@@ -1284,15 +1305,12 @@ namespace STEM.Surge
 
             protected override List<Sys.Threading.IThreadable> Sort(List<Sys.Threading.IThreadable> collection)
             {
-                return collection.Where(i => !i.QueuedForExecution && (DateTime.UtcNow - i.LastExecutionEnd) > i.ExecutionInterval && Directory.Exists(((Poller)i).PollerMessage.Directory))
+                return collection.Where(i => !i.QueuedForExecution && (DateTime.UtcNow - i.LastExecutionEnd) > i.ExecutionInterval)
                                            .OrderBy(i => ((Poller)i).PollerMessage.PollInterval.Value.TotalMilliseconds - (DateTime.UtcNow - i.LastExecutionEnd).TotalMilliseconds).Take(MaximumConcurrent).ToList();
-
             }
         }
 
         PollerPool _PollerPool = new PollerPool();
-        bool _AssemblyInitializationComplete = false;
-
 
         private void RequestResume_onResponse(Message delivered, Message response)
         {
@@ -1303,7 +1321,7 @@ namespace STEM.Surge
             {
                 if (r != null && r.RequestApproved)
                 {
-                    AssignInstructionSet a = new AssignInstructionSet(m.InstructionSet, r.MessageConnection.RemoteAddress, m.InstructionSet.DeploymentControllerID, STEM.Sys.IO.Net.MachineIP(), "", "", "");
+                    AssignInstructionSet a = new AssignInstructionSet(m.InstructionSet, r.MessageConnection.RemoteAddress, m.InstructionSet.DeploymentControllerID, STEM.Sys.IO.Net.MachineIP(), "", "", "", 5);
                     new Runner(this, r.MessageConnection, a);
                 }
                 else
@@ -1341,17 +1359,27 @@ namespace STEM.Surge
                 }
                 else if (message is AssemblyInitializationComplete)
                 {
-                    if (!_AssemblyInitializationComplete)
+                    if (!AssemblySync.AssemblyInitializationComplete)
                         while (_AsmPool.LoadLevel > 0)
                             System.Threading.Thread.Sleep(100);
 
-                    _AssemblyInitializationComplete = true;
+                    AssemblySync.AssemblyInitializationComplete = true;
+
+                    lock (AssemblySync.Registered)
+                    {
+                        AssemblySync a = AssemblySync.Registered.FirstOrDefault(i => i.Connection == connection);
+
+                        if (a != null)
+                            a.Dispose();
+                    }
 
                     lock (_BranchHealthThreads)
                     {
                         if (_BranchHealthThreads.ContainsKey(connection.ToString()))
                             return;
                     }
+
+                    STEM.Sys.EventLog.WriteEntry("BranchManager.SendBranchHealthDetails", "Branch SendBranchHealthDetails: " + message.MessageConnection.RemoteAddress + ":" + message.MessageConnection.LocalPort, STEM.Sys.EventLog.EventLogEntryType.Information);
 
                     SendBranchHealthDetails(connection);
 
@@ -1443,6 +1471,8 @@ namespace STEM.Surge
 
                         if (_BranchHealthThreads.ContainsKey(connectionKey))
                             return;
+                        
+                        STEM.Sys.EventLog.WriteEntry("BranchManager.BranchHealthThread", "Branch BranchHealthThread Started: " + message.MessageConnection.RemoteAddress + ":" + message.MessageConnection.LocalPort, STEM.Sys.EventLog.EventLogEntryType.Information);
 
                         System.Threading.Thread t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(ReportState));
                         t.IsBackground = true;
@@ -1636,13 +1666,13 @@ namespace STEM.Surge
                             {
                                 if (!_RunningSandboxes.ContainsKey(sandboxID))
                                 {
-                                    if (_AssemblyInitializationComplete)
+                                    if (AssemblySync.AssemblyInitializationComplete)
                                     {
                                         string altAssmStore = null;
                                         if (!String.IsNullOrEmpty(m.AlternateAssemblyStore))
                                             altAssmStore = m.AlternateAssemblyStore;
 
-                                        sandbox = LaunchSandbox(sandboxID, m.SandboxAppConfigXml, altAssmStore);
+                                        sandbox = LaunchSandbox(sandboxID, m.SandboxAppConfigXml, altAssmStore, m.MinutesOfInactivity);
                                     }
                                 }
                                 else
@@ -1978,7 +2008,7 @@ namespace STEM.Surge
 
         bool SendBranchHealthDetails(MessageConnection connection)
         {
-            if (_AssemblyInitializationComplete)
+            if (AssemblySync.AssemblyInitializationComplete)
             {
                 BranchHealthDetails branchHealthDetails = new BranchHealthDetails();
 
@@ -2026,6 +2056,11 @@ namespace STEM.Surge
                     }
 
                     return true;
+                }
+                else
+                {
+                    // Force close
+                    connection.Close();
                 }
             }
 
@@ -2156,35 +2191,35 @@ namespace STEM.Surge
                             System.Threading.Thread.Sleep(10);
                     }
 
-            retry = 10;
-            while (retry-- > 0)
-                try
-                {
-                    if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
-                        File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
 
-                    if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
+            if (PostMortemCache != null && iSet.CachePostMortem && iSet.Instructions.Count > 0)
+            {
+                retry = 10;
+                while (retry-- > 0)
+                    try
+                    {
+                        if (File.Exists(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is")))
+                            File.Delete(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"));
+
                         try
                         {
                             using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
                             {
                                 fs.Write(iSet.Serialize());
                             }
+
+                            break;
                         }
                         catch
                         {
                             if (!System.IO.Directory.Exists(PostMortemCache))
                             {
                                 System.IO.Directory.CreateDirectory(PostMortemCache);
-
-                                using (StreamWriter fs = new StreamWriter(File.Open(System.IO.Path.Combine(PostMortemCache, iSet.ID.ToString() + ".is"), FileMode.Create, FileAccess.ReadWrite, FileShare.None)))
-                                {
-                                    fs.Write(iSet.Serialize());
-                                }
                             }
                         }
-                }
-                catch { System.Threading.Thread.Sleep(10); }
+                    }
+                    catch { System.Threading.Thread.Sleep(10); }
+            }
         }
                 
         static Dictionary<string, List<Message>> _ManagerMessageReturns = new Dictionary<string, List<Message>>();
