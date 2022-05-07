@@ -577,30 +577,30 @@ namespace STEM.Sys.IO.TCP
 
         public virtual void Close()
         {
+            try
+            {
+                if (_Receiver != null)
+                {
+                    Thread t = _Receiver;
+                    _Receiver = null;
+
+                    try
+                    {
+                        t.Interrupt();
+                    }
+                    catch { }
+
+                    try
+                    {
+                        t.Abort();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
             lock (_AccessMutex)
             {
-                try
-                {
-                    if (_Receiver != null)
-                    {
-                        Thread t = _Receiver;
-                        _Receiver = null;
-
-                        try
-                        {
-                            t.Interrupt();
-                        }
-                        catch { }
-
-                        try
-                        {
-                            t.Abort();
-                        }
-                        catch { }
-                    }
-                }
-                catch { }
-
                 if (_TcpClient != null)
                 {
                     try
@@ -986,6 +986,11 @@ namespace STEM.Sys.IO.TCP
                                     throw ex;
                                 }
                             }
+                    }
+                    catch (ObjectDisposedException ex)
+                    {
+                        STEM.Sys.EventLog.WriteEntry("Connection.Send", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        IsConnected();
                     }
                     catch (Exception ex)
                     {
