@@ -267,9 +267,16 @@ namespace STEM.Surge
                 lock (_DeploymentManagerConfigurationMutex)
                     if (!_Connected && connection.RemoteAddress == PrimaryDeploymentManagerIP)
                     {
-                        AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
-                        a.Compress = true;
-                        c.Send(a);
+                        try
+                        {
+                            AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                            a.Compress = true;
+                            c.Send(a);
+                        }
+                        catch (Exception ex)
+                        {
+                            STEM.Sys.EventLog.WriteEntry("UIActor.onHandshakeComplete", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        }
 
                         _LastAssemblyList = DateTime.UtcNow;
 
@@ -314,7 +321,7 @@ namespace STEM.Surge
                         connection.Send(asm);
                     }
 
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(100);
                 }
 
                 if (_ActiveDeploymentManagers != null)
@@ -326,9 +333,13 @@ namespace STEM.Surge
                 return;
             }
 
-            AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
-            a.Compress = true;
-            connection.Send(a);
+            try
+            {
+                AssemblyList a = new AssemblyList(STEM.Sys.Serialization.VersionManager.VersionCache.Replace(Environment.CurrentDirectory, "."), true);
+                a.Compress = true;
+                connection.Send(a);
+            }
+            catch { }
         }
         
         /// <summary>
