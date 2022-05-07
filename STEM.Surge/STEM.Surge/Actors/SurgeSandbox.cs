@@ -26,9 +26,13 @@ namespace STEM.Surge
 {
     public class SurgeSandbox : SurgeBranchManager
     {
-        public SurgeSandbox(int communicationPort, string postMortemCache)
+        int _MinutesOfInactivity = 5;
+
+        public SurgeSandbox(int communicationPort, string postMortemCache, int minutesOfInactivity)
             : base(null, communicationPort, postMortemCache, false, null, true)
         {
+            if (minutesOfInactivity > 0)
+                _MinutesOfInactivity = minutesOfInactivity;
         }
 
         protected override void onOpened(Connection connection)
@@ -58,7 +62,7 @@ namespace STEM.Surge
 
         void Timeout()
         {
-            if ((DateTime.UtcNow - _LastAssignment).TotalMinutes > 5.0)
+            if ((DateTime.UtcNow - _LastAssignment).TotalMinutes > _MinutesOfInactivity)
                 if (_Assigned.Count(i => !i.IsStatic) == 0)
                 {
                     System.Diagnostics.Process self = System.Diagnostics.Process.GetCurrentProcess();
