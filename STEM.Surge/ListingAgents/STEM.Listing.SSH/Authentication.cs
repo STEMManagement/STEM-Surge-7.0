@@ -920,6 +920,10 @@ namespace STEM.Listing.SSH
         void CreateDirectory(string directory, SftpClient conn)
         {
             directory = AdjustPath(conn.ConnectionInfo.Host, directory);
+
+            if (directory.Length < 2)
+                return;
+
             string sd = AdjustPath(conn.ConnectionInfo.Host, System.IO.Path.GetDirectoryName(directory.TrimEnd('/')));
 
             if (sd.Length < 2)
