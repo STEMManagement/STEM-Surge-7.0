@@ -588,6 +588,7 @@ namespace STEM.Surge
             }
         }
 
+        static Dictionary<string, bool> _InstructionSetHasAuth = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
         static Dictionary<string, _InstructionSet> _InstructionSet = new Dictionary<string, _InstructionSet>(StringComparer.InvariantCultureIgnoreCase);
         static Dictionary<string, DateTime> _LastWriteTime = new Dictionary<string, DateTime>(StringComparer.InvariantCultureIgnoreCase);
 
@@ -612,6 +613,21 @@ namespace STEM.Surge
                 {
                     try
                     {
+                        _InstructionSet iSet = STEM.Sys.Serializable.Deserialize(txt) as _InstructionSet;
+                        _InstructionSetHasAuth[templateName] = false;
+                        foreach (Instruction ins in iSet.Instructions)
+                        {
+                            try
+                            {
+                                foreach (PropertyInfo prop in ins.GetType().GetProperties().Where(p => p.PropertyType.IsSubclassOf(typeof(STEM.Sys.Security.IAuthentication))))
+                                {
+                                    _InstructionSetHasAuth[templateName] = true;
+                                    break;
+                                }
+                            }
+                            catch { }
+                        }
+
                         _InstructionSet[templateName] = STEM.Sys.Serializable.Deserialize(txt) as _InstructionSet;
                         _LastWriteTime[templateName] = lwt;
                     }
@@ -650,7 +666,10 @@ namespace STEM.Surge
 
                 CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
 
-                bool updated = clone.PopulateAuthenticationDetails(GetAuthenticationStore());
+                bool updated = false;
+                
+                if (_InstructionSetHasAuth[InstructionSetTemplate])
+                    updated = clone.PopulateAuthenticationDetails(GetAuthenticationStore());
 
                 if (updated)
                     CustomizeInstructionSet(clone, TemplateKVP, recommendedBranchIP, initiationSource, true);
