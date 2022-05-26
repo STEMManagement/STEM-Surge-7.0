@@ -184,7 +184,8 @@ namespace STEM.Listing.S3
                                 {
                                     RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(Region),
                                     ServiceURL = this.ServiceURL,
-                                    ForcePathStyle = true
+                                    ForcePathStyle = true,
+                                    AuthenticationRegion = Region
                                 };
 
                                 _Client = new AmazonS3Client(creds, cfg);
@@ -292,7 +293,7 @@ namespace STEM.Listing.S3
         {
             List<S3Object> ret = new List<S3Object>();
 
-            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, Prefix = prefix, Delimiter = "/", MaxKeys = maxResults };
+            ListObjectsRequest listRequest = new ListObjectsRequest { BucketName = bucketName, Prefix = prefix, MaxKeys = maxResults };
 
             System.Threading.Tasks.Task<ListObjectsResponse> listResponse;
             do
