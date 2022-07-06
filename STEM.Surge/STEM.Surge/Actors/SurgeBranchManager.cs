@@ -2006,6 +2006,10 @@ namespace STEM.Surge
             }
         }
 
+
+        static DateTime _LastReportToDisposalManager = DateTime.MinValue;
+        static object _DisposalManagerLock = new object();
+
         bool SendBranchHealthDetails(MessageConnection connection)
         {
             if (AssemblySync.AssemblyInitializationComplete)
@@ -2042,6 +2046,18 @@ namespace STEM.Surge
                 branchHealthDetails.BranchState = _LastState;
                 branchHealthDetails.GenerationTime = generationTime;
                 branchHealthDetails.ProcessorOverload = _ConfigurationDS.Settings[0].ProcessorOverload;
+
+                lock (_DisposalManagerLock)
+                    if ((DateTime.UtcNow - _LastReportToDisposalManager).TotalSeconds > 5)
+                        try
+                        {
+                            _LastReportToDisposalManager = DateTime.UtcNow;
+                            STEM.Sys.State.DisposalManager.ReportState(this, _LastState == BranchState.Online, assignments.Count);
+                        }
+                        catch (Exception ex)
+                        {
+                            STEM.Sys.EventLog.WriteEntry("BranchManager.SendBranchHealthDetails", ex.ToString(), STEM.Sys.EventLog.EventLogEntryType.Error);
+                        }
 
                 if (connection.Send(branchHealthDetails, false))
                 {
